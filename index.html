@@ -4,21 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>King — NoFap Journey Tracker</title>
-    <script>
-    (function () {
-        if (location.protocol === 'file:') return;
-        var link = document.createElement('link');
-        link.rel = 'manifest';
-        link.href = './manifest.json';
-        document.head.appendChild(link);
-    })();
-    </script>
     <meta name="theme-color" content="#34c759">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="King">
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect fill='%2334c759' width='192' height='192' rx='40'/%3E%3Ctext x='96' y='128' font-size='72' font-weight='800' text-anchor='middle' fill='white' font-family='system-ui,sans-serif'%3EK%3C/text%3E%3C/svg%3E" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect fill='%2334c759' width='192' height='192' rx='40'/%3E%3Ctext x='96' y='128' font-size='72' font-weight='800' text-anchor='middle' fill='white' font-family='system-ui,sans-serif'%3EK%3C/text%3E%3C/svg%3E">
+    <meta name="application-name" content="King">
+    <link rel="icon" type="image/png" sizes="192x192" href="./assets/icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="./assets/icon-512.png">
+    <link rel="apple-touch-icon" href="./assets/icon-192.png">
+    <link rel="manifest" href="./manifest.json">
     <style>
         html, body { background: #f2f2f7; color: #1d1d1f; margin: 0; }
         #loadScreen {
@@ -595,6 +590,6 @@
     <script defer src="./ui-actions.js?v=10"></script>
     <script defer src="./ui-history.js?v=15"></script>
     <script defer src="./ui-day.js?v=14"></script>
-    <script defer src="./boot.js?v=12"></script>
+    <script defer src="./boot.js?v=13"></script>
 </body>
 </html>

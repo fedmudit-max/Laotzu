@@ -1,4 +1,4 @@
-const CACHE_NAME = 'king-v50';
+const CACHE_NAME = 'king-v51';
 
 const ASSETS = [
     './',
@@ -19,6 +19,10 @@ const ASSETS = [
     './ui-day.js',
     './boot.js',
     './manifest.json',
+    './assets/icon-192.png',
+    './assets/icon-512.png',
+    './assets/icon-192-maskable.png',
+    './assets/icon-512-maskable.png',
 ];
 
 self.addEventListener('install', function (event) {

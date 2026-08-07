@@ -3,10 +3,14 @@
  */
 
 function registerServiceWorkerDeferred() {
+    // PWA install (Android app icon / standalone) needs HTTPS or localhost + SW.
+    // file:// always becomes a plain Chrome shortcut — cannot install as app.
     if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
 
     var isLocalDev = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
     if (isLocalDev) {
+        // Desktop localhost: skip SW to avoid stale cache during development.
+        // For Android install testing, serve over LAN HTTP/HTTPS (phone IP) or ngrok.
         navigator.serviceWorker.getRegistrations().then(function (regs) {
             regs.forEach(function (reg) { reg.unregister(); });
         }).catch(function () {});

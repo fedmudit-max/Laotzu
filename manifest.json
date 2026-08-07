@@ -1,17 +1,38 @@
 {
-  "name": "King \u2014 NoFap Journey Tracker",
+  "name": "King — NoFap Journey Tracker",
   "short_name": "King",
   "description": "Track your recovery journey, streaks, and milestones.",
+  "id": "./",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#f2f2f7",
   "theme_color": "#34c759",
   "icons": [
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect fill='%2334c759' width='192' height='192' rx='40'/%3E%3Ctext x='96' y='128' font-size='72' font-weight='800' text-anchor='middle' fill='white' font-family='system-ui,sans-serif'%3EK%3C/text%3E%3C/svg%3E",
+      "src": "./assets/icon-192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any"
+    },
+    {
+      "src": "./assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./assets/icon-192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./assets/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
