@@ -142,10 +142,26 @@ function renderBrainCard() {
     var list = document.getElementById('scienceList');
     if (!list || typeof BRAIN_PHASES === 'undefined') return;
 
+    var journeyEnded = isJourneyEndedDisplay();
+    var slipFreeze = isStreakFreezeDay();
+    // Slip freeze and journey end both grey the progress position (same as Streak tab).
+    var freezeStyle = journeyEnded || slipFreeze;
+    var sciencePane = document.getElementById('tab-science');
+    if (sciencePane) {
+        sciencePane.classList.toggle('journey-ended-day', journeyEnded);
+        sciencePane.classList.toggle('streak-freeze-day', slipFreeze);
+    }
+
     list.innerHTML = BRAIN_PHASES.map(function (phase, idx) {
         var isCurrent = streak > 0 && streak >= phase.from && streak < phase.to;
         var phaseEnd = phase.to === Infinity ? 365 : phase.to;
         var isCompleted = streak > 0 && streak >= phaseEnd;
+
+        // Frozen position (slip day or journey end): hold as completed/grey, no live "here"
+        if (freezeStyle && isCurrent) {
+            isCompleted = true;
+            isCurrent = false;
+        }
 
         var toLabel  = phase.to === Infinity ? '365+' : phase.to;
         var dayRange = 'Day ' + phase.from + '\u2013' + toLabel;
@@ -159,12 +175,13 @@ function renderBrainCard() {
         var cls = 'science-item';
         if (isCurrent)   cls += ' current';
         if (isCompleted) cls += ' completed';
+        if (freezeStyle && isCompleted) cls += ' journey-ended-item';
         if (!isCurrent && !isCompleted) cls += ' future';
 
         var badge = isCurrent
             ? '<span class="science-here-badge">You are here</span>'
             : isCompleted
-                ? '<span class="science-days-range">\u2713 Done</span>'
+                ? '<span class="science-days-range">' + (freezeStyle ? 'Ended' : '\u2713 Done') + '</span>'
                 : '<span class="science-days-range">' + dayRange + '</span>';
 
         var progressBar = isCurrent ? (
@@ -249,9 +266,11 @@ function checkOnboarding() {
         currentSlide = 0;
         if (btn) btn.textContent = 'Next →';
         overlay.style.display = 'flex';
+        overlay.style.pointerEvents = 'auto';
         overlay.classList.remove('hidden');
     } else {
         overlay.style.display = 'none';
+        overlay.style.pointerEvents = 'none';
     }
 }
 
@@ -275,11 +294,8 @@ function onboardingNext() {
 
 function completeOnboarding() {
     safeSet('onboardingComplete', 'true');
-    const overlay = document.getElementById('onboardingOverlay');
-    if (!overlay) return;
-    overlay.classList.add('hidden');
-    overlay.style.pointerEvents = 'none';
-    setTimeout(() => { overlay.style.display = 'none'; }, 400);
+
+    // Trial + dates before any UI work — after Let’s Begin, premium sections gate on trial.
     try {
         startPremiumTrial();
         if (!state.lastOpenedDate) {
@@ -290,18 +306,83 @@ function completeOnboarding() {
     } catch (err) {
         console.error('King onboarding save failed:', err);
     }
+
+    const overlay = document.getElementById('onboardingOverlay');
+    if (overlay) {
+        overlay.classList.add('hidden');
+        // Keep intercepting clicks until fade-out finishes — otherwise the same
+        // “Let’s Begin” tap falls through (paywall / export / panels) and can open
+        // "Your free trial has ended" while trial is still being applied.
+        setTimeout(function () {
+            overlay.style.display = 'none';
+            overlay.style.pointerEvents = 'none';
+        }, 400);
+    }
+
+    if (typeof monthPanelOpen !== 'undefined') monthPanelOpen = true;
+    if (typeof deferredHeavyRendered !== 'undefined') deferredHeavyRendered = false;
+
+    // Never show paywall immediately after first start.
+    if (typeof closePremiumSheet === 'function') closePremiumSheet();
+
     try {
-        renderAll();
+        // Show premium UI (month grid, etc.) with active trial, fill heavy widgets.
+        if (typeof unlockPremiumFeatures === 'function') {
+            unlockPremiumFeatures();
+        } else {
+            renderAll();
+        }
     } catch (err) {
         console.error('King onboarding render failed:', err);
     }
 }
 
 // ════════════════════════════════════════════════════════
-//  DEV — simulate next calendar day (testing only)
+//  DEV — testing helpers
 // ════════════════════════════════════════════════════════
 
-function devAdvanceOneDay() {
+/**
+ * Add one strong day to the journey score without moving the calendar
+ * or wall date. (+1 / +7 strong buttons)
+ */
+function applyDevStrongScore(suppressUI) {
+    suppressUI = !!suppressUI;
+
+    state.score.success++;
+    state.currentStreak++;
+
+    const prevLongest = state.longestStreak;
+    const recordToBeat = state.longestStreakAtStreakStart;
+    const isNewRecord = isPersonalBestStreak(state.currentStreak, recordToBeat);
+
+    if (state.currentStreak > state.longestStreak) {
+        state.longestStreak = state.currentStreak;
+    }
+
+    if (!suppressUI && isNewRecord) {
+        state.recordCelebrated = true;
+    }
+
+    if (state.currentStreak === 50) state.day50Count++;
+    if (state.currentStreak === 100) state.day100Count++;
+
+    var personalBestCrossing = isPersonalBestJourneyCrossing(state.score.success);
+
+    updateBestJourney();
+
+    return {
+        streak: state.currentStreak,
+        successCount: state.score.success,
+        milestoneHit: resolveJourneyMilestoneHit(state.score.success),
+        personalBestCrossing: personalBestCrossing,
+        isNewRecord: !suppressUI && isNewRecord,
+        prevLongest: prevLongest,
+        recordToBeat: recordToBeat,
+    };
+}
+
+/** Advance simulated wall day only — does not change score or Day counter. */
+function devAdvanceNextDay() {
     if (!safeGet('onboardingComplete')) {
         showToast(0, 'Finish onboarding first.');
         return;
@@ -309,26 +390,45 @@ function devAdvanceOneDay() {
 
     if (isAwaitingNextJourney()) {
         beginNextJourney();
-        state.lastOpenedDate = todayKey();
-        state.lastCheckedDate = todayKey();
         chartPage = -1;
         saveAndRender();
         showToast(state.attempt, `Journey ${state.attempt} started ⏭`);
         return;
     }
 
-    if (canLogToday() && state.todayStatus !== 'success') {
-        applyStrongDay({ logDate: todayKey(), suppressUI: true });
-    }
-
+    // Simulated wall date only. Day counter stays frozen for testing.
     state.devDateOffset = (state.devDateOffset || 0) + 1;
-    ensureTodayUnloggedIfNeeded(todayKey());
-    clampCalendarDayToRealToday();
+
+    // Allow logging again for the simulated "today" without adding score.
+    state.todayStatus = 'none';
+    state.todayFailCount = 0;
+
+    // Quiet day-check so multi-day auto-strong / calendar advance cannot invent days or score.
     state.lastOpenedDate = todayKey();
     state.lastCheckedDate = todayKey();
+    clampCalendarDayToRealToday();
     chartPage = -1;
     saveAndRender();
-    showToast(state.score.success, `Test: +1 strong · Day ${getDisplayCalendarDay()} ⏭`);
+    showToast(0, `Test: next day (no score, Day stays ${getDisplayCalendarDay()}) · ${state.score.success}/${state.score.failures}`);
+}
+
+function devAdvanceOneStrong() {
+    if (!safeGet('onboardingComplete')) {
+        showToast(0, 'Finish onboarding first.');
+        return;
+    }
+
+    if (isAwaitingNextJourney()) {
+        showToast(0, 'Start the next journey first.');
+        return;
+    }
+
+    const result = applyDevStrongScore(false);
+    handleStrongDayUI(result, false);
+    clampCalendarDayToRealToday();
+    chartPage = -1;
+    saveAndRender();
+    showToast(state.score.success, `Test: +1 strong · score only · Day ${getDisplayCalendarDay()}`);
 }
 
 function devAdvanceSevenDays() {
@@ -344,36 +444,20 @@ function devAdvanceSevenDays() {
 
     let lastResult = null;
     for (let i = 0; i < 7; i++) {
-        if (!canLogToday()) break;
-
-        if (state.todayStatus === 'success') {
-            state.devDateOffset = (state.devDateOffset || 0) + 1;
-            state.todayStatus = 'none';
-            state.todayFailCount = 0;
-        }
-
-        lastResult = applyStrongDay({ logDate: todayKey(), suppressUI: i < 6 });
+        lastResult = applyDevStrongScore(i < 6);
         handleStrongDayUI(lastResult, i < 6);
 
         if (journeyIsOver(state)) {
             completeEndJourney();
             clampCalendarDayToRealToday();
-            state.lastOpenedDate = todayKey();
-            state.lastCheckedDate = todayKey();
+            chartPage = -1;
+            saveAndRender();
             return;
-        }
-
-        if (i < 6) {
-            state.devDateOffset = (state.devDateOffset || 0) + 1;
-            state.todayStatus = 'none';
-            state.todayFailCount = 0;
         }
     }
 
     clampCalendarDayToRealToday();
-    state.lastOpenedDate = todayKey();
-    state.lastCheckedDate = todayKey();
     chartPage = -1;
     saveAndRender();
-    showToast(state.score.success, `Test: +7 strong · Day ${getDisplayCalendarDay()} ⏭`);
+    showToast(state.score.success, `Test: +7 strong · score only · Day ${getDisplayCalendarDay()}`);
 }

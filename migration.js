@@ -1,5 +1,8 @@
 /**
  * migration.js — Upgrade saved state when schema changes.
+ *
+ * Trial seed (trialStartedAt) is not migrated here — boot/init + onboarding own
+ * that write (ensureTrialStarted) so load doesn't stamp without a clear save owner.
  */
 
 function migrateDailyLogToDateKeys(log) {
@@ -34,16 +37,9 @@ function syncTodaySlipCountInLog(s) {
     }
 }
 
-function migratePremiumFields(merged) {
-    // Trial start is a state write — storage/migration path, not Entitlement.
-    ensureTrialStarted(merged);
-}
-
-
 function runStateMigrations(merged, saved) {
     merged.dailyLog = migrateDailyLogToDateKeys(saved.dailyLog || merged.dailyLog);
     merged.longestStreakAtStreakStart = migrateLongestStreakAtStart(merged, saved);
     syncTodaySlipCountInLog(merged);
-    migratePremiumFields(merged);
     return merged;
 }

@@ -8,7 +8,7 @@ let currentTab = 0;
 let chartPage = -1;
 let chartMode = 'streaks';
 let monthOffset = 0;
-let monthPanelOpen = false;
+let monthPanelOpen = true;
 let chartPanelOpen = false;
 let lifetimePanelOpen = false;
 let toastTimer = null;
@@ -34,11 +34,16 @@ function init() {
     const saved = loadFromStorage();
     if (!saved) {
         replaceState(getDefaultState());
-        return;
+    } else {
+        const beforeCounts = JSON.stringify(saved.journeyMilestones || {});
+        replaceState(mergeSavedState(saved));
+        if (beforeCounts !== JSON.stringify(state.journeyMilestones || {})) {
+            saveToStorage(state);
+        }
     }
-    const beforeCounts = JSON.stringify(saved.journeyMilestones || {});
-    replaceState(mergeSavedState(saved));
-    if (beforeCounts !== JSON.stringify(state.journeyMilestones || {})) {
+    // Single load-time write for trial: stamp + persist when onboarded and missing/invalid.
+    // Do not seed from render/layout — boot init owns this boundary.
+    if (ensureTrialStarted(state)) {
         saveToStorage(state);
     }
 }
@@ -253,7 +258,10 @@ function renderButtons() {
 }
 
 function renderStreakMilestones() {
-    const streak = state.currentStreak;
+    const streak = getDisplayStreak();
+    const freeze = isStreakFreezeDay();
+    const tabRoot = document.getElementById('tab-streak');
+    if (tabRoot) tabRoot.classList.toggle('streak-freeze-day', freeze);
 
     const STREAK_MILESTONES_LIST = [
         { id: 'cs-day1',  day: 1,  baseName: 'Day 1',  label: 'Started'      },
@@ -275,9 +283,9 @@ function renderStreakMilestones() {
             nameEl.textContent = baseName;
             statEl.textContent = '—';
         } else if (streak >= day) {
-            setMilestoneState(item, 'achieved-glow');
+            setMilestoneState(item, freeze ? 'achieved streak-ended' : 'achieved-glow');
             nameEl.textContent = `${baseName} — ${label}`;
-            statEl.textContent = '✓';
+            statEl.textContent = freeze ? 'Ended' : '✓';
         } else {
             setMilestoneState(item, null);
             nameEl.textContent = baseName;
@@ -285,14 +293,14 @@ function renderStreakMilestones() {
         }
     });
 
-    // Count badges
+    // Count badges (lifetime — still show counts; highlight only if live/frozen streak qualifies)
     renderCountMilestone('cs-day50',  streak >= 50,  state.day50Count);
     renderCountMilestone('cs-day100', streak >= 100, state.day100Count);
 
-    // Best streak (gold when live record, default when streak ended)
+    // Best streak (gold when live record; frozen ends use longest only)
     const best = document.getElementById('bestStreakItem');
     const disp = document.getElementById('longestStreakDisplay');
-    if (state.currentStreak > 0 && state.currentStreak >= state.longestStreak) {
+    if (!freeze && state.currentStreak > 0 && state.currentStreak >= state.longestStreak) {
         setMilestoneState(best, 'golden');
         disp.textContent = state.currentStreak;
     } else {
@@ -303,8 +311,11 @@ function renderStreakMilestones() {
 
 /** Sets achieved/achieved-glow/golden/null on a milestone item */
 function setMilestoneState(item, className) {
-    item.classList.remove('achieved', 'achieved-glow', 'golden');
-    if (className) item.classList.add(className);
+    item.classList.remove('achieved', 'achieved-glow', 'golden', 'streak-ended');
+    if (!className) return;
+    className.split(/\s+/).forEach(function (c) {
+        if (c) item.classList.add(c);
+    });
 }
 
 /** Renders a count-based milestone (50-day, 100-day) */
@@ -407,8 +418,11 @@ function layoutWeeklyTrack(track) {
         lineRightPct: (lineEnd / trackWidth) * 100,
     });
 
-    const streak = state.currentStreak;
+    const streak = getDisplayStreak();
     rail.style.setProperty('--weekly-green', String(getWeeklyGreenPct(streak)));
+    const grey = getWeeklyGreyFill(streak);
+    rail.style.setProperty('--weekly-grey-start', String(grey.start));
+    rail.style.setProperty('--weekly-grey-width', String(grey.width));
 
     const traveler = rail.querySelector('.weekly-active-traveler');
     if (traveler) {
@@ -437,10 +451,18 @@ function renderWeeklyStreak() {
     const track = document.getElementById('weeklyStreakTrack');
     if (!track) return;
 
-    const streak   = state.currentStreak;
+    const streak   = getDisplayStreak();
+    const freeze   = isStreakFreezeDay();
     const progress = getWeeklyStreakDay(streak);
+    const freezeLayout = freeze ? getWeeklyFreezeLayout(streak) : null;
+    const slipDay = freezeLayout ? freezeLayout.slipWeekDay : 0;
+    const strongDays = freezeLayout ? freezeLayout.strongWeekDay : progress;
+
     renderWeeklyStreakInsight(progress);
     const traveler = getWeeklyActiveTraveler(streak);
+
+    const card = document.getElementById('weeklyStreakCard');
+    if (card) card.classList.toggle('streak-freeze-day', freeze);
 
     const startDone = isWeeklyStartReached(streak);
     const startCls = 'weekly-step weekly-step-start' + (startDone ? ' done' : '');
@@ -450,11 +472,26 @@ function renderWeeklyStreak() {
     let labelHtml  = '<div class="weekly-step-label-col' + (startDone ? ' done' : '') + '">' +
         '<div class="weekly-step-label">Start</div></div>';
     for (let day = 1; day <= 7; day++) {
-        const done    = progress > 0 && day <= progress;
-        const current = done && day === progress;
+        const strongDone = strongDays > 0 && day <= strongDays;
+        const isSlipDot = freeze && day === slipDay;
+        const done    = strongDone || isSlipDot;
+        const current = (!freeze && done && day === progress) || isSlipDot;
         const isTarget = day === 7 && !done;
-        const stepCls  = ['weekly-step', isTarget ? 'target' : '', done ? 'done' : '', current ? 'current' : ''].filter(Boolean).join(' ');
-        const labelCls = ['weekly-step-label-col', done ? 'done' : '', current ? 'current' : ''].filter(Boolean).join(' ');
+        const stepCls  = [
+            'weekly-step',
+            isTarget ? 'target' : '',
+            strongDone ? 'done' : '',
+            isSlipDot ? 'slip-day' : '',
+            current ? 'current' : '',
+            freeze && strongDone ? 'frozen' : '',
+        ].filter(Boolean).join(' ');
+        const labelCls = [
+            'weekly-step-label-col',
+            strongDone ? 'done' : '',
+            isSlipDot ? 'slip-day' : '',
+            current ? 'current' : '',
+            freeze && strongDone ? 'frozen' : '',
+        ].filter(Boolean).join(' ');
         const marker  = isTarget
             ? `<div class="weekly-step-marker"><svg class="weekly-step-bullseye-svg" viewBox="0 0 18 18" aria-hidden="true">
                 <line class="dart-shaft" x1="3.3" y1="2.5" x2="8.55" y2="8.35" stroke="#9a7b4f" stroke-width="1.1" stroke-linecap="round"/>
@@ -471,11 +508,12 @@ function renderWeeklyStreak() {
     }
 
     const travelerHtml = traveler
-        ? '<div class="weekly-active-traveler" aria-hidden="true"></div>'
+        ? '<div class="weekly-active-traveler' + (freeze ? ' frozen slip' : '') + '" aria-hidden="true"></div>'
         : '';
 
     track.innerHTML = `
-        <div class="weekly-streak-rail">
+        <div class="weekly-streak-rail${freeze ? ' freeze' : ''}">
+            <div class="weekly-grey-fill" aria-hidden="true"></div>
             ${railHtml}
             ${travelerHtml}
         </div>
@@ -499,7 +537,10 @@ function updateWeeklyTravelerPosition() {
         return;
     }
 
-    const streak = state.currentStreak;
+    // Freeze day is static — full re-render only on status change
+    if (isStreakFreezeDay()) return;
+
+    const streak = getDisplayStreak();
     const pos = getWeeklyActiveTraveler(streak);
     const traveler = rail.querySelector('.weekly-active-traveler');
 
@@ -526,6 +567,7 @@ function buildMilestoneSectionHtml(milestones, options) {
     options = options || {};
     var alwaysShow = !!options.alwaysShow;
     var mysteryLock = !!options.mysteryLock;
+    var journeyEnded = isJourneyEndedDisplay();
 
     if (mysteryLock && !isJourneyMilestoneRevealed(options.mysteryUnlock || 0)) {
         return '<div class="mystery-lock"><span class="mystery-lock-icon">🔒</span></div>';
@@ -537,7 +579,10 @@ function buildMilestoneSectionHtml(milestones, options) {
         var m = milestones[i];
         if (alwaysShow || isJourneyMilestoneRevealed(m.unlockAt)) {
             var glow = shouldJourneyMilestoneGlow(m.day);
-            var cls = 'milestone-item' + (glow ? ' achieved-glow' : '');
+            var reached = journeyScoreSuccess() >= m.day;
+            var cls = 'milestone-item';
+            if (glow && !journeyEnded) cls += ' achieved-glow';
+            else if (reached || glow) cls += ' achieved journey-ended-item';
             var status = formatJourneyMilestoneStatus(m.day);
             html +=
                 '<div class="' + cls + '">' +
@@ -574,6 +619,11 @@ function renderJourneyMilestones() {
     var key = getJourneyMilestonesRenderKey();
     if (key === lastJourneyMilestonesKey) return;
     lastJourneyMilestonesKey = key;
+
+    var journeyPane = document.getElementById('tab-journey');
+    if (journeyPane) {
+        journeyPane.classList.toggle('journey-ended-day', isJourneyEndedDisplay());
+    }
 
     renderMilestoneSection(
         document.getElementById('strongSection'),

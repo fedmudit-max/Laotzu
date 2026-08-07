@@ -8,10 +8,29 @@
  *   Answer: "Can this user access premium features?"
  *   Nothing more.
  *
+ * ---------------------------------------------------------------------------
+ * EntitlementSnapshot (contract with Billing / Firebase / Storage)
+ * See also ARCHITECTURE.md → "EntitlementSnapshot (contract)"
+ *
+ * Embedded on journey `state` (not a separate store). JSDoc shape:
+ *
+ * @typedef {Object} EntitlementSnapshot
+ * @property {string} [trialStartedAt]  ISO-8601; '' if unset. Local trial start.
+ *                                      Window = trialStartedAt + PREMIUM_TRIAL_DAYS.
+ *                                      Written by ensureTrialStarted / onboarding only.
+ * @property {string} [premiumUntil]    ISO-8601; '' if unset. Paid access end.
+ *                                      Written only via updateEntitlementSnapshot.
+ * @property {string} [lastVerifiedAt]  ISO-8601 reserved (S3 server verify).
+ * @property {''|'local-trial'|'play'|'restore'|'dev'} [source]
+ *                                      Who last set paid entitlement (reserved S2/S3).
+ *
+ * Entitlement never writes the snapshot. UI never reads raw fields for access.
+ * ---------------------------------------------------------------------------
+ *
  * Dependencies
  *
  * Reads:
- *   ✓ state (trialStartedAt, premiumUntil)
+ *   ✓ state EntitlementSnapshot fields (trialStartedAt, premiumUntil; later lastVerifiedAt, source)
  *   ✓ constants (PREMIUM_TRIAL_DAYS, MS_PER_DAY)
  *   ✓ safeGet('onboardingComplete') — paywall / basic tier only
  *
@@ -26,8 +45,8 @@
  *   ✗ State
  *
  * Public API:
- *   Entitlement.hasPremiumAccess()
- *   Entitlement.isTrialActive()
+ *   Entitlement.hasPremiumAccess()  — trial || subscription
+ *   Entitlement.isTrialActive()     — calendar window only (not exclusive of sub)
  *   Entitlement.isSubscriptionActive()
  *   Entitlement.daysRemaining()
  *   Entitlement.shouldShowPaywall()
@@ -39,8 +58,13 @@
  *   - This file has zero side effects: no DOM, no storage writes,
  *     no billing, no Firebase.
  *
+ * Product rule:
+ *   Local trial lasts PREMIUM_TRIAL_DAYS (30) from a valid trialStartedAt.
+ *   Trial write/seed is Storage/Journey (ensureTrialStarted) — not this file.
+ *   All trial-tier UI uses Entitlement.hasPremiumAccess() only.
+ *
  * Trial calc ownership: Entitlement
- * Purchase / unlock writes: Billing (write path) — not this file
+ * Purchase / unlock writes: Billing updateEntitlementSnapshot — not this file
  */
 
 var Entitlement = (function () {
@@ -65,14 +89,15 @@ var Entitlement = (function () {
         return !Number.isNaN(until.getTime()) && until.getTime() > Date.now();
     }
 
+    /** True while trialStartedAt…+PREMIUM_TRIAL_DAYS is still in the future (independent of subscription). */
     function isTrialActive(s) {
         s = snapshot(s);
-        if (isSubscriptionActive(s)) return false;
         var ends = getTrialEndsAt(s);
         if (!ends) return false;
         return ends.getTime() > Date.now();
     }
 
+    /** Single access answer: paid subscription OR open trial window. */
     function hasPremiumAccess(s) {
         return isSubscriptionActive(s) || isTrialActive(s);
     }

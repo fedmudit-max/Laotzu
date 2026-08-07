@@ -98,7 +98,10 @@ function showFileProtocolBanner() {
             urgeSurvived: urgeSurvived,
             closeUrge: closeUrge,
             closeCompare: closeCompare,
-            'dev-next-day': devAdvanceOneDay,
+            'open-learn-journey': openLearnJourney,
+            'close-learn-journey': closeLearnJourney,
+            'dev-next-day': devAdvanceNextDay,
+            'dev-one-strong': devAdvanceOneStrong,
             'dev-seven-days': devAdvanceSevenDays,
             'export-backup': exportProgressBackup,
             'import-backup': openImportPicker,
@@ -120,6 +123,13 @@ function showFileProtocolBanner() {
 
     var importInput = document.getElementById('importFileInput');
     if (importInput) importInput.addEventListener('change', onImportFileSelected);
+
+    var learnOverlay = document.getElementById('learnJourneyOverlay');
+    if (learnOverlay) {
+        learnOverlay.addEventListener('click', function (e) {
+            if (e.target.id === 'learnJourneyOverlay') closeLearnJourney();
+        });
+    }
 
     window.chartNav = chartNav;
     window.toggleSciencePhase = toggleSciencePhase;

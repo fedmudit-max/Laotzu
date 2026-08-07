@@ -175,6 +175,209 @@ body {
     padding-top: 14px;
 }
 
+/* ── Learn the Journey entry + sheet ── */
+.learn-journey-card .collapse-header {
+    cursor: pointer;
+}
+
+.learn-journey-overlay {
+    z-index: 2100;
+    align-items: flex-end;
+    padding: 0;
+}
+
+.learn-journey-overlay .learn-journey-card-panel {
+    max-width: 440px;
+    width: 100%;
+    max-height: min(88vh, 720px);
+    margin: 0 auto;
+    border-radius: 24px 24px 0 0;
+    padding: 0;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transform: translateY(24px) scale(1);
+}
+
+.learn-journey-overlay.active .learn-journey-card-panel {
+    transform: translateY(0);
+}
+
+.learn-journey-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 20px 18px 12px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.learn-journey-title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.4px;
+    color: var(--text);
+    line-height: 1.25;
+}
+
+.learn-journey-close {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 10px;
+    background: rgba(60, 60, 67, 0.08);
+    color: var(--text-muted);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.learn-journey-close:active {
+    background: rgba(60, 60, 67, 0.14);
+}
+
+.learn-journey-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 8px 18px 8px;
+}
+
+.learn-section {
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(60, 60, 67, 0.08);
+}
+
+.learn-section:last-child,
+.learn-section-final {
+    border-bottom: none;
+}
+
+.learn-section-title {
+    margin: 0 0 8px;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.2px;
+}
+
+.learn-section-body {
+    margin: 0 0 8px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.learn-section-body:last-child {
+    margin-bottom: 0;
+}
+
+.learn-list {
+    margin: 0;
+    padding: 0 0 0 1.15em;
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.learn-list li {
+    margin-bottom: 6px;
+}
+
+.learn-list li:last-child {
+    margin-bottom: 0;
+}
+
+.learn-quote {
+    margin: 8px 0 12px;
+    padding: 10px 12px;
+    border-left: 3px solid rgba(52, 199, 89, 0.55);
+    background: rgba(52, 199, 89, 0.08);
+    border-radius: 0 10px 10px 0;
+    font-size: 14px;
+    line-height: 1.45;
+    color: var(--text);
+    font-weight: 600;
+    font-style: italic;
+}
+
+.learn-quote-emphasis {
+    border-left-color: var(--green);
+    background: rgba(52, 199, 89, 0.12);
+}
+
+.learn-quote-final {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-style: normal;
+    margin-bottom: 4px;
+}
+
+.learn-quote-final strong {
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: -0.2px;
+}
+
+.learn-quote-final span {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.learn-progress-figure {
+    margin: 4px 0 12px;
+    padding: 0;
+}
+
+.learn-progress-img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
+    background: #fff;
+}
+
+.btn-learn-done {
+    flex-shrink: 0;
+    margin: 8px 18px 18px;
+    border: none;
+    border-radius: 14px;
+    padding: 14px 16px;
+    background: var(--green);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+    cursor: pointer;
+}
+
+.btn-learn-done:active {
+    opacity: 0.9;
+}
+
+@media (min-width: 480px) {
+    .learn-journey-overlay {
+        align-items: center;
+        padding: 20px;
+    }
+
+    .learn-journey-overlay .learn-journey-card-panel {
+        border-radius: 24px;
+        max-height: min(80vh, 680px);
+    }
+}
+
 /* ── KNOWLEDGE CARD ── */
 .knowledge-card.card {
     padding: 16px 18px;
@@ -632,6 +835,8 @@ button {
     position: relative;
     height: 14px;
     --weekly-green: 0;
+    --weekly-grey-start: 0;
+    --weekly-grey-width: 0;
     --weekly-line-left: 0px;
     --weekly-line-width: 100%;
 }
@@ -660,6 +865,24 @@ button {
     background: linear-gradient(90deg, var(--green), var(--green-light));
     z-index: 0;
     pointer-events: none;
+}
+
+/* Slip segment after green (freeze-day only) */
+.weekly-grey-fill {
+    display: none;
+    position: absolute;
+    left: calc(var(--weekly-line-left, 0px) + var(--weekly-line-width, 100%) * var(--weekly-grey-start) / 100);
+    top: 50%;
+    height: 2px;
+    width: calc(var(--weekly-line-width, 100%) * var(--weekly-grey-width) / 100);
+    transform: translateY(-50%);
+    background: #8e8e93;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.weekly-streak-rail.freeze .weekly-grey-fill {
+    display: block;
 }
 
 .weekly-streak-labels {
@@ -713,6 +936,26 @@ button {
 .weekly-step.current .weekly-step-marker::after,
 .weekly-step.done:not(.current) .weekly-step-marker::after {
     background: var(--green);
+}
+
+.weekly-step.slip-day .weekly-step-marker::after,
+.weekly-step.slip-day.current .weekly-step-marker::after {
+    background: #8e8e93;
+    width: 12px;
+    height: 12px;
+}
+
+.weekly-step.slip-day .weekly-step-dot {
+    width: 12px;
+    height: 12px;
+    border: none;
+    background: #8e8e93;
+    box-shadow: none;
+}
+
+.weekly-step-label-col.slip-day .weekly-step-label {
+    color: #8e8e93;
+    font-weight: 700;
 }
 
 .weekly-step.target .weekly-step-marker {
@@ -772,6 +1015,28 @@ button {
     background: var(--green);
     animation: none;
     box-shadow: none;
+}
+
+.weekly-step.slip-day .weekly-step-dot,
+.weekly-step.slip-day.current .weekly-step-dot {
+    width: 12px;
+    height: 12px;
+    border: none;
+    background: #8e8e93;
+    box-shadow: none;
+    animation: none;
+}
+
+.weekly-step.slip-day .weekly-step-marker::after,
+.weekly-step.slip-day.current .weekly-step-marker::after {
+    background: #8e8e93;
+    width: 12px;
+    height: 12px;
+}
+
+.weekly-step-label-col.slip-day .weekly-step-label {
+    color: #8e8e93;
+    font-weight: 700;
 }
 
 .weekly-active-traveler {
@@ -883,6 +1148,127 @@ button {
     font-weight: 700;
 }
 
+.weekly-streak-rail.freeze {
+    opacity: 1;
+}
+
+.weekly-step.frozen.done .weekly-step-dot {
+    opacity: 1;
+}
+
+.weekly-step-label-col.frozen .weekly-step-label {
+    color: var(--green);
+}
+
+.weekly-active-traveler.frozen {
+    opacity: 1;
+    animation: none;
+    transition: none;
+}
+
+/* Solid grey slip marker (no ring / gradient) */
+.weekly-active-traveler.frozen.slip {
+    width: 12px;
+    height: 12px;
+    border: none;
+    background: #8e8e93;
+    box-shadow: none;
+    animation: none;
+}
+
+/* Streak tab: slip freeze — grey instead of green */
+#tab-streak.streak-freeze-day .milestone-item.achieved .milestone-name,
+#tab-streak.streak-freeze-day .milestone-item.achieved .milestone-status,
+#tab-streak.streak-freeze-day .milestone-item.achieved-glow .milestone-name,
+#tab-streak.streak-freeze-day .milestone-item.achieved-glow .milestone-status {
+    color: #8e8e93 !important;
+    font-weight: 600;
+}
+
+#tab-streak.streak-freeze-day .milestone-item.achieved,
+#tab-streak.streak-freeze-day .milestone-item.achieved-glow {
+    border-color: rgba(142, 142, 147, 0.45);
+    background: rgba(142, 142, 147, 0.08);
+    animation: none !important;
+    box-shadow: none !important;
+    opacity: 1;
+}
+
+#tab-streak.streak-freeze-day .milestone-item.achieved .milestone-status {
+    font-size: 12px;
+    letter-spacing: 0.02em;
+    color: #8e8e93 !important;
+}
+
+/* Journey tab + Progress tab: grey on journey end (pending next journey) */
+#tab-journey.journey-ended-day .milestone-item.achieved .milestone-name,
+#tab-journey.journey-ended-day .milestone-item.achieved .milestone-status,
+#tab-journey.journey-ended-day .milestone-item.achieved-glow .milestone-name,
+#tab-journey.journey-ended-day .milestone-item.achieved-glow .milestone-status,
+#tab-journey.journey-ended-day .milestone-item.journey-ended-item .milestone-name,
+#tab-journey.journey-ended-day .milestone-item.journey-ended-item .milestone-status {
+    color: #8e8e93 !important;
+    font-weight: 600;
+}
+
+#tab-journey.journey-ended-day .milestone-item.achieved,
+#tab-journey.journey-ended-day .milestone-item.achieved-glow,
+#tab-journey.journey-ended-day .milestone-item.journey-ended-item {
+    border-color: rgba(142, 142, 147, 0.45);
+    background: rgba(142, 142, 147, 0.08);
+    animation: none !important;
+    box-shadow: none !important;
+}
+
+#tab-journey.journey-ended-day .section-label {
+    color: #8e8e93;
+}
+
+/* Progress tab: grey on journey end or slip freeze (same feel as Streak tab) */
+#tab-science.journey-ended-day .science-item.completed,
+#tab-science.journey-ended-day .science-item.journey-ended-item,
+#tab-science.streak-freeze-day .science-item.completed,
+#tab-science.streak-freeze-day .science-item.journey-ended-item {
+    border-color: rgba(142, 142, 147, 0.45);
+    background: rgba(142, 142, 147, 0.08);
+    animation: none !important;
+}
+
+#tab-science.journey-ended-day .science-item.completed .science-phase-name,
+#tab-science.journey-ended-day .science-item.journey-ended-item .science-phase-name,
+#tab-science.streak-freeze-day .science-item.completed .science-phase-name,
+#tab-science.streak-freeze-day .science-item.journey-ended-item .science-phase-name {
+    color: #8e8e93;
+    font-weight: 700;
+}
+
+#tab-science.journey-ended-day .science-item.completed .science-days-range,
+#tab-science.journey-ended-day .science-item.journey-ended-item .science-days-range,
+#tab-science.streak-freeze-day .science-item.completed .science-days-range,
+#tab-science.streak-freeze-day .science-item.journey-ended-item .science-days-range {
+    color: #8e8e93;
+    border-color: rgba(142, 142, 147, 0.35);
+    background: rgba(142, 142, 147, 0.1);
+}
+
+#tab-science.journey-ended-day .science-item.current,
+#tab-science.streak-freeze-day .science-item.current {
+    border-color: rgba(142, 142, 147, 0.5);
+    background: rgba(142, 142, 147, 0.08);
+    animation: none !important;
+}
+
+#tab-science.journey-ended-day .science-here-badge,
+#tab-science.streak-freeze-day .science-here-badge {
+    background: rgba(142, 142, 147, 0.18);
+    color: #8e8e93;
+}
+
+#tab-science.journey-ended-day .science-progress-fill,
+#tab-science.streak-freeze-day .science-progress-fill {
+    background: #8e8e93;
+}
+
 .weekly-streak-tagline {
     margin-top: 10px;
     padding-top: 8px;
@@ -987,7 +1373,7 @@ button {
     color: var(--gold);
 }
 
-/* Section label above a group of milestones */
+/* Section label above a group of milestones (Streak Records / Journey Strong-Warrior-King) */
 .section-label {
     font-size: 13px;
     font-weight: 700;
@@ -997,7 +1383,8 @@ button {
     margin: 24px 0 12px 4px;
 }
 
-.section-label:first-child { margin-top: 0; }
+/* First section title in a tab (e.g. Journey → Strong) */
+.tab-content > .section-label:first-child { margin-top: 0; }
 
 /* ── STREAK CHART ───────────────────────────────── */
 .chart-header {
@@ -1030,6 +1417,80 @@ button {
     min-width: 0;
 }
 
+.chart-inner {
+    display: block;
+    width: 100%;
+    height: 180px;
+    overflow: visible;
+}
+
+.chart-inner.is-empty {
+    opacity: 0.4;
+}
+
+.history-empty-state {
+    position: absolute;
+    inset: 12px 8px 20px 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 12px 16px;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.history-empty-state[hidden] {
+    display: none;
+}
+
+.history-empty-title {
+    margin: 0 0 6px;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+    color: var(--text);
+    line-height: 1.3;
+}
+
+.history-empty-sub {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.4;
+    color: var(--text-muted);
+    max-width: 240px;
+}
+
+.month-grid-wrap {
+    position: relative;
+}
+
+.month-grid.is-empty {
+    opacity: 0.35;
+}
+
+.month-empty-state {
+    inset: 24px 12px 12px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.72);
+}
+
+.history-empty-hint {
+    margin: 10px 0 0;
+    padding: 0 4px 4px;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.4;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.history-empty-hint[hidden] {
+    display: none;
+}
+
 .chart-frame {
     display: flex;
     flex-direction: column;
@@ -1057,13 +1518,6 @@ button {
 }
 
 .chart-yaxis { display: none; }
-
-.chart-inner {
-    display: block;
-    width: 100%;
-    height: 180px;
-    overflow: visible;
-}
 
 @keyframes chart-dot-live-glow {
     0%, 100% {
@@ -1908,6 +2362,101 @@ button {
     padding: 0 8px;
 }
 
+/* Journey score example (Progress slide) */
+.onboarding-slide:has(.onboarding-journey-compare) .onboarding-emoji {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.onboarding-slide:has(.onboarding-journey-compare) .onboarding-body {
+    margin-bottom: 18px;
+    font-size: 15px;
+}
+
+.onboarding-journey-compare {
+    margin: 0 4px 28px;
+    text-align: left;
+}
+
+.onb-journey-card {
+    background: var(--card, #fff);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 12px 14px;
+}
+
+.onb-journey-card-better {
+    border-color: rgba(52, 199, 89, 0.45);
+    background: rgba(52, 199, 89, 0.08);
+}
+
+.onb-journey-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.onb-journey-card-better .onb-journey-label {
+    color: var(--green);
+}
+
+.onb-journey-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    font-size: 14px;
+    color: var(--text-muted);
+    font-weight: 500;
+    padding: 3px 0;
+}
+
+.onb-journey-row strong {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+}
+
+.onb-journey-score {
+    margin-top: 4px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+    font-weight: 600;
+    color: var(--text);
+}
+
+.onb-journey-score strong {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text);
+}
+
+.onb-journey-card-better .onb-journey-score strong {
+    color: var(--green);
+}
+
+.onb-journey-arrow {
+    text-align: center;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-muted);
+    line-height: 1;
+    padding: 8px 0;
+}
+
+.onb-journey-verdict {
+    margin: 12px 0 0;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    color: var(--green);
+}
+
 .onboarding-dots {
     display: flex;
     justify-content: center;
@@ -2112,7 +2661,7 @@ button {
 .premium-feature-list {
     list-style: none;
     text-align: left;
-    margin: 0 0 18px;
+    margin: 0 0 12px;
     padding: 0;
 }
 
@@ -2134,6 +2683,27 @@ button {
     left: 0;
     color: var(--green);
     font-weight: 700;
+}
+
+.premium-backup-note {
+    margin: 0 0 16px;
+    padding: 10px 12px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.45;
+    color: var(--text-muted);
+    background: rgba(60, 60, 67, 0.06);
+    border-radius: 10px;
+}
+
+.premium-backup-note[hidden] {
+    display: none;
+}
+
+.premium-panel-features + .premium-backup-note {
+    margin-top: 4px;
+    margin-bottom: 14px;
 }
 
 .premium-price {

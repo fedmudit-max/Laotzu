@@ -16,7 +16,8 @@ function setPremiumSectionVisible(id, visible) {
     if (el) el.hidden = !visible;
 }
 
-/** Hide premium-only sections when user has no premium access (post-onboarding). */
+/** Hide premium-only sections when user has no premium access (post-onboarding).
+ *  Read-only: never writes state. Trial seed lives in init / onboarding. */
 function applyPremiumTierLayout() {
     var show = !safeGet('onboardingComplete') || Entitlement.hasPremiumAccess();
     setPremiumSectionVisible('weeklyStreakCard', show);
@@ -47,25 +48,45 @@ function syncPremiumPanel() {
     if (premiumPanelOpen) renderPremiumPanelContent();
 }
 
+function fillPremiumFeatureList(listEl) {
+    if (!listEl) return;
+    listEl.innerHTML = PREMIUM_FEATURES.map(function (f) {
+        return '<li>' + f + '</li>';
+    }).join('');
+}
+
+function setPremiumBackupNote(el, visible) {
+    if (!el) return;
+    if (!visible) {
+        el.hidden = true;
+        el.textContent = '';
+        return;
+    }
+    el.hidden = false;
+    el.textContent = PREMIUM_BACKUP_NOTE;
+}
+
 function renderPremiumPanelContent() {
     var statusEl = document.getElementById('premiumPanelStatus');
     var listEl = document.getElementById('premiumPanelFeatures');
+    var noteEl = document.getElementById('premiumPanelBackupNote');
     if (!statusEl || !listEl) return;
 
     if (Entitlement.isSubscriptionActive()) {
         statusEl.textContent = 'Premium active until ' + Entitlement.subscriptionExpiresLabel() + '. Thank you for supporting King.';
+        setPremiumBackupNote(noteEl, false);
     } else if (Entitlement.isTrialActive()) {
         var left = Entitlement.daysRemaining();
         statusEl.textContent = left === 1
-            ? 'You have 1 day left on your 30-day free trial.'
-            : 'You have ' + left + ' days left on your 30-day free trial.';
+            ? '1 day left on your free trial. Export/import still works now — Premium keeps backup after the trial.'
+            : left + ' days left on your free trial. Export/import works now; Premium is required to keep backup after trial.';
+        setPremiumBackupNote(noteEl, true);
     } else {
-        statusEl.textContent = 'Subscribe to unlock timeline, milestones, quotes, charts, and backup. Daily logging stays free.';
+        statusEl.textContent = 'Subscribe to unlock timeline, milestones, quotes, charts, and export/import. Daily logging stays free.';
+        setPremiumBackupNote(noteEl, true);
     }
 
-    listEl.innerHTML = PREMIUM_FEATURES.map(function (f) {
-        return '<li>' + f + '</li>';
-    }).join('');
+    fillPremiumFeatureList(listEl);
 }
 
 function renderPremiumStatus() {
@@ -110,6 +131,7 @@ function renderPremiumSheet() {
     var subEl = document.getElementById('premiumSheetSubtitle');
     var trialEl = document.getElementById('premiumTrialBadge');
     var listEl = document.getElementById('premiumFeatureList');
+    var noteEl = document.getElementById('premiumBackupNote');
     var laterBtn = document.getElementById('premiumLaterBtn');
     var buyBtn = document.querySelector('[data-action="premium-checkout"]');
     var restoreBtn = document.querySelector('[data-action="premium-restore"]');
@@ -123,12 +145,13 @@ function renderPremiumSheet() {
         if (laterBtn) laterBtn.textContent = 'Close';
         if (buyBtn) buyBtn.hidden = true;
         if (restoreBtn) restoreBtn.hidden = true;
+        setPremiumBackupNote(noteEl, false);
     } else if (Entitlement.isTrialActive()) {
         var left = Entitlement.daysRemaining();
         titleEl.textContent = '30-day Premium trial';
         subEl.textContent = left === 1
-            ? '1 day left of full access. Subscribe anytime to keep Premium after the trial.'
-            : left + ' days left of full access. Subscribe anytime to keep Premium after the trial.';
+            ? '1 day left of full access. Subscribe to keep Premium — including export/import — after the trial.'
+            : left + ' days left of full access. Subscribe to keep Premium — including export/import — after the trial.';
         if (trialEl) {
             trialEl.hidden = false;
             trialEl.textContent = 'Free trial';
@@ -136,18 +159,18 @@ function renderPremiumSheet() {
         if (laterBtn) laterBtn.textContent = 'Not now';
         if (buyBtn) buyBtn.hidden = false;
         if (restoreBtn) restoreBtn.hidden = false;
+        setPremiumBackupNote(noteEl, true);
     } else {
         titleEl.textContent = 'Your free trial has ended';
-        subEl.textContent = 'Subscribe to unlock timeline, milestones, quotes, charts, and backup. Daily logging stays free.';
+        subEl.textContent = 'Subscribe to unlock timeline, milestones, quotes, charts, and export/import. Daily logging stays free.';
         if (trialEl) trialEl.hidden = true;
         if (laterBtn) laterBtn.textContent = 'Continue with basic logging';
         if (buyBtn) buyBtn.hidden = false;
         if (restoreBtn) restoreBtn.hidden = false;
+        setPremiumBackupNote(noteEl, true);
     }
 
-    listEl.innerHTML = PREMIUM_FEATURES.map(function (f) {
-        return '<li>' + f + '</li>';
-    }).join('');
+    fillPremiumFeatureList(listEl);
 }
 
 function openPremiumSheet() {
@@ -165,20 +188,27 @@ function closePremiumSheet() {
     overlay.setAttribute('aria-hidden', 'true');
 }
 
-/** Gate: ask Entitlement, show paywall if denied. */
+/** Gate: ask Entitlement, show paywall if denied. Never during / right before onboarding is done without access. */
 function requirePremium() {
+    if (safeGet('onboardingComplete') !== 'true') return false;
     if (Entitlement.hasPremiumAccess()) return true;
     openPremiumSheet();
     return false;
 }
 
 /**
- * Temporary local unlock until Google Play + Firebase verify (S2/S3).
- * Single write path for paid entitlement in Sprint 1.
+ * Single write path for paid EntitlementSnapshot fields (Billing / later Firebase).
+ * Partial updates only; see ARCHITECTURE.md → EntitlementSnapshot.
+ *
+ * @param {Partial<EntitlementSnapshot>} fields
+ *   v1 accepts: premiumUntil
+ *   reserved (ignored until implemented): lastVerifiedAt, source
+ *   never write trialStartedAt here — local trial seed owns that field
  */
 function updateEntitlementSnapshot(fields) {
     if (!fields || typeof fields !== 'object') return;
     if (fields.premiumUntil !== undefined) state.premiumUntil = fields.premiumUntil;
+    // S2/S3: lastVerifiedAt, source
     saveToStorage(state);
 }
 

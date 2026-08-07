@@ -259,11 +259,29 @@ function buildChartGridLines(yFracs, muted) {
     }).join('');
 }
 
+function setHistoryEmptyVisible(id, visible) {
+    var el = document.getElementById(id);
+    if (el) el.hidden = !visible;
+}
+
+function hasAnyDailyLogEntries() {
+    var log = state.dailyLog || {};
+    var keys = Object.keys(log);
+    for (var i = 0; i < keys.length; i++) {
+        if (logStatus(log[keys[i]])) return true;
+    }
+    return false;
+}
+
 function renderChart() {
     const outer = document.getElementById('chartOuter');
     const cH = CHART_H - CHART_PAD_T - CHART_PAD_B;
     const xLabelY = CHART_PAD_T + cH + 10;
     const yFracs = [0, 0.25, 0.5, 0.75, 1];
+    const emptyEl = document.getElementById('chartEmptyState');
+    const titleEl = document.getElementById('chartEmptyTitle');
+    const subEl = document.getElementById('chartEmptySub');
+    const svgEl = document.getElementById('chartInner');
 
     const pagination = getChartPagination();
     const { points, show, maxPage, hasNav } = pagination;
@@ -273,17 +291,30 @@ function renderChart() {
         updateChartNavButtons(false, false, false);
 
         const yMax = 30;
-        document.getElementById('chartInner').setAttribute('viewBox', `0 0 ${CHART_VW} ${CHART_H}`);
-        document.getElementById('chartInner').innerHTML = `
-            ${buildChartYLabels(yFracs, yMax, true)}
-            ${buildChartGridLines(yFracs, true)}
-            <line x1="${CHART_Y_GUT}" y1="${CHART_PAD_T}" x2="${CHART_Y_GUT}" y2="${CHART_PAD_T + cH}"
-                stroke="rgba(0,0,0,0.10)" stroke-width="1.5"/>
-            <text x="${CHART_Y_GUT + CHART_PLOT_W / 2}" y="${CHART_PAD_T + cH / 2}" text-anchor="middle"
-                dominant-baseline="middle" font-size="13" fill="rgba(134,134,139,0.6)"
-                font-family="-apple-system,sans-serif">Your history starts today</text>`;
+        if (svgEl) {
+            svgEl.setAttribute('viewBox', `0 0 ${CHART_VW} ${CHART_H}`);
+            svgEl.classList.add('is-empty');
+            svgEl.innerHTML = `
+                ${buildChartYLabels(yFracs, yMax, true)}
+                ${buildChartGridLines(yFracs, true)}
+                <line x1="${CHART_Y_GUT}" y1="${CHART_PAD_T}" x2="${CHART_Y_GUT}" y2="${CHART_PAD_T + cH}"
+                    stroke="rgba(0,0,0,0.08)" stroke-width="1.5"/>`;
+        }
+
+        if (titleEl) {
+            titleEl.textContent = 'Your first Journey begins today.';
+        }
+        if (subEl) {
+            subEl.textContent = chartMode === 'journeys'
+                ? 'Check in daily — each Journey will show here as you grow.'
+                : 'Check in daily to see your streak progress here.';
+        }
+        setHistoryEmptyVisible('chartEmptyState', true);
         return;
     }
+
+    setHistoryEmptyVisible('chartEmptyState', false);
+    if (svgEl) svgEl.classList.remove('is-empty');
 
     outer.style.display = 'flex';
 
@@ -352,8 +383,9 @@ function renderChart() {
     const canGoRight = chartPage < maxPage;
     updateChartNavButtons(canGoLeft, canGoRight, hasNav);
 
-    document.getElementById('chartInner').setAttribute('viewBox', `0 0 ${CHART_VW} ${CHART_H}`);
-    document.getElementById('chartInner').innerHTML = `
+    if (svgEl) {
+        svgEl.setAttribute('viewBox', `0 0 ${CHART_VW} ${CHART_H}`);
+        svgEl.innerHTML = `
         <defs>
             <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%"   stop-color="#34c759" stop-opacity="0.15"/>
@@ -366,6 +398,7 @@ function renderChart() {
         ${pts.length > 1 ? `<path d="${linePath}" fill="none" stroke="#34c759"
             stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>` : ''}
         ${nodes}`;
+    }
 }
 
 // ════════════════════════════════════════════════════════
@@ -379,14 +412,15 @@ function monthNav(dir) {
     // Don't go before the month the journey started
     // Find earliest date in dailyLog
     const log   = state.dailyLog || {};
+    const realToday = realTodayKey();
     const dates = Object.values(log)
         .map(e => (typeof e === 'object') ? e.date : null)
-        .filter(Boolean)
+        .filter(function (d) { return d && d <= realToday; })
         .sort();
 
     if (dates.length > 0) {
         const earliest   = parseDateKey(dates[0]);
-        const today      = new Date();
+        const today      = parseDateKey(realToday);
         const minOffset  = (earliest.getFullYear() - today.getFullYear()) * 12
                          + (earliest.getMonth() - today.getMonth());
         if (monthOffset < minOffset) monthOffset = minOffset;
@@ -399,6 +433,7 @@ function renderMonthGrid() {
     const grid    = document.getElementById('monthGrid');
     const legend  = document.getElementById('monthLegend');
     const log     = state.dailyLog || {};
+    const realToday = realTodayKey();
 
     // Apply monthOffset to get the target month
     const ref   = new Date();
@@ -426,7 +461,8 @@ function renderMonthGrid() {
     if (prevBtn) {
         const dates = Object.values(log)
             .map(e => (typeof e === 'object') ? e.date : null)
-            .filter(Boolean).sort();
+            .filter(function (d) { return d && d <= realToday; })
+            .sort();
         if (dates.length > 0) {
             const earliest  = parseDateKey(dates[0]);
             const minOffset = (earliest.getFullYear() - today.getFullYear()) * 12
@@ -437,12 +473,13 @@ function renderMonthGrid() {
         }
     }
 
-    // Build date → { status, slipCount } lookup
+    // Build date → { status, slipCount } lookup (never paint past real today)
     const dateInfo = {};
     Object.values(log).forEach(entry => {
-        const dateKey = (typeof entry === 'object') ? entry.date : null;
+        let dateKey = (typeof entry === 'object') ? entry.date : null;
         const status  = logStatus(entry);
         if (!dateKey || !status) return;
+        if (dateKey > realToday) return;
         const slipCount = status === 'slip' ? (entry.slipCount || 1) : 0;
         dateInfo[dateKey] = { status, slipCount };
     });
@@ -452,7 +489,7 @@ function renderMonthGrid() {
     for (let d = 1; d <= daysInMonth; d++) {
         const key = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
         const info = dateInfo[key];
-        const isFuture = isCurrentMonth && d > today.getDate();
+        const isFuture = key > realToday;
         if (info && info.status === 'strong') strongCount++;
         else if (info && info.status === 'slip') slipCount += info.slipCount;
         else if (!isFuture) noLogCount++;
@@ -489,16 +526,16 @@ function renderMonthGrid() {
     // Day cells
     for (let d = 1; d <= daysInMonth; d++) {
         const key      = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-        const isToday  = isCurrentMonth && d === today.getDate();
-        const isFuture = isCurrentMonth && d > today.getDate();
+        const isToday  = key === realToday;
+        const isFuture = key > realToday;
         const info     = dateInfo[key];
         const status   = info && info.status;
         const daySlips = (info && info.slipCount) || 0;
 
         let cls = 'month-cell';
-        if (status === 'strong') cls += ' strong';
+        if (isFuture) cls += ' future';
+        else if (status === 'strong') cls += ' strong';
         else if (status === 'slip') cls += ' slip' + (daySlips > 1 ? ' slip-multi' : '');
-        else if (isFuture) cls += ' future';
         if (isToday) cls += ' today';
 
         const slipBadge = status === 'slip' && daySlips > 1
@@ -509,6 +546,11 @@ function renderMonthGrid() {
     }
 
     grid.innerHTML = html;
+
+    // Whole-journey empty: no logs yet — show guidance over the sparse calendar.
+    var monthEmpty = !hasAnyDailyLogEntries() && strongCount === 0 && slipCount === 0;
+    setHistoryEmptyVisible('monthEmptyState', monthEmpty);
+    if (grid) grid.classList.toggle('is-empty', monthEmpty);
 }
 
 // ════════════════════════════════════════════════════════
@@ -525,4 +567,8 @@ function renderLifetimeStats() {
     document.getElementById('lifetimeJourneys').textContent = journeys;
     document.getElementById('lifetimeStrong').textContent   = totalStrong;
     document.getElementById('lifetimeRelapses').textContent = totalRelapses;
+
+    // Hint while nothing is logged yet (journey 1, zeros at zero).
+    const empty = totalStrong === 0 && totalRelapses === 0 && journeys <= 1;
+    setHistoryEmptyVisible('lifetimeEmptyHint', empty);
 }

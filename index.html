@@ -29,7 +29,7 @@
             z-index: 9999;
         }
     </style>
-    <link rel="stylesheet" href="./styles.css?v=1">
+    <link rel="stylesheet" href="./styles.css?v=16">
 </head>
 <body>
 
@@ -140,9 +140,8 @@
                     <div class="milestone-status">—</div>
                 </div>
             </div>
-            <div id="streakRecordsSection">
             <div class="section-label">Records</div>
-            <div class="milestone-list">
+            <div class="milestone-list" id="streakRecordsSection">
                 <div class="milestone-item" id="cs-day50">
                     <div class="milestone-info"><div class="milestone-icon">⭐</div><div class="milestone-name">50 Days Count</div></div>
                     <div class="milestone-status">0</div>
@@ -155,7 +154,6 @@
                     <div class="milestone-info"><div class="milestone-icon">🏆</div><div class="milestone-name">Best Streak</div></div>
                     <div class="milestone-status" id="longestStreakDisplay">0</div>
                 </div>
-            </div>
             </div>
         </div>
 
@@ -193,13 +191,13 @@
 
     <!-- ═══ MONTHLY GRID (collapsible) ═════════════════════ -->
     <div class="card collapse-card" id="monthPanelCard">
-        <button type="button" class="collapse-header" id="monthPanelToggle" aria-expanded="false" aria-controls="monthPanelBody">
+        <button type="button" class="collapse-header" id="monthPanelToggle" aria-expanded="true" aria-controls="monthPanelBody">
             <span class="collapse-header-row">
                 <span class="collapse-title">Monthly Grid</span>
-                <span class="collapse-chevron" id="monthPanelChevron" aria-hidden="true">›</span>
+                <span class="collapse-chevron open" id="monthPanelChevron" aria-hidden="true">›</span>
             </span>
         </button>
-        <div class="collapse-body" id="monthPanelBody">
+        <div class="collapse-body is-open" id="monthPanelBody">
             <div class="chart-header">
                 <button class="month-nav-btn" id="monthNavPrev" data-action="month-prev">‹</button>
                 <div style="text-align:center;">
@@ -207,7 +205,13 @@
                 </div>
                 <button class="month-nav-btn" id="monthNavNext" data-action="month-next">›</button>
             </div>
-            <div class="month-grid" id="monthGrid"></div>
+            <div class="month-grid-wrap">
+                <div class="month-grid" id="monthGrid"></div>
+                <div class="history-empty-state month-empty-state" id="monthEmptyState" hidden>
+                    <p class="history-empty-title">Your first Journey begins today.</p>
+                    <p class="history-empty-sub">Log a strong day or a slip — each day will show up here.</p>
+                </div>
+            </div>
             <div class="month-legend" id="monthLegend"></div>
         </div>
     </div>
@@ -229,6 +233,10 @@
                 <div class="chart-outer" id="chartOuter">
                     <div class="chart-plot-wrap">
                         <svg class="chart-inner" id="chartInner" height="180"></svg>
+                        <div class="history-empty-state" id="chartEmptyState" hidden>
+                            <p class="history-empty-title" id="chartEmptyTitle">Your first Journey begins today.</p>
+                            <p class="history-empty-sub" id="chartEmptySub">Check in daily to see your progress here.</p>
+                        </div>
                     </div>
                 </div>
                 <div class="chart-nav-row" id="chartNavRow">
@@ -252,7 +260,7 @@
             </span>
         </button>
         <div class="collapse-body" id="lifetimePanelBody">
-            <div class="lifetime-stats">
+            <div class="lifetime-stats" id="lifetimeStatsRow">
                 <div class="lifetime-stat">
                     <div class="lifetime-stat-value" id="lifetimeJourneys">1</div>
                     <div class="lifetime-stat-label">Journeys</div>
@@ -268,7 +276,21 @@
                     <div class="lifetime-stat-label">Relapses</div>
                 </div>
             </div>
+            <p class="history-empty-hint" id="lifetimeEmptyHint" hidden>Check in daily — strong days and slips fill your lifetime stats.</p>
         </div>
+    </div>
+
+    <!-- ═══ LEARN THE JOURNEY ════════════════════════════ -->
+    <div class="card collapse-card learn-journey-card" id="learnJourneyCard">
+        <button type="button" class="collapse-header" id="learnJourneyToggle" data-action="open-learn-journey" aria-haspopup="dialog">
+            <span class="collapse-header-row">
+                <span class="collapse-header-text">
+                    <span class="collapse-title">📖 Learn the Journey</span>
+                    <span class="collapse-teaser">Why streaks, journeys, and progress matter</span>
+                </span>
+                <span class="collapse-chevron" aria-hidden="true">›</span>
+            </span>
+        </button>
     </div>
 
     <!-- ═══ PREMIUM (collapsible) ══════════════════════════ -->
@@ -286,6 +308,7 @@
             <div class="premium-panel-inner">
                 <p class="premium-panel-status" id="premiumPanelStatus"></p>
                 <ul class="premium-panel-features" id="premiumPanelFeatures"></ul>
+                <p class="premium-backup-note" id="premiumPanelBackupNote"></p>
                 <button class="btn-premium-panel" type="button" data-action="open-premium">View plans &amp; subscribe</button>
             </div>
         </div>
@@ -298,13 +321,87 @@
             <button class="btn-backup" type="button" id="importBackupBtn" data-action="import-backup">Import Progress</button>
             <p class="backup-status" id="lastBackupLabel">Last exported: Never</p>
             <button class="btn-dev" type="button" data-action="dev-next-day">⏭ Test: Next Day</button>
-            <button class="btn-dev" type="button" data-action="dev-seven-days">⏭ Test: +7 Strong Days</button>
+            <button class="btn-dev" type="button" data-action="dev-one-strong">⏭ Test: +1 Strong (score only)</button>
+            <button class="btn-dev" type="button" data-action="dev-seven-days">⏭ Test: +7 Strong (score only)</button>
             <button class="btn-reset" type="button" data-action="modal-reset">↺ Reset All Data</button>
         </div>
         <input type="file" id="importFileInput" accept=".json,application/json" hidden>
     </div>
 
 </div><!-- .container -->
+
+<!-- ── Learn the Journey ── -->
+<div class="overlay learn-journey-overlay" id="learnJourneyOverlay" aria-hidden="true" role="presentation">
+    <div class="overlay-card learn-journey-card-panel" role="dialog" aria-modal="true" aria-labelledby="learnJourneyTitle">
+        <div class="learn-journey-header">
+            <h2 class="learn-journey-title" id="learnJourneyTitle">📖 Learn the Journey</h2>
+            <button type="button" class="learn-journey-close" data-action="close-learn-journey" aria-label="Close">✕</button>
+        </div>
+        <div class="learn-journey-scroll">
+            <section class="learn-section">
+                <h3 class="learn-section-title">Why this app?</h3>
+                <p class="learn-section-body">This app helps you build self-control through consistent daily progress. It focuses on long-term improvement, not perfection.</p>
+            </section>
+
+            <section class="learn-section">
+                <h3 class="learn-section-title">Journey vs Streak</h3>
+                <p class="learn-section-body">A streak shows your current run.</p>
+                <p class="learn-section-body">A Journey shows how much you've improved over time.</p>
+                <p class="learn-section-body">One relapse may end a streak, but it doesn't erase your progress.</p>
+            </section>
+
+            <section class="learn-section">
+                <h3 class="learn-section-title">How to use the app</h3>
+                <ul class="learn-list">
+                    <li>Check in once a day.</li>
+                    <li>Be honest with yourself.</li>
+                    <li>Try to improve your Journey score over time.</li>
+                    <li>Don't worry about being perfect.</li>
+                </ul>
+            </section>
+
+            <section class="learn-section">
+                <h3 class="learn-section-title">If you relapse</h3>
+                <p class="learn-section-body">Record it and move on.</p>
+                <p class="learn-section-body">Don't quit because of one bad day. Every new day is another opportunity to improve.</p>
+            </section>
+
+            <section class="learn-section">
+                <h3 class="learn-section-title">Your goal</h3>
+                <p class="learn-section-body">Don't ask:</p>
+                <blockquote class="learn-quote">"Can I keep a perfect streak forever?"</blockquote>
+                <p class="learn-section-body">Ask:</p>
+                <blockquote class="learn-quote learn-quote-emphasis">"Can I make this Journey better than the last one?"</blockquote>
+            </section>
+
+            <section class="learn-section">
+                <h3 class="learn-section-title">Your data</h3>
+                <p class="learn-section-body">Your data stays on your device. You can export and import it whenever you want.</p>
+            </section>
+
+            <section class="learn-section learn-section-final">
+                <h3 class="learn-section-title">One final thought</h3>
+                <blockquote class="learn-quote learn-quote-final">
+                    <strong>Progress is measured over months, not moments.</strong>
+                    <span>Keep showing up. Small improvements become lasting change.</span>
+                </blockquote>
+            </section>
+
+            <figure class="learn-progress-figure">
+                <img
+                    class="learn-progress-img"
+                    src="./assets/progress-ideal-vs-actual.png"
+                    alt="What we think progress looks like: a straight line up over time. What progress actually looks like: an upward trend with ups and downs."
+                    width="800"
+                    height="300"
+                    loading="lazy"
+                    decoding="async"
+                >
+            </figure>
+        </div>
+        <button type="button" class="btn-learn-done" data-action="close-learn-journey">Got it</button>
+    </div>
+</div>
 
 <!-- ── Premium upgrade ── -->
 <div class="overlay premium-overlay" id="premiumOverlay" aria-hidden="true">
@@ -313,6 +410,7 @@
         <div class="premium-title" id="premiumSheetTitle">Premium</div>
         <div class="premium-subtitle" id="premiumSheetSubtitle">Full access during your free trial.</div>
         <ul class="premium-feature-list" id="premiumFeatureList"></ul>
+        <p class="premium-backup-note" id="premiumBackupNote"></p>
         <div class="premium-price">$4.99 / year <span class="premium-price-note">after 30-day trial</span></div>
         <button class="btn-premium-buy" type="button" data-action="premium-checkout">Subscribe to Premium</button>
         <button class="btn-premium-restore" type="button" data-action="premium-restore">Restore purchase</button>
@@ -349,7 +447,23 @@
         <div class="onboarding-slide" id="slide-3">
             <div class="onboarding-emoji">📈</div>
             <div class="onboarding-title">Progress, Not Perfection</div>
-            <div class="onboarding-body">Each journey, aim for more strong days than the last. More wins. Fewer slips. Your success rate grows. That's what recovery actually looks like.</div>
+            <div class="onboarding-body">Each journey, aim for more strong days than the last. One relapse ends a streak — it doesn’t erase your Journey.</div>
+            <div class="onboarding-journey-compare" aria-label="Example journey scores">
+                <div class="onb-journey-card">
+                    <div class="onb-journey-label">Journey 1</div>
+                    <div class="onb-journey-row"><span>Success Days</span><strong>72</strong></div>
+                    <div class="onb-journey-row"><span>Relapses</span><strong>10</strong></div>
+                    <div class="onb-journey-row onb-journey-score"><span>Score</span><strong>72</strong></div>
+                </div>
+                <div class="onb-journey-arrow" aria-hidden="true">↓</div>
+                <div class="onb-journey-card onb-journey-card-better">
+                    <div class="onb-journey-label">Journey 2</div>
+                    <div class="onb-journey-row"><span>Success Days</span><strong>104</strong></div>
+                    <div class="onb-journey-row"><span>Relapses</span><strong>10</strong></div>
+                    <div class="onb-journey-row onb-journey-score"><span>Score</span><strong>104</strong></div>
+                </div>
+                <p class="onb-journey-verdict">You're improving.</p>
+            </div>
         </div>
 
         <!-- Slide 5 — The destination -->
@@ -463,19 +577,19 @@
     </div>
 </div>
 
-    <script defer src="./constants.js?v=2"></script>
-    <script defer src="./data.js?v=2"></script>
-    <script defer src="./migration.js?v=2"></script>
-    <script defer src="./logic.js?v=2"></script>
-    <script defer src="./entitlement.js?v=2"></script>
-    <script defer src="./billing.js?v=2"></script>
-    <script defer src="./firebase.js?v=2"></script>
-    <script defer src="./backup.js?v=2"></script>
-    <script defer src="./ui-main.js?v=2"></script>
-    <script defer src="./ui-overlays.js?v=2"></script>
-    <script defer src="./ui-actions.js?v=2"></script>
-    <script defer src="./ui-history.js?v=2"></script>
-    <script defer src="./ui-day.js?v=2"></script>
-    <script defer src="./boot.js?v=2"></script>
+    <script defer src="./constants.js?v=9"></script>
+    <script defer src="./data.js?v=8"></script>
+    <script defer src="./migration.js?v=9"></script>
+    <script defer src="./logic.js?v=17"></script>
+    <script defer src="./entitlement.js?v=14"></script>
+    <script defer src="./billing.js?v=16"></script>
+    <script defer src="./firebase.js?v=10"></script>
+    <script defer src="./backup.js?v=10"></script>
+    <script defer src="./ui-main.js?v=14"></script>
+    <script defer src="./ui-overlays.js?v=11"></script>
+    <script defer src="./ui-actions.js?v=10"></script>
+    <script defer src="./ui-history.js?v=14"></script>
+    <script defer src="./ui-day.js?v=13"></script>
+    <script defer src="./boot.js?v=11"></script>
 </body>
 </html>

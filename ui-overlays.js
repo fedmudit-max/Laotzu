@@ -355,3 +355,26 @@ function showJourneyComparison(current, prevBestScore) {
 function closeCompare() {
     document.getElementById('journeyCompareOverlay').classList.remove('active');
 }
+
+// ════════════════════════════════════════════════════════
+//  LEARN THE JOURNEY
+// ════════════════════════════════════════════════════════
+
+function openLearnJourney() {
+    var overlay = document.getElementById('learnJourneyOverlay');
+    if (!overlay) return;
+    overlay.classList.add('active');
+    overlay.setAttribute('aria-hidden', 'false');
+    var panel = overlay.querySelector('.learn-journey-card-panel');
+    if (panel) {
+        var scroll = panel.querySelector('.learn-journey-scroll');
+        if (scroll) scroll.scrollTop = 0;
+    }
+}
+
+function closeLearnJourney() {
+    var overlay = document.getElementById('learnJourneyOverlay');
+    if (!overlay) return;
+    overlay.classList.remove('active');
+    overlay.setAttribute('aria-hidden', 'true');
+}

@@ -77,11 +77,31 @@ UI
 
 ---
 
+## EntitlementSnapshot (contract)
+
+Shared shape of premium entitlement fields on journey `state`.  
+**Readers:** `entitlement.js` only answers access.  
+**Writers:** local trial seed (`ensureTrialStarted` / onboarding) and paid path (`updateEntitlementSnapshot` → Billing / Firebase later).
+
+| Field | Type | Owner of writes | Status |
+|-------|------|-----------------|--------|
+| `trialStartedAt` | ISO-8601 string or `''` | Boot / init / onboarding (`logic.js`) | **v1 live** |
+| `premiumUntil` | ISO-8601 string or `''` | `updateEntitlementSnapshot` (Billing; Firebase after verify later) | **v1 live** |
+| `lastVerifiedAt` | ISO-8601 string or `''` | Firebase / Billing after server verify | reserved (S3) |
+| `source` | `'local-trial' \| 'play' \| 'restore' \| 'dev' \| ''` | same write path as paid fields | reserved (S2/S3) |
+
+Rules:
+- UI never reads these fields raw for access decisions — only `Entitlement.*`.
+- Partial updates OK: writers pass only fields they own; unknown keys ignored by the write API until declared here.
+- Trial length is **not** stored; it is derived as `trialStartedAt + PREMIUM_TRIAL_DAYS`.
+
+---
+
 ## Entitlement Public API
 
 ```text
-Entitlement.hasPremiumAccess()
-Entitlement.isTrialActive()
+Entitlement.hasPremiumAccess()     // trialActive || subscriptionActive
+Entitlement.isTrialActive()        // trial window only (independent of sub)
 Entitlement.isSubscriptionActive()
 Entitlement.daysRemaining()
 Entitlement.shouldShowPaywall()

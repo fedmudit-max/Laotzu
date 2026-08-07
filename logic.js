@@ -131,8 +131,20 @@ function dailyLogStorageKey(calDay, patch) {
     return (patch && patch.date) ? patch.date : dailyLogKey(calDay);
 }
 
+/** Never store wall dates after real today (dev offset must not advance monthly grid). */
+function clampDateKeyToRealToday(dateKey) {
+    var real = realTodayKey();
+    if (!dateKey || !/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return real;
+    if (dateKey > real) return real;
+    return dateKey;
+}
+
 function writeDailyLog(calDay, patch) {
     state.dailyLog = state.dailyLog || {};
+    patch = patch || {};
+    if (patch.date) {
+        patch = Object.assign({}, patch, { date: clampDateKeyToRealToday(patch.date) });
+    }
     state.dailyLog[dailyLogStorageKey(calDay, patch)] = patch;
 }
 
@@ -216,6 +228,9 @@ function getDefaultState() {
         recordCelebrated: false,
         pendingNextJourney: false,
         journeyEndedDate: '',
+        /** Length archived on the first slip of that calendar day (for freeze UI only). */
+        lastFreezeStreak: 0,
+        lastFreezeDate: '',
         devDateOffset: 0,
         trialStartedAt: '',
         premiumUntil: '',
@@ -259,18 +274,39 @@ function replaceState(next) {
 }
 
 /**
- * Start local trial when onboarding completes. Writes state only.
+ * Ensure a valid trialStartedAt exists so trial lasts PREMIUM_TRIAL_DAYS.
+ * Does not restart an expired trial (keeps a valid past stamp).
  * Ownership: Storage / Journey bootstrap (not Entitlement — Entitlement is read-only).
+ * @param {object} [s] state
+ * @param {{ force?: boolean }} [opts] force=true skips onboarding check (post-onboarding complete)
+ * @returns {boolean} true if trialStartedAt was written/repaired
  */
-function ensureTrialStarted(s) {
+function ensureTrialStarted(s, opts) {
     s = s || state;
-    if (s.trialStartedAt) return;
-    if (safeGet('onboardingComplete') !== 'true') return;
+    opts = opts || {};
+    if (!opts.force && safeGet('onboardingComplete') !== 'true') return false;
+
+    if (s.trialStartedAt) {
+        var start = new Date(s.trialStartedAt);
+        if (!Number.isNaN(start.getTime())) return false; // valid stamp (active or already expired)
+    }
+
     s.trialStartedAt = new Date().toISOString();
+    return true;
 }
 
+/** Stamp / renew trial when onboarding finishes (always leave an active 30-day window). */
 function startPremiumTrial() {
-    ensureTrialStarted(state);
+    // Active trial: keep existing start date (do not reset the clock).
+    if (state.trialStartedAt) {
+        var start = new Date(state.trialStartedAt);
+        if (!Number.isNaN(start.getTime())) {
+            var ends = start.getTime() + PREMIUM_TRIAL_DAYS * MS_PER_DAY;
+            if (ends > Date.now()) return;
+        }
+    }
+    // Missing or expired stamp — begin a fresh PREMIUM_TRIAL_DAYS window from now.
+    state.trialStartedAt = new Date().toISOString();
 }
 
 // ════════════════════════════════════════════════════════
@@ -426,6 +462,7 @@ function getJourneyMilestonesRenderKey(s) {
         journeyScoreSuccess(s),
         maxJourneyStrongDaysEver(),
         isAwaitingNextJourney(s) ? 1 : 0,
+        isJourneyEndedDisplay(s) ? 1 : 0,
         s.attempt || 1,
     ];
     for (var i = 0; i < JOURNEY_MILESTONE_DAYS.length; i++) {
@@ -561,14 +598,22 @@ function expandSectionMilestones(sectionDays) {
     return out;
 }
 
-/** Brain recovery Progress tab — current streak only; resets on slip, not journey day. */
+/** Brain recovery Progress tab — frozen streak on multi-day slip day, else live streak. */
 function getBrainProgressStreak() {
-    return Math.max(0, state.currentStreak || 0);
+    return getDisplayStreak();
 }
 
 function isAwaitingNextJourney(s) {
     s = s || state;
     return !!s.pendingNextJourney;
+}
+
+/**
+ * Journey finished (10 slips) — waiting for next journey day.
+ * Journey / Progress tabs show frozen grey styling until next journey starts.
+ */
+function isJourneyEndedDisplay(s) {
+    return isAwaitingNextJourney(s);
 }
 
 /** Live score counts only while the journey is still active (not archived / ended). */
@@ -590,6 +635,33 @@ function canLogToday() {
 function streakSegmentBeforeSlip() {
     // First slip of the calendar day archives the streak built so far.
     return state.todayStatus === 'none' ? state.currentStreak : 0;
+}
+
+/**
+ * Streak length frozen for display after today's first slip.
+ * Only the segment archived today — never reuses older journey segments
+ * (that wrongly put grey on day 2 after a fresh 0-streak slip).
+ */
+function getEndedStreakLength() {
+    if (state.lastFreezeDate !== todayKey()) return 0;
+    const n = state.lastFreezeStreak;
+    return typeof n === 'number' && n > 0 ? n : 0;
+}
+
+/**
+ * Slip day freeze until calendar day rolls over.
+ * - Ended 1+ strong: green through completed days, grey on the fail day (strong+1)
+ * - Ended 0 (fresh week / start): grey on day 1 only
+ * Live data: currentStreak is already 0.
+ */
+function isStreakFreezeDay() {
+    return state.todayStatus === 'failed' && state.lastFreezeDate === todayKey();
+}
+
+/** Streak length used for weekly timeline and Streak-tab display only. */
+function getDisplayStreak() {
+    if (isStreakFreezeDay()) return getEndedStreakLength();
+    return Math.max(0, state.currentStreak || 0);
 }
 
 function isPersonalBestStreak(streak, recordToBeat) {
@@ -625,12 +697,17 @@ function getLastStrongLogDate() {
     return latest;
 }
 
-/** After a full 7-day week, show a fresh timeline from the next calendar day onward. */
+/**
+ * After a full 7-day week, show a fresh timeline from the next calendar day.
+ * While Day 7 is still logged strong today, freeze the week on Day 7 —
+ * do not jump to the next week until midnight / the next day starts.
+ */
 function shouldRefreshWeeklyTimeline(streak) {
+    if (isStreakFreezeDay()) return false;
     if (!streak || streak <= 0 || streak % 7 !== 0) return false;
-    const lastStrong = getLastStrongLogDate();
-    if (!lastStrong) return state.todayStatus !== 'success';
-    return lastStrong !== todayKey();
+    // Completed week sealed today — hold Day 7 until the calendar day rolls over.
+    if (state.todayStatus === 'success') return false;
+    return true;
 }
 
 /** Day 1–7 within the current weekly streak cycle (0 when no streak). Resets after every 7 days. */
@@ -670,7 +747,7 @@ function getWeeklyDotCenterPct(day) {
     return (day / WEEKLY_TRACK_UNITS) * 100;
 }
 
-/** Wall-clock ms for intra-day math — dev date offset shifts "now" with the simulated day. */
+/** Wall-clock ms for intra-day math (follows dev day offset when testing). */
 function getWeeklyClockMs() {
     const offset = (state && state.devDateOffset) || 0;
     return Date.now() + offset * MS_PER_DAY;
@@ -687,8 +764,57 @@ function getIntraDaySegmentProgress() {
     return 2 / 3;
 }
 
+/** Convert a track-width % into 0–100 along the green connector line. */
+function trackPctToLinePct(trackPct) {
+    if (weeklyTrackLayout && weeklyTrackLayout.lineLeftPct != null) {
+        const lineWidth = weeklyTrackLayout.lineRightPct - weeklyTrackLayout.lineLeftPct;
+        if (lineWidth <= 0) return 0;
+        return Math.min(100, Math.max(0,
+            ((trackPct - weeklyTrackLayout.lineLeftPct) / lineWidth) * 100));
+    }
+    const lineStart = getWeeklyDotCenterPct(0);
+    const lineEnd = getWeeklyDotCenterPct(7);
+    const lineWidth = lineEnd - lineStart;
+    if (lineWidth <= 0) return 0;
+    return Math.min(100, Math.max(0, ((trackPct - lineStart) / lineWidth) * 100));
+}
+
+/**
+ * Freeze-day layout after a slip:
+ *  - 1+ strong then slip aiming at next day: green through strong days, grey on strong+1
+ *  - 0 strong (timeline at start): grey on day 1 only
+ *  - Green + 8h partial into the fail segment; traveler on slip-day (grey)
+ */
+function getWeeklyFreezeLayout(streak) {
+    const strongWeekDay = getWeeklyStreakDay(streak);
+    // Slip day is the next working week day, or day 1 when nothing was completed.
+    const slipWeekDay = Math.min(7, Math.max(1, strongWeekDay + 1));
+    const t = getIntraDaySegmentProgress();
+
+    const strongPct = getWeeklyDotCenterPct(strongWeekDay);
+    const slipPct = getWeeklyDotCenterPct(slipWeekDay);
+    // Green keeps 8h progress into the (strong → slip) segment; grey completes to slip day.
+    const greenTrackPct = strongPct + (slipPct - strongPct) * t;
+
+    return {
+        strongWeekDay: strongWeekDay,
+        slipWeekDay: slipWeekDay,
+        greenTrackPct: greenTrackPct,
+        travelerTrackPct: slipPct,
+        greenLinePct: trackPctToLinePct(greenTrackPct),
+        greyStartLinePct: trackPctToLinePct(greenTrackPct),
+        greyEndLinePct: trackPctToLinePct(slipPct),
+    };
+}
+
 function getWeeklyTravelerPct(streak) {
-    if (isWeeklySlipReflectDay()) return null;
+    // Slip with no archived strong days — empty track, no traveler.
+    if (isWeeklySlipReflectDay() && !isStreakFreezeDay()) return null;
+
+    if (isStreakFreezeDay()) {
+        const layout = getWeeklyFreezeLayout(streak);
+        return layout ? layout.travelerTrackPct : null;
+    }
 
     const progress = getWeeklyStreakDay(streak);
 
@@ -707,27 +833,38 @@ function getWeeklyTravelerPct(streak) {
     return from + (to - from) * t;
 }
 
-/** Green connector fill % along the stretched line to match traveler position. */
+/** Green connector fill % along the stretched line to match traveler (or freeze green end). */
 function getWeeklyGreenPct(streak) {
-    const travelerPct = getWeeklyTravelerPct(streak);
-    if (travelerPct == null) return 0;
-
-    if (weeklyTrackLayout && weeklyTrackLayout.lineLeftPct != null) {
-        const lineWidth = weeklyTrackLayout.lineRightPct - weeklyTrackLayout.lineLeftPct;
-        if (lineWidth <= 0) return 0;
-        return Math.min(100, Math.max(0,
-            ((travelerPct - weeklyTrackLayout.lineLeftPct) / lineWidth) * 100));
+    if (isStreakFreezeDay()) {
+        const layout = getWeeklyFreezeLayout(streak);
+        return layout ? layout.greenLinePct : 0;
     }
 
-    const lineStart = getWeeklyDotCenterPct(0);
-    const lineEnd = getWeeklyDotCenterPct(7);
-    const lineWidth = lineEnd - lineStart;
-    if (lineWidth <= 0) return 0;
-    return Math.min(100, Math.max(0, ((travelerPct - lineStart) / lineWidth) * 100));
+    const travelerPct = getWeeklyTravelerPct(streak);
+    if (travelerPct == null) return 0;
+    return trackPctToLinePct(travelerPct);
+}
+
+/** Grey slip segment as % of line (freeze only). */
+function getWeeklyGreyFill(streak) {
+    if (!isStreakFreezeDay()) {
+        return { start: 0, end: 0, width: 0 };
+    }
+    const layout = getWeeklyFreezeLayout(streak);
+    if (!layout) return { start: 0, end: 0, width: 0 };
+    const start = layout.greyStartLinePct;
+    const end = layout.greyEndLinePct;
+    return {
+        start: start,
+        end: end,
+        width: Math.max(0, end - start),
+    };
 }
 
 /** Start origin is passed once the day segment has begun (8h+ or any day completed). */
 function isWeeklyStartReached(streak) {
+    // Freeze (including 0-strong → grey Day 1): Start is already past — solid green.
+    if (isStreakFreezeDay()) return true;
     if (isWeeklySlipReflectDay()) return false;
     const progress = getWeeklyStreakDay(streak);
     if (progress > 0) return true;
@@ -768,7 +905,7 @@ function applyStrongDay({ logDate, suppressUI = false } = {}) {
         };
     }
 
-    const dateKey = logDate || todayKey();
+    const dateKey = clampDateKeyToRealToday(logDate || todayKey());
     const calDay = state.calendarDay;
 
     state.score.success++;
@@ -794,7 +931,9 @@ function applyStrongDay({ logDate, suppressUI = false } = {}) {
     var personalBestCrossing = isPersonalBestJourneyCrossing(state.score.success);
 
     updateBestJourney();
-    markTodayStatus(dateKey, 'success');
+    // Status follows simulated "today" so Next Day can re-open the log buttons;
+    // wall log stays ≤ real today for the monthly grid.
+    markTodayStatus(logDate || todayKey(), 'success');
 
     return {
         streak: state.currentStreak,
@@ -830,12 +969,12 @@ function getMaxCalendarDayForToday() {
 
 /** Day counter shown in UI — never ahead of real today. */
 function getDisplayCalendarDay() {
-    return Math.min(state.calendarDay, getMaxCalendarDayForToday());
+    return Math.min(state.calendarDay || 1, getMaxCalendarDayForToday());
 }
 
 function clampCalendarDayToRealToday() {
     const max = getMaxCalendarDayForToday();
-    if (state.calendarDay > max) {
+    if ((state.calendarDay || 1) > max) {
         state.calendarDay = max;
         if (!isWallDateLogged(realTodayKey())) {
             state.todayStatus = 'none';
@@ -844,7 +983,9 @@ function clampCalendarDayToRealToday() {
     }
 }
 
+/** Step calendar day forward only when wall-clock allows it (never past real today). */
 function advanceCalendarDay() {
+    clampCalendarDayToRealToday();
     if (state.calendarDay >= getMaxCalendarDayForToday()) {
         return false;
     }
@@ -856,17 +997,26 @@ function advanceCalendarDay() {
 
 /** Log a slip for a given calendar day. Each slip uses one journey chance; slipCount tracks multiples same day. */
 function applySlipDay({ logDate, calDay }) {
-    state.currentJourneyStreaks.push(streakSegmentBeforeSlip());
+    const firstSlipOfDay = state.todayStatus === 'none';
+    const ended = streakSegmentBeforeSlip();
+    state.currentJourneyStreaks.push(ended);
     state.score.failures++;
     state.longestStreakAtStreakStart = state.longestStreak;
     state.currentStreak = 0;
     state.recordCelebrated = false;
 
+    const wallDate = clampDateKeyToRealToday(logDate);
+    // Freeze UI only from this days first slip (0 or more strong) — never reuse older segments.
+    if (firstSlipOfDay) {
+        state.lastFreezeStreak = ended;
+        state.lastFreezeDate = todayKey();
+    }
+
     writeDailyLog(calDay, {
         status: 'slip',
         day: calDay,
-        date: logDate,
-        slipCount: nextSlipCount(logDate, calDay),
+        date: wallDate,
+        slipCount: nextSlipCount(wallDate, calDay),
     });
 
     state.todayFailCount++;
@@ -1004,4 +1154,6 @@ function beginNextJourney() {
     state.todayFailCount = 0;
     state.pendingNextJourney = false;
     state.journeyEndedDate = '';
+    state.lastFreezeStreak = 0;
+    state.lastFreezeDate = '';
 }

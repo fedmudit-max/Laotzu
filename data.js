@@ -70,7 +70,7 @@ const JOURNEY_MILESTONES = {
     400:  { emoji: '💎', stage: 'WARRIOR',  title: '400 Journey Days!',     message: '400 days of pure diamond-grade discipline. Unbreakable. Next target — 500 strong days.' },
     500:  { emoji: '🦁', stage: 'KING',     title: '500 Journey Days!',     message: 'FIVE HUNDRED. You are legendary. Next target — 750 strong days.' },
     750:  { emoji: '🦅', stage: 'KING',     title: '750 Journey Days!',     message: '750 days. You soar above 99.9% of everyone. Next target — 1000 strong days. The crown awaits.' },
-    1000: { emoji: '👑', stage: 'KING',     title: '1000 Journey Days! 👑', message: 'ONE THOUSAND DAYS. You are the King. There is no next target. You have arrived.' },
+    1000: { emoji: '👑', stage: 'KING',     title: '1000 Journey Days! 👑', message: 'ONE THOUSAND DAYS. You are the King. You have arrived.' },
 };
 
 /** Sorted milestone thresholds — single source for counters and backfill. */
