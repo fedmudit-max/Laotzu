@@ -11,6 +11,7 @@ let monthOffset = 0;
 let monthPanelOpen = true;
 let chartPanelOpen = false;
 let lifetimePanelOpen = false;
+let backupResetPanelOpen = false;
 let toastTimer = null;
 let confettiParticles = [];
 let confettiAnimId    = null;

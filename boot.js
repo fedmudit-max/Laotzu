@@ -100,9 +100,6 @@ function showFileProtocolBanner() {
             closeCompare: closeCompare,
             'open-learn-journey': openLearnJourney,
             'close-learn-journey': closeLearnJourney,
-            'dev-next-day': devAdvanceNextDay,
-            'dev-one-strong': devAdvanceOneStrong,
-            'dev-seven-days': devAdvanceSevenDays,
             'export-backup': exportProgressBackup,
             'import-backup': openImportPicker,
         };

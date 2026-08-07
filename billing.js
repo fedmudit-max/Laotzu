@@ -148,7 +148,7 @@ function renderPremiumSheet() {
         setPremiumBackupNote(noteEl, false);
     } else if (Entitlement.isTrialActive()) {
         var left = Entitlement.daysRemaining();
-        titleEl.textContent = '30-day Premium trial';
+        titleEl.textContent = PREMIUM_TRIAL_DAYS + '-day Premium trial';
         subEl.textContent = left === 1
             ? '1 day left of full access. Subscribe to keep Premium — including export/import — after the trial.'
             : left + ' days left of full access. Subscribe to keep Premium — including export/import — after the trial.';
@@ -171,6 +171,11 @@ function renderPremiumSheet() {
     }
 
     fillPremiumFeatureList(listEl);
+
+    var priceNote = document.getElementById('premiumPriceNote');
+    if (priceNote) {
+        priceNote.textContent = 'after ' + PREMIUM_TRIAL_DAYS + '-day trial';
+    }
 }
 
 function openPremiumSheet() {

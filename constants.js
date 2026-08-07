@@ -10,8 +10,8 @@ const URGE_DURATION_SECS = 5 * 60;
 const TOTAL_SLIDES = 5;
 const BACKUP_FORMAT = 'king-backup';
 const BACKUP_VERSION = 1;
-/** Minimum free days for trial-tier features (Monthly Grid must stay unlocked this long). */
-const PREMIUM_TRIAL_DAYS = 30;
+/** Local free trial length. Use 30 for production; temporarily 7 for mobile/local lock tests. */
+const PREMIUM_TRIAL_DAYS = 7;
 const PREMIUM_CHECKOUT_URL = '';
 const PREMIUM_SUBSCRIPTION_DAYS = 365;
 /** Feature bullets on paywall + premium panel. */

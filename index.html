@@ -29,7 +29,7 @@
             z-index: 9999;
         }
     </style>
-    <link rel="stylesheet" href="./styles.css?v=16">
+    <link rel="stylesheet" href="./styles.css?v=20">
 </head>
 <body>
 
@@ -314,18 +314,23 @@
         </div>
     </div>
 
-    <!-- ═══ BACKUP & TOOLS ═══════════════════════════════ -->
-    <div class="card actions-card">
-        <div class="actions-stack">
-            <button class="btn-backup" type="button" id="exportBackupBtn" data-action="export-backup">Export Progress</button>
-            <button class="btn-backup" type="button" id="importBackupBtn" data-action="import-backup">Import Progress</button>
-            <p class="backup-status" id="lastBackupLabel">Last exported: Never</p>
-            <button class="btn-dev" type="button" data-action="dev-next-day">⏭ Test: Next Day</button>
-            <button class="btn-dev" type="button" data-action="dev-one-strong">⏭ Test: +1 Strong (score only)</button>
-            <button class="btn-dev" type="button" data-action="dev-seven-days">⏭ Test: +7 Strong (score only)</button>
-            <button class="btn-reset" type="button" data-action="modal-reset">↺ Reset All Data</button>
+    <!-- ═══ BACKUP & RESET ═══════════════════════════════ -->
+    <div class="card collapse-card actions-card" id="backupResetCard">
+        <button type="button" class="collapse-header" id="backupResetToggle" aria-expanded="false" aria-controls="backupResetBody">
+            <span class="collapse-header-row">
+                <span class="collapse-title">Backup &amp; Reset</span>
+                <span class="collapse-chevron" id="backupResetChevron" aria-hidden="true">›</span>
+            </span>
+        </button>
+        <div class="collapse-body" id="backupResetBody">
+            <div class="actions-stack">
+                <button class="btn-backup" type="button" id="exportBackupBtn" data-action="export-backup">Export Progress</button>
+                <button class="btn-backup" type="button" id="importBackupBtn" data-action="import-backup">Import Progress</button>
+                <p class="backup-status" id="lastBackupLabel">Last exported: Never</p>
+                <button class="btn-reset" type="button" data-action="modal-reset">↺ Reset All Data</button>
+            </div>
+            <input type="file" id="importFileInput" accept=".json,application/json" hidden>
         </div>
-        <input type="file" id="importFileInput" accept=".json,application/json" hidden>
     </div>
 
 </div><!-- .container -->
@@ -411,7 +416,7 @@
         <div class="premium-subtitle" id="premiumSheetSubtitle">Full access during your free trial.</div>
         <ul class="premium-feature-list" id="premiumFeatureList"></ul>
         <p class="premium-backup-note" id="premiumBackupNote"></p>
-        <div class="premium-price">$4.99 / year <span class="premium-price-note">after 30-day trial</span></div>
+        <div class="premium-price">$4.99 / year <span class="premium-price-note" id="premiumPriceNote">after free trial</span></div>
         <button class="btn-premium-buy" type="button" data-action="premium-checkout">Subscribe to Premium</button>
         <button class="btn-premium-restore" type="button" data-action="premium-restore">Restore purchase</button>
         <button class="btn-premium-later" type="button" id="premiumLaterBtn" data-action="premium-later">Not now</button>
@@ -577,19 +582,19 @@
     </div>
 </div>
 
-    <script defer src="./constants.js?v=9"></script>
+    <script defer src="./constants.js?v=10"></script>
     <script defer src="./data.js?v=8"></script>
     <script defer src="./migration.js?v=9"></script>
     <script defer src="./logic.js?v=17"></script>
     <script defer src="./entitlement.js?v=14"></script>
-    <script defer src="./billing.js?v=16"></script>
+    <script defer src="./billing.js?v=17"></script>
     <script defer src="./firebase.js?v=10"></script>
     <script defer src="./backup.js?v=10"></script>
-    <script defer src="./ui-main.js?v=14"></script>
+    <script defer src="./ui-main.js?v=15"></script>
     <script defer src="./ui-overlays.js?v=11"></script>
     <script defer src="./ui-actions.js?v=10"></script>
-    <script defer src="./ui-history.js?v=14"></script>
-    <script defer src="./ui-day.js?v=13"></script>
-    <script defer src="./boot.js?v=11"></script>
+    <script defer src="./ui-history.js?v=15"></script>
+    <script defer src="./ui-day.js?v=14"></script>
+    <script defer src="./boot.js?v=12"></script>
 </body>
 </html>

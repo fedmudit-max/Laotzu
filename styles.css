@@ -678,15 +678,20 @@ button {
     background: linear-gradient(180deg, #9ca3af, #6b7280);
     box-shadow: none;
 }
+.actions-card .collapse-body {
+    padding: 0;
+}
+
 .actions-card .actions-stack {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     row-gap: 8px;
     width: 100%;
+    padding: 12px 14px 14px;
+    box-sizing: border-box;
 }
 
 .actions-card .btn-backup,
-.actions-card .btn-dev,
 .actions-card .btn-reset {
     display: block;
     width: 100%;
@@ -713,17 +718,6 @@ button {
 .actions-card .btn-backup:hover {
     border-color: var(--green);
     color: var(--green);
-}
-
-.actions-card .btn-dev {
-    background: rgba(0, 122, 255, 0.08);
-    color: #007aff;
-    border: 1px dashed rgba(0, 122, 255, 0.35);
-    font-weight: 600;
-}
-
-.actions-card .btn-dev:hover {
-    background: rgba(0, 122, 255, 0.14);
 }
 
 .actions-card .btn-reset {

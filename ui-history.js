@@ -22,10 +22,16 @@ function toggleLifetimePanel() {
     syncHistoryPanels();
 }
 
+function toggleBackupResetPanel() {
+    backupResetPanelOpen = !backupResetPanelOpen;
+    syncHistoryPanels();
+}
+
 function syncHistoryPanels() {
     var monthOpen = monthPanelOpen;
     var chartOpen = chartPanelOpen;
     var lifetimeOpen = lifetimePanelOpen;
+    var backupOpen = backupResetPanelOpen;
     if (monthOpen || chartOpen || lifetimeOpen) ensureDeferredHeavyRendered();
     var el;
 
@@ -35,18 +41,24 @@ function syncHistoryPanels() {
     if (el) el.classList.toggle('is-open', chartOpen);
     el = document.getElementById('lifetimePanelBody');
     if (el) el.classList.toggle('is-open', lifetimeOpen);
+    el = document.getElementById('backupResetBody');
+    if (el) el.classList.toggle('is-open', backupOpen);
     el = document.getElementById('monthPanelChevron');
     if (el) el.classList.toggle('open', monthOpen);
     el = document.getElementById('chartPanelChevron');
     if (el) el.classList.toggle('open', chartOpen);
     el = document.getElementById('lifetimePanelChevron');
     if (el) el.classList.toggle('open', lifetimeOpen);
+    el = document.getElementById('backupResetChevron');
+    if (el) el.classList.toggle('open', backupOpen);
     el = document.getElementById('monthPanelToggle');
     if (el) el.setAttribute('aria-expanded', monthOpen ? 'true' : 'false');
     el = document.getElementById('chartPanelToggle');
     if (el) el.setAttribute('aria-expanded', chartOpen ? 'true' : 'false');
     el = document.getElementById('lifetimePanelToggle');
     if (el) el.setAttribute('aria-expanded', lifetimeOpen ? 'true' : 'false');
+    el = document.getElementById('backupResetToggle');
+    if (el) el.setAttribute('aria-expanded', backupOpen ? 'true' : 'false');
 
     if (chartOpen) renderChart();
 }
@@ -71,6 +83,13 @@ function syncHistoryPanels() {
         lifetimeBtn.addEventListener('click', function (e) {
             e.preventDefault();
             toggleLifetimePanel();
+        });
+    }
+    var backupBtn = document.getElementById('backupResetToggle');
+    if (backupBtn) {
+        backupBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            toggleBackupResetPanel();
         });
     }
 })();
