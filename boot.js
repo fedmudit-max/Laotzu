@@ -180,6 +180,7 @@ function showFileProtocolBanner() {
         initPremiumStartup();
         paintApp(true);
         try { checkOnboarding(); } catch (err) { console.error('King onboarding failed:', err); }
+        try { initDailyReminders(); } catch (err) { console.error('King reminders init failed:', err); }
         dismissLoadScreen();
         deferStartupHeavyWork();
     }
@@ -192,6 +193,7 @@ function showFileProtocolBanner() {
             refreshOnAppOpen();
             if (safeGet('onboardingComplete')) {
                 try { updateWeeklyTravelerPosition(); } catch (err) { console.error('King weekly render failed:', err); }
+                try { syncDailyReminderSchedule(); } catch (err) { /* ignore */ }
             }
         }
     });

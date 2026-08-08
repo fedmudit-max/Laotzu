@@ -27,11 +27,17 @@ function toggleBackupResetPanel() {
     syncHistoryPanels();
 }
 
+function toggleReminderPanel() {
+    reminderPanelOpen = !reminderPanelOpen;
+    syncHistoryPanels();
+}
+
 function syncHistoryPanels() {
     var monthOpen = monthPanelOpen;
     var chartOpen = chartPanelOpen;
     var lifetimeOpen = lifetimePanelOpen;
     var backupOpen = backupResetPanelOpen;
+    var reminderOpen = reminderPanelOpen;
     if (monthOpen || chartOpen || lifetimeOpen) ensureDeferredHeavyRendered();
     var el;
 
@@ -43,6 +49,8 @@ function syncHistoryPanels() {
     if (el) el.classList.toggle('is-open', lifetimeOpen);
     el = document.getElementById('backupResetBody');
     if (el) el.classList.toggle('is-open', backupOpen);
+    el = document.getElementById('reminderPanelBody');
+    if (el) el.classList.toggle('is-open', reminderOpen);
     el = document.getElementById('monthPanelChevron');
     if (el) el.classList.toggle('open', monthOpen);
     el = document.getElementById('chartPanelChevron');
@@ -51,6 +59,8 @@ function syncHistoryPanels() {
     if (el) el.classList.toggle('open', lifetimeOpen);
     el = document.getElementById('backupResetChevron');
     if (el) el.classList.toggle('open', backupOpen);
+    el = document.getElementById('reminderPanelChevron');
+    if (el) el.classList.toggle('open', reminderOpen);
     el = document.getElementById('monthPanelToggle');
     if (el) el.setAttribute('aria-expanded', monthOpen ? 'true' : 'false');
     el = document.getElementById('chartPanelToggle');
@@ -59,6 +69,8 @@ function syncHistoryPanels() {
     if (el) el.setAttribute('aria-expanded', lifetimeOpen ? 'true' : 'false');
     el = document.getElementById('backupResetToggle');
     if (el) el.setAttribute('aria-expanded', backupOpen ? 'true' : 'false');
+    el = document.getElementById('reminderPanelToggle');
+    if (el) el.setAttribute('aria-expanded', reminderOpen ? 'true' : 'false');
 
     if (chartOpen) renderChart();
 }
@@ -90,6 +102,13 @@ function syncHistoryPanels() {
         backupBtn.addEventListener('click', function (e) {
             e.preventDefault();
             toggleBackupResetPanel();
+        });
+    }
+    var reminderBtn = document.getElementById('reminderPanelToggle');
+    if (reminderBtn) {
+        reminderBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            toggleReminderPanel();
         });
     }
 })();

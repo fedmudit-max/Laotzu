@@ -34,6 +34,7 @@ This document defines implementation boundaries. Changes require an implementati
 | App keys / trial length | **Constants** (`constants.js`) |
 | Static copy (milestones, quotes) | **Data** (`data.js`) |
 | Startup / SW / event router | **Boot** (`boot.js`) |
+| Daily local notification schedule | **Reminders** (`reminders.js` + `sw.js` timers) |
 
 ---
 

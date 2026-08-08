@@ -234,6 +234,10 @@ function getDefaultState() {
         devDateOffset: 0,
         trialStartedAt: '',
         premiumUntil: '',
+        /** Local daily check-in reminder (device notifications; no server). */
+        reminderEnabled: false,
+        reminderHour: 20,
+        reminderMinute: 0,
     };
 }
 
@@ -259,8 +263,17 @@ function mergeSavedState(saved) {
     merged.pastJourneyStreaks = saved.pastJourneyStreaks || saved.streakHistory || defaults.pastJourneyStreaks;
     merged.currentJourneyStreaks = saved.currentJourneyStreaks || saved.currentAttemptStreaks || defaults.currentJourneyStreaks;
     merged.urgeLog = saved.urgeLog || defaults.urgeLog;
+    merged.reminderEnabled = !!saved.reminderEnabled;
+    merged.reminderHour = clampInt(saved.reminderHour, 0, 23, defaults.reminderHour);
+    merged.reminderMinute = clampInt(saved.reminderMinute, 0, 59, defaults.reminderMinute);
     syncJourneyMilestoneCountsFromHistory(merged);
     return runStateMigrations(merged, saved);
+}
+
+function clampInt(value, min, max, fallback) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return fallback;
+    return Math.min(max, Math.max(min, Math.round(n)));
 }
 
 let state = getDefaultState();

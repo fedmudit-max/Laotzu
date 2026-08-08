@@ -732,6 +732,119 @@ button {
     color: #ff3b30;
 }
 
+/* ── Daily reminder panel ── */
+.reminder-panel-inner {
+    padding: 4px 14px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.reminder-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.reminder-row-time {
+    align-items: center;
+}
+
+.reminder-row-text {
+    min-width: 0;
+}
+
+.reminder-row-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.reminder-row-hint {
+    margin-top: 3px;
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.35;
+}
+
+.reminder-time-input {
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 10px;
+    min-width: 7.5rem;
+}
+
+.reminder-time-input:focus {
+    outline: none;
+    border-color: var(--green);
+}
+
+.reminder-switch {
+    position: relative;
+    display: inline-flex;
+    width: 48px;
+    height: 28px;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.reminder-switch input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.reminder-switch-track {
+    position: absolute;
+    inset: 0;
+    border-radius: 99px;
+    background: rgba(60, 60, 67, 0.18);
+    transition: background 0.2s ease;
+}
+
+.reminder-switch-track::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+    transition: transform 0.2s ease;
+}
+
+.reminder-switch input:checked + .reminder-switch-track {
+    background: var(--green);
+}
+
+.reminder-switch input:checked + .reminder-switch-track::after {
+    transform: translateX(20px);
+}
+
+.reminder-switch input:disabled + .reminder-switch-track {
+    opacity: 0.45;
+}
+
+.reminder-switch input:focus-visible + .reminder-switch-track {
+    box-shadow: 0 0 0 3px rgba(52, 199, 89, 0.25);
+}
+
+.reminder-status {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--text-muted);
+}
+
 .backup-status {
     margin: 2px 0 4px;
     font-size: 12px;
@@ -947,11 +1060,6 @@ button {
     box-shadow: none;
 }
 
-.weekly-step-label-col.slip-day .weekly-step-label {
-    color: #8e8e93;
-    font-weight: 700;
-}
-
 .weekly-step.target .weekly-step-marker {
     width: 14px;
     height: 14px;
@@ -1026,11 +1134,6 @@ button {
     background: #8e8e93;
     width: 12px;
     height: 12px;
-}
-
-.weekly-step-label-col.slip-day .weekly-step-label {
-    color: #8e8e93;
-    font-weight: 700;
 }
 
 .weekly-active-traveler {
@@ -1142,6 +1245,14 @@ button {
     font-weight: 700;
 }
 
+/* Slip day always grey — must beat .done / .current (same day often has both) */
+.weekly-step-label-col.slip-day .weekly-step-label,
+.weekly-step-label-col.slip-day.done .weekly-step-label,
+.weekly-step-label-col.slip-day.current .weekly-step-label {
+    color: #8e8e93;
+    font-weight: 700;
+}
+
 .weekly-streak-rail.freeze {
     opacity: 1;
 }
@@ -1229,20 +1340,15 @@ button {
 }
 
 #tab-science.journey-ended-day .science-item.completed .science-phase-name,
-#tab-science.journey-ended-day .science-item.journey-ended-item .science-phase-name,
-#tab-science.streak-freeze-day .science-item.completed .science-phase-name,
-#tab-science.streak-freeze-day .science-item.journey-ended-item .science-phase-name {
-    color: #8e8e93;
-    font-weight: 700;
-}
-
 #tab-science.journey-ended-day .science-item.completed .science-days-range,
+#tab-science.journey-ended-day .science-item.journey-ended-item .science-phase-name,
 #tab-science.journey-ended-day .science-item.journey-ended-item .science-days-range,
+#tab-science.streak-freeze-day .science-item.completed .science-phase-name,
 #tab-science.streak-freeze-day .science-item.completed .science-days-range,
+#tab-science.streak-freeze-day .science-item.journey-ended-item .science-phase-name,
 #tab-science.streak-freeze-day .science-item.journey-ended-item .science-days-range {
     color: #8e8e93;
-    border-color: rgba(142, 142, 147, 0.35);
-    background: rgba(142, 142, 147, 0.1);
+    font-weight: 600;
 }
 
 #tab-science.journey-ended-day .science-item.current,
@@ -1254,8 +1360,10 @@ button {
 
 #tab-science.journey-ended-day .science-here-badge,
 #tab-science.streak-freeze-day .science-here-badge {
-    background: rgba(142, 142, 147, 0.18);
     color: #8e8e93;
+    font-weight: 600;
+    background: none;
+    border: none;
 }
 
 #tab-science.journey-ended-day .science-progress-fill,
@@ -1554,41 +1662,43 @@ button {
 }
 
 .science-item {
+    display: flex;
+    flex-direction: column;
     border-radius: 12px;
     padding: 14px 16px;
     border: 1px solid var(--border);
     background: var(--bg);
-    transition: all 0.2s;
+    transition: all 0.2s ease;
     position: relative;
 }
 
-/* Current phase — glowing green */
+/* Current phase — same green glow as .milestone-item.achieved-glow */
 .science-item.current {
-    border-color: rgba(52,199,89,0.5);
-    background: rgba(52,199,89,0.07);
+    border-color: rgba(52,199,89,0.45);
     animation: glowGreen 2.4s ease-in-out infinite;
 }
 
-/* Completed phase — green highlight like streak/journey milestones */
-.science-item.completed {
-    border-color: rgba(52,199,89,0.35);
-    background: rgba(52,199,89,0.05);
-}
-
-.science-item.completed .science-phase-name {
+.science-item.current .science-phase-name,
+.science-item.current .science-here-badge {
     color: var(--green);
     font-weight: 700;
 }
 
-.science-item.completed .science-days-range {
-    color: var(--green);
-    border-color: rgba(52,199,89,0.3);
+/* Completed phase — green text + soft green fill (highlighted like Streak) */
+.science-item.completed {
+    border-color: rgba(52,199,89,0.45);
     background: rgba(52,199,89,0.08);
 }
 
-/* Future phase — faded */
+.science-item.completed .science-phase-name,
+.science-item.completed .science-days-range {
+    color: var(--green);
+    font-weight: 600;
+}
+
+/* Upcoming phases — same solid look as unreached milestones */
 .science-item.future {
-    opacity: 0.4;
+    opacity: 1;
 }
 
 .science-item-header {
@@ -1601,38 +1711,42 @@ button {
 .science-item-left {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
 }
 
 .science-emoji { font-size: 20px; }
 
+/* Match .milestone-name */
 .science-phase-name {
     font-size: 15px;
-    font-weight: 700;
+    font-weight: 500;
     color: var(--text);
 }
 
+/* Day criteria — smaller than milestone status (status is short nums; ranges are longer labels) */
 .science-days-range {
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--text-muted);
-    background: var(--bg);
-    padding: 3px 8px;
-    border-radius: 20px;
-    border: 1px solid var(--border);
+    background: none;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    white-space: nowrap;
 }
 
-/* "YOU ARE HERE" badge on current phase */
+/* Current position label — same scale as day criteria */
 .science-here-badge {
-    font-size: 10px;
+    font-size: 13px;
     font-weight: 700;
-    letter-spacing: 0.8px;
-    text-transform: uppercase;
+    letter-spacing: normal;
+    text-transform: none;
     color: var(--green);
-    background: rgba(52,199,89,0.12);
-    padding: 3px 8px;
-    border-radius: 20px;
-    border: 1px solid rgba(52,199,89,0.3);
+    background: none;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    white-space: nowrap;
 }
 
 .science-desc {

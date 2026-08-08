@@ -12,6 +12,7 @@ let monthPanelOpen = true;
 let chartPanelOpen = false;
 let lifetimePanelOpen = false;
 let backupResetPanelOpen = false;
+let reminderPanelOpen = false;
 let toastTimer = null;
 let confettiParticles = [];
 let confettiAnimId    = null;
@@ -60,6 +61,7 @@ function saveAndRender() {
             ? 'Storage full — use Reset All Data to keep logging.'
             : 'Could not save your progress. Try again.');
     }
+    try { if (typeof syncDailyReminderSchedule === 'function') syncDailyReminderSchedule(); } catch (e) { /* ignore */ }
     renderAll();
 }
 
@@ -71,6 +73,7 @@ function renderAll(options) {
         renderChances,
         renderButtons,
         renderPremiumStatus,
+        renderDailyReminder,
         syncHistoryPanels,
     ];
     if (full) {

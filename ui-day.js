@@ -163,8 +163,10 @@ function renderBrainCard() {
             isCurrent = false;
         }
 
-        var toLabel  = phase.to === Infinity ? '365+' : phase.to;
-        var dayRange = 'Day ' + phase.from + '\u2013' + toLabel;
+        // Display 1–3 for Withdrawal (data still uses from:0 for phase math).
+        var labelFrom = phase.from < 1 ? 1 : phase.from;
+        var toLabel   = phase.to === Infinity ? '365+' : phase.to;
+        var dayRange  = 'Day ' + labelFrom + '\u2013' + toLabel;
 
         var phaseLen = phaseEnd - phase.from;
         if (phaseLen <= 0) phaseLen = 1;
