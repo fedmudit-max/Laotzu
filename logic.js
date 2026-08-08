@@ -234,10 +234,6 @@ function getDefaultState() {
         devDateOffset: 0,
         trialStartedAt: '',
         premiumUntil: '',
-        /** Local daily check-in reminder (device notifications; no server). */
-        reminderEnabled: false,
-        reminderHour: 20,
-        reminderMinute: 0,
     };
 }
 
@@ -263,17 +259,8 @@ function mergeSavedState(saved) {
     merged.pastJourneyStreaks = saved.pastJourneyStreaks || saved.streakHistory || defaults.pastJourneyStreaks;
     merged.currentJourneyStreaks = saved.currentJourneyStreaks || saved.currentAttemptStreaks || defaults.currentJourneyStreaks;
     merged.urgeLog = saved.urgeLog || defaults.urgeLog;
-    merged.reminderEnabled = !!saved.reminderEnabled;
-    merged.reminderHour = clampInt(saved.reminderHour, 0, 23, defaults.reminderHour);
-    merged.reminderMinute = clampInt(saved.reminderMinute, 0, 59, defaults.reminderMinute);
     syncJourneyMilestoneCountsFromHistory(merged);
     return runStateMigrations(merged, saved);
-}
-
-function clampInt(value, min, max, fallback) {
-    const n = Number(value);
-    if (!Number.isFinite(n)) return fallback;
-    return Math.min(max, Math.max(min, Math.round(n)));
 }
 
 let state = getDefaultState();
@@ -287,11 +274,12 @@ function replaceState(next) {
 }
 
 /**
- * Ensure a valid trialStartedAt exists so trial lasts PREMIUM_TRIAL_DAYS.
+ * Ensure a valid trialStartedAt exists so trial lasts PREMIUM_TRIAL_DAYS from
+ * journey calendar Day 1 (set on onboarding / when onboarded user loads).
  * Does not restart an expired trial (keeps a valid past stamp).
- * Ownership: Storage / Journey bootstrap (not Entitlement — Entitlement is read-only).
+ * Ownership: Storage / Journey bootstrap — not Entitlement (read-only).
  * @param {object} [s] state
- * @param {{ force?: boolean }} [opts] force=true skips onboarding check (post-onboarding complete)
+ * @param {{ force?: boolean }} [opts] force=true skips onboarding check
  * @returns {boolean} true if trialStartedAt was written/repaired
  */
 function ensureTrialStarted(s, opts) {
@@ -304,11 +292,40 @@ function ensureTrialStarted(s, opts) {
         if (!Number.isNaN(start.getTime())) return false; // valid stamp (active or already expired)
     }
 
-    s.trialStartedAt = new Date().toISOString();
+    s.trialStartedAt = trialStartIsoForCalendarDayOne(s);
     return true;
 }
 
-/** Stamp / renew trial when onboarding finishes (always leave an active 30-day window). */
+/**
+ * Start of the user's journey Day 1 in local time (fallback: today).
+ * Trial window runs PREMIUM_TRIAL_DAYS from this midnight.
+ */
+function trialStartIsoForCalendarDayOne(s) {
+    s = s || state;
+    var key = '';
+    var log = s.dailyLog || {};
+    var keys = Object.keys(log);
+    for (var i = 0; i < keys.length; i++) {
+        var entry = log[keys[i]];
+        if (entry && entry.day === 1 && entry.date && /^\d{4}-\d{2}-\d{2}$/.test(entry.date)) {
+            key = entry.date;
+            break;
+        }
+    }
+    if (!key && s.lastOpenedDate && /^\d{4}-\d{2}-\d{2}$/.test(s.lastOpenedDate)) {
+        key = s.lastOpenedDate;
+    }
+    if (!key) key = todayKey();
+    var parts = key.split('-');
+    var y = parseInt(parts[0], 10);
+    var m = parseInt(parts[1], 10) - 1;
+    var d = parseInt(parts[2], 10);
+    var localMidnight = new Date(y, m, d, 0, 0, 0, 0);
+    if (Number.isNaN(localMidnight.getTime())) return new Date().toISOString();
+    return localMidnight.toISOString();
+}
+
+/** Stamp trial when onboarding ends (Skip or full slides) — Calendar Day 1 window. */
 function startPremiumTrial() {
     // Active trial: keep existing start date (do not reset the clock).
     if (state.trialStartedAt) {
@@ -318,8 +335,31 @@ function startPremiumTrial() {
             if (ends > Date.now()) return;
         }
     }
-    // Missing or expired stamp — begin a fresh PREMIUM_TRIAL_DAYS window from now.
-    state.trialStartedAt = new Date().toISOString();
+    // Missing or expired stamp — begin from local midnight of journey Day 1.
+    state.trialStartedAt = trialStartIsoForCalendarDayOne(state);
+}
+
+/**
+ * Single finish path for Skip and “Let’s Begin”.
+ * Marks onboarding done, anchors journey Day 1 dates, starts Premium trial.
+ */
+function beginJourneyAfterOnboarding() {
+    safeSet('onboardingComplete', 'true');
+
+    // Journey Day 1 — same whether user skipped slides or opened every one.
+    if (!state.calendarDay || state.calendarDay < 1) {
+        state.calendarDay = 1;
+    }
+    if (!state.lastOpenedDate) {
+        state.lastOpenedDate = todayKey();
+    }
+    if (!state.lastCheckedDate) {
+        state.lastCheckedDate = state.lastOpenedDate;
+    }
+
+    startPremiumTrial();
+    // Idempotent if stamp missing (never skips Day-1 seed).
+    ensureTrialStarted(state, { force: true });
 }
 
 // ════════════════════════════════════════════════════════

@@ -27,17 +27,11 @@ function toggleBackupResetPanel() {
     syncHistoryPanels();
 }
 
-function toggleReminderPanel() {
-    reminderPanelOpen = !reminderPanelOpen;
-    syncHistoryPanels();
-}
-
 function syncHistoryPanels() {
     var monthOpen = monthPanelOpen;
     var chartOpen = chartPanelOpen;
     var lifetimeOpen = lifetimePanelOpen;
     var backupOpen = backupResetPanelOpen;
-    var reminderOpen = reminderPanelOpen;
     if (monthOpen || chartOpen || lifetimeOpen) ensureDeferredHeavyRendered();
     var el;
 
@@ -49,8 +43,6 @@ function syncHistoryPanels() {
     if (el) el.classList.toggle('is-open', lifetimeOpen);
     el = document.getElementById('backupResetBody');
     if (el) el.classList.toggle('is-open', backupOpen);
-    el = document.getElementById('reminderPanelBody');
-    if (el) el.classList.toggle('is-open', reminderOpen);
     el = document.getElementById('monthPanelChevron');
     if (el) el.classList.toggle('open', monthOpen);
     el = document.getElementById('chartPanelChevron');
@@ -59,8 +51,6 @@ function syncHistoryPanels() {
     if (el) el.classList.toggle('open', lifetimeOpen);
     el = document.getElementById('backupResetChevron');
     if (el) el.classList.toggle('open', backupOpen);
-    el = document.getElementById('reminderPanelChevron');
-    if (el) el.classList.toggle('open', reminderOpen);
     el = document.getElementById('monthPanelToggle');
     if (el) el.setAttribute('aria-expanded', monthOpen ? 'true' : 'false');
     el = document.getElementById('chartPanelToggle');
@@ -69,8 +59,6 @@ function syncHistoryPanels() {
     if (el) el.setAttribute('aria-expanded', lifetimeOpen ? 'true' : 'false');
     el = document.getElementById('backupResetToggle');
     if (el) el.setAttribute('aria-expanded', backupOpen ? 'true' : 'false');
-    el = document.getElementById('reminderPanelToggle');
-    if (el) el.setAttribute('aria-expanded', reminderOpen ? 'true' : 'false');
 
     if (chartOpen) renderChart();
 }
@@ -102,13 +90,6 @@ function syncHistoryPanels() {
         backupBtn.addEventListener('click', function (e) {
             e.preventDefault();
             toggleBackupResetPanel();
-        });
-    }
-    var reminderBtn = document.getElementById('reminderPanelToggle');
-    if (reminderBtn) {
-        reminderBtn.addEventListener('click', function (e) {
-            e.preventDefault();
-            toggleReminderPanel();
         });
     }
 })();
@@ -202,7 +183,17 @@ function getAllStreakPoints() {
 
 /**
  * Returns data points for journeys chart mode (one point per journey).
+ * Live journey appears once the attempt has any activity (strong *or* slip),
+ * so a slip-only J1… at 0 renders instead of the empty “begins today” copy.
  */
+function hasActiveJourneySeries() {
+    if ((state.score && state.score.success) > 0) return true;
+    if ((state.score && state.score.failures) > 0) return true;
+    if ((state.currentStreak || 0) > 0) return true;
+    if ((state.currentJourneyStreaks || []).length > 0) return true;
+    return false;
+}
+
 function getJourneyChartPoints() {
     const points = state.completedJourneys.map(j => ({
         val: j.score.success,
@@ -210,8 +201,12 @@ function getJourneyChartPoints() {
     }));
     // Journey is archived on end but score resets only on the next calendar day —
     // skip the live point while awaiting, or J1 and J1… appear together.
-    if (!isAwaitingNextJourney() && state.score.success > 0) {
-        points.push({ val: state.score.success, label: `J${state.attempt}…`, live: true });
+    if (!isAwaitingNextJourney() && hasActiveJourneySeries()) {
+        points.push({
+            val: state.score.success || 0,
+            label: `J${state.attempt}…`,
+            live: true,
+        });
     }
     return points;
 }
@@ -364,7 +359,10 @@ function renderChart() {
         `<line x1="${CHART_Y_GUT}" y1="${CHART_PAD_T}" x2="${CHART_Y_GUT}" y2="${CHART_PAD_T + cH}"
             stroke="rgba(0,0,0,0.12)" stroke-width="1.5"/>`;
 
-    const isCurrentBest = state.currentStreak > 0 && state.currentStreak === state.longestStreak;
+    const isCurrentBest = chartMode === 'journeys'
+        ? (state.score.success || 0) > 0 &&
+            (state.score.success || 0) === (state.bestJourney && state.bestJourney.success)
+        : state.currentStreak > 0 && state.currentStreak === state.longestStreak;
     const slotCount = getChartWindow();
 
     const pts = show.map((p, i) => ({

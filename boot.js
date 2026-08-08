@@ -93,6 +93,7 @@ function showFileProtocolBanner() {
             'chart-streaks': function () { switchChartMode('streaks'); },
             'chart-journeys': function () { switchChartMode('journeys'); },
             onboardingNext: onboardingNext,
+            // Skip uses the same finish path as Let's Begin — trial from Calendar Day 1.
             onboardingSkip: completeOnboarding,
             'yesterday-strong': function () { logYesterday('strong'); },
             'yesterday-slip': function () { logYesterday('slip'); },
@@ -180,7 +181,6 @@ function showFileProtocolBanner() {
         initPremiumStartup();
         paintApp(true);
         try { checkOnboarding(); } catch (err) { console.error('King onboarding failed:', err); }
-        try { initDailyReminders(); } catch (err) { console.error('King reminders init failed:', err); }
         dismissLoadScreen();
         deferStartupHeavyWork();
     }
@@ -193,7 +193,6 @@ function showFileProtocolBanner() {
             refreshOnAppOpen();
             if (safeGet('onboardingComplete')) {
                 try { updateWeeklyTravelerPosition(); } catch (err) { console.error('King weekly render failed:', err); }
-                try { syncDailyReminderSchedule(); } catch (err) { /* ignore */ }
             }
         }
     });

@@ -732,119 +732,6 @@ button {
     color: #ff3b30;
 }
 
-/* ── Daily reminder panel ── */
-.reminder-panel-inner {
-    padding: 4px 14px 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-}
-
-.reminder-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-}
-
-.reminder-row-time {
-    align-items: center;
-}
-
-.reminder-row-text {
-    min-width: 0;
-}
-
-.reminder-row-label {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text);
-}
-
-.reminder-row-hint {
-    margin-top: 3px;
-    font-size: 12px;
-    color: var(--text-muted);
-    line-height: 1.35;
-}
-
-.reminder-time-input {
-    font-family: inherit;
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--text);
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 8px 10px;
-    min-width: 7.5rem;
-}
-
-.reminder-time-input:focus {
-    outline: none;
-    border-color: var(--green);
-}
-
-.reminder-switch {
-    position: relative;
-    display: inline-flex;
-    width: 48px;
-    height: 28px;
-    flex-shrink: 0;
-    cursor: pointer;
-}
-
-.reminder-switch input {
-    position: absolute;
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.reminder-switch-track {
-    position: absolute;
-    inset: 0;
-    border-radius: 99px;
-    background: rgba(60, 60, 67, 0.18);
-    transition: background 0.2s ease;
-}
-
-.reminder-switch-track::after {
-    content: '';
-    position: absolute;
-    top: 3px;
-    left: 3px;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    background: #fff;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
-    transition: transform 0.2s ease;
-}
-
-.reminder-switch input:checked + .reminder-switch-track {
-    background: var(--green);
-}
-
-.reminder-switch input:checked + .reminder-switch-track::after {
-    transform: translateX(20px);
-}
-
-.reminder-switch input:disabled + .reminder-switch-track {
-    opacity: 0.45;
-}
-
-.reminder-switch input:focus-visible + .reminder-switch-track {
-    box-shadow: 0 0 0 3px rgba(52, 199, 89, 0.25);
-}
-
-.reminder-status {
-    margin: 0;
-    font-size: 12px;
-    line-height: 1.45;
-    color: var(--text-muted);
-}
-
 .backup-status {
     margin: 2px 0 4px;
     font-size: 12px;
@@ -1048,13 +935,13 @@ button {
 .weekly-step.slip-day .weekly-step-marker::after,
 .weekly-step.slip-day.current .weekly-step-marker::after {
     background: #8e8e93;
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
 }
 
 .weekly-step.slip-day .weekly-step-dot {
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
     border: none;
     background: #8e8e93;
     box-shadow: none;
@@ -1097,22 +984,22 @@ button {
 }
 
 .weekly-step-start.done .weekly-step-origin {
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
     border-width: 0;
     background: var(--green);
 }
 
 .weekly-step.done:not(.current) .weekly-step-dot {
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
     border-width: 0;
     background: var(--green);
 }
 
 .weekly-step.current .weekly-step-dot {
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
     border-width: 0;
     background: var(--green);
     animation: none;
@@ -1121,8 +1008,8 @@ button {
 
 .weekly-step.slip-day .weekly-step-dot,
 .weekly-step.slip-day.current .weekly-step-dot {
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
     border: none;
     background: #8e8e93;
     box-shadow: none;
@@ -1132,10 +1019,11 @@ button {
 .weekly-step.slip-day .weekly-step-marker::after,
 .weekly-step.slip-day.current .weekly-step-marker::after {
     background: #8e8e93;
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
 }
 
+/* Moving position — smaller than filled day dots (10px solid) */
 .weekly-active-traveler {
     position: absolute;
     top: 50%;
@@ -1273,8 +1161,8 @@ button {
 
 /* Solid grey slip marker (no ring / gradient) */
 .weekly-active-traveler.frozen.slip {
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
     border: none;
     background: #8e8e93;
     box-shadow: none;

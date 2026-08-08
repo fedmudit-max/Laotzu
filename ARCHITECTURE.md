@@ -34,7 +34,16 @@ This document defines implementation boundaries. Changes require an implementati
 | App keys / trial length | **Constants** (`constants.js`) |
 | Static copy (milestones, quotes) | **Data** (`data.js`) |
 | Startup / SW / event router | **Boot** (`boot.js`) |
-| Daily local notification schedule | **Reminders** (`reminders.js` + `sw.js` timers) |
+
+---
+
+## Daily reminders (deferred to Capacitor)
+
+**Not in v1 web/PWA.** Browser service-worker timers are unreliable after the app is fully closed and must not be marketed as local alarms.
+
+**When we add them:** Capacitor shell (Sprint 2 area), via **`@capacitor/local-notifications`** (or native AlarmManager equivalent) for OS-scheduled daily check-in. Same UX intent as Loop Habits: enable + time, fire while closed. Prefer native local notifications over FCM for daily reminders.
+
+**Do not** reintroduce best-effort web `Notification` / SW `setTimeout` scheduling for this product surface.
 
 ---
 
@@ -82,11 +91,11 @@ UI
 
 Shared shape of premium entitlement fields on journey `state`.  
 **Readers:** `entitlement.js` only answers access.  
-**Writers:** local trial seed (`ensureTrialStarted` / onboarding) and paid path (`updateEntitlementSnapshot` → Billing / Firebase later).
+**Writers:** local trial seed (`startPremiumTrial` / `ensureTrialStarted` at onboarding / Day 1) and paid path (`updateEntitlementSnapshot` → Billing / Firebase later).
 
 | Field | Type | Owner of writes | Status |
 |-------|------|-----------------|--------|
-| `trialStartedAt` | ISO-8601 string or `''` | Boot / init / onboarding (`logic.js`) | **v1 live** |
+| `trialStartedAt` | ISO-8601 string or `''` | Onboarding + init (`logic.js`; start of Calendar Day 1) | **v1 live** |
 | `premiumUntil` | ISO-8601 string or `''` | `updateEntitlementSnapshot` (Billing; Firebase after verify later) | **v1 live** |
 | `lastVerifiedAt` | ISO-8601 string or `''` | Firebase / Billing after server verify | reserved (S3) |
 | `source` | `'local-trial' \| 'play' \| 'restore' \| 'dev' \| ''` | same write path as paid fields | reserved (S2/S3) |
@@ -128,5 +137,5 @@ Entitlement.subscriptionExpiresLabel()
 | Sprint | Work |
 |--------|------|
 | **1** | Entitlement API + wire existing premium UI *(done)* |
-| **2** | Capacitor + Google Play Billing + restore |
+| **2** | Capacitor + Google Play Billing + restore · local daily check-in reminders (`@capacitor/local-notifications`) |
 | **3** | Firebase anonymous auth + purchase verify + closed testing |

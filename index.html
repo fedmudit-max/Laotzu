@@ -24,7 +24,7 @@
             z-index: 9999;
         }
     </style>
-    <link rel="stylesheet" href="./styles.css?v=26">
+    <link rel="stylesheet" href="./styles.css?v=28">
 </head>
 <body>
 
@@ -309,38 +309,6 @@
         </div>
     </div>
 
-    <!-- ═══ DAILY REMINDER ════════════════════════════════ -->
-    <div class="card collapse-card reminder-card" id="reminderPanelCard">
-        <button type="button" class="collapse-header" id="reminderPanelToggle" aria-expanded="false" aria-controls="reminderPanelBody">
-            <span class="collapse-header-row">
-                <span class="collapse-header-text">
-                    <span class="collapse-title">Daily Reminder</span>
-                    <span class="collapse-teaser" id="reminderPanelTeaser">Set a daily check-in time</span>
-                </span>
-                <span class="collapse-chevron" id="reminderPanelChevron" aria-hidden="true">›</span>
-            </span>
-        </button>
-        <div class="collapse-body" id="reminderPanelBody">
-            <div class="reminder-panel-inner">
-                <div class="reminder-row">
-                    <div class="reminder-row-text">
-                        <div class="reminder-row-label">Notify me daily</div>
-                        <div class="reminder-row-hint">A gentle nudge to log your day</div>
-                    </div>
-                    <label class="reminder-switch">
-                        <input type="checkbox" id="reminderEnabledToggle" aria-label="Enable daily reminder">
-                        <span class="reminder-switch-track" aria-hidden="true"></span>
-                    </label>
-                </div>
-                <div class="reminder-row reminder-row-time">
-                    <label class="reminder-row-label" for="reminderTimeInput">Reminder time</label>
-                    <input type="time" id="reminderTimeInput" class="reminder-time-input" value="20:00">
-                </div>
-                <p class="reminder-status" id="reminderStatus"></p>
-            </div>
-        </div>
-    </div>
-
     <!-- ═══ BACKUP & RESET ═══════════════════════════════ -->
     <div class="card collapse-card actions-card" id="backupResetCard">
         <button type="button" class="collapse-header" id="backupResetToggle" aria-expanded="false" aria-controls="backupResetBody">
@@ -611,18 +579,17 @@
 
     <script defer src="./constants.js?v=10"></script>
     <script defer src="./data.js?v=8"></script>
-    <script defer src="./migration.js?v=9"></script>
-    <script defer src="./logic.js?v=18"></script>
-    <script defer src="./entitlement.js?v=14"></script>
+    <script defer src="./migration.js?v=11"></script>
+    <script defer src="./logic.js?v=22"></script>
+    <script defer src="./entitlement.js?v=16"></script>
     <script defer src="./billing.js?v=17"></script>
     <script defer src="./firebase.js?v=10"></script>
     <script defer src="./backup.js?v=10"></script>
-    <script defer src="./reminders.js?v=1"></script>
-    <script defer src="./ui-main.js?v=16"></script>
+    <script defer src="./ui-main.js?v=20"></script>
     <script defer src="./ui-overlays.js?v=11"></script>
     <script defer src="./ui-actions.js?v=10"></script>
-    <script defer src="./ui-history.js?v=16"></script>
-    <script defer src="./ui-day.js?v=15"></script>
-    <script defer src="./boot.js?v=14"></script>
+    <script defer src="./ui-history.js?v=18"></script>
+    <script defer src="./ui-day.js?v=18"></script>
+    <script defer src="./boot.js?v=16"></script>
 </body>
 </html>

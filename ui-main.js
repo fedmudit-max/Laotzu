@@ -12,7 +12,6 @@ let monthPanelOpen = true;
 let chartPanelOpen = false;
 let lifetimePanelOpen = false;
 let backupResetPanelOpen = false;
-let reminderPanelOpen = false;
 let toastTimer = null;
 let confettiParticles = [];
 let confettiAnimId    = null;
@@ -43,8 +42,7 @@ function init() {
             saveToStorage(state);
         }
     }
-    // Single load-time write for trial: stamp + persist when onboarded and missing/invalid.
-    // Do not seed from render/layout — boot init owns this boundary.
+    // Onboarded users with no trial stamp get Calendar Day 1 window; never write pre-onboarding.
     if (ensureTrialStarted(state)) {
         saveToStorage(state);
     }
@@ -61,7 +59,6 @@ function saveAndRender() {
             ? 'Storage full — use Reset All Data to keep logging.'
             : 'Could not save your progress. Try again.');
     }
-    try { if (typeof syncDailyReminderSchedule === 'function') syncDailyReminderSchedule(); } catch (e) { /* ignore */ }
     renderAll();
 }
 
@@ -73,7 +70,6 @@ function renderAll(options) {
         renderChances,
         renderButtons,
         renderPremiumStatus,
-        renderDailyReminder,
         syncHistoryPanels,
     ];
     if (full) {
@@ -250,7 +246,7 @@ function renderButtons() {
         failBtn.disabled    = false;
         failBtn.textContent = count === 0
             ? '✕ I Slipped'
-            : `✕ I Slipped ${ORDINALS[count] || `${count}th`} time`;
+            : `✕ I Slipped ${ORDINALS[count] || `${count}th`} time today`;
 
     } else {
         successBtn.disabled = false;

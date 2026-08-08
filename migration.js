@@ -1,8 +1,8 @@
 /**
  * migration.js — Upgrade saved state when schema changes.
  *
- * Trial seed (trialStartedAt) is not migrated here — boot/init + onboarding own
- * that write (ensureTrialStarted) so load doesn't stamp without a clear save owner.
+ * Trial seed (trialStartedAt) is not migrated here — onboarding / init own
+ * that write (startPremiumTrial / ensureTrialStarted) from Calendar Day 1.
  */
 
 function migrateDailyLogToDateKeys(log) {

@@ -17,7 +17,7 @@
  * @typedef {Object} EntitlementSnapshot
  * @property {string} [trialStartedAt]  ISO-8601; '' if unset. Local trial start.
  *                                      Window = trialStartedAt + PREMIUM_TRIAL_DAYS.
- *                                      Written by ensureTrialStarted / onboarding only.
+ *                                      Written at onboarding / Day 1 (ensureTrialStarted / startPremiumTrial).
  * @property {string} [premiumUntil]    ISO-8601; '' if unset. Paid access end.
  *                                      Written only via updateEntitlementSnapshot.
  * @property {string} [lastVerifiedAt]  ISO-8601 reserved (S3 server verify).
@@ -60,7 +60,7 @@
  *
  * Product rule:
  *   Local trial lasts PREMIUM_TRIAL_DAYS (30) from a valid trialStartedAt.
- *   Trial write/seed is Storage/Journey (ensureTrialStarted) — not this file.
+ *   Trial write/seed is Storage/Journey at onboarding / Calendar Day 1 — not this file.
  *   All trial-tier UI uses Entitlement.hasPremiumAccess() only.
  *
  * Trial calc ownership: Entitlement

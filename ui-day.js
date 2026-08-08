@@ -294,16 +294,10 @@ function onboardingNext() {
     }
 }
 
+/** Skip and full slide flow both end here — trial starts from Calendar Day 1 either way. */
 function completeOnboarding() {
-    safeSet('onboardingComplete', 'true');
-
-    // Trial + dates before any UI work — after Let’s Begin, premium sections gate on trial.
     try {
-        startPremiumTrial();
-        if (!state.lastOpenedDate) {
-            state.lastOpenedDate = todayKey();
-            state.lastCheckedDate = todayKey();
-        }
+        beginJourneyAfterOnboarding();
         saveToStorage(state);
     } catch (err) {
         console.error('King onboarding save failed:', err);
@@ -313,8 +307,7 @@ function completeOnboarding() {
     if (overlay) {
         overlay.classList.add('hidden');
         // Keep intercepting clicks until fade-out finishes — otherwise the same
-        // “Let’s Begin” tap falls through (paywall / export / panels) and can open
-        // "Your free trial has ended" while trial is still being applied.
+        // “Let’s Begin” / Skip tap falls through (paywall / export / panels).
         setTimeout(function () {
             overlay.style.display = 'none';
             overlay.style.pointerEvents = 'none';
@@ -328,7 +321,6 @@ function completeOnboarding() {
     if (typeof closePremiumSheet === 'function') closePremiumSheet();
 
     try {
-        // Show premium UI (month grid, etc.) with active trial, fill heavy widgets.
         if (typeof unlockPremiumFeatures === 'function') {
             unlockPremiumFeatures();
         } else {
