@@ -520,32 +520,18 @@ function renderMonthGrid() {
         dateInfo[dateKey] = { status, slipCount };
     });
 
-    // Month totals for legend
-    let strongCount = 0, slipCount = 0, noLogCount = 0;
-    for (let d = 1; d <= daysInMonth; d++) {
-        const key = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-        const info = dateInfo[key];
-        const isFuture = key > realToday;
-        if (info && info.status === 'strong') strongCount++;
-        else if (info && info.status === 'slip') slipCount += info.slipCount;
-        else if (!isFuture) noLogCount++;
-    }
-
     if (legend) {
         legend.innerHTML = `
             <span class="month-legend-item">
                 <span class="legend-dot strong"></span>
-                <span class="month-legend-count strong">${strongCount}</span>
                 <span>Strong</span>
             </span>
             <span class="month-legend-item">
                 <span class="legend-dot slip"></span>
-                <span class="month-legend-count slip">${slipCount}</span>
-                <span>Slip${slipCount !== 1 ? 's' : ''}</span>
+                <span>Slip</span>
             </span>
             <span class="month-legend-item">
                 <span class="legend-dot empty"></span>
-                <span class="month-legend-count muted">${noLogCount}</span>
                 <span>No log</span>
             </span>`;
     }
@@ -584,7 +570,7 @@ function renderMonthGrid() {
     grid.innerHTML = html;
 
     // Whole-journey empty: no logs yet — show guidance over the sparse calendar.
-    var monthEmpty = !hasAnyDailyLogEntries() && strongCount === 0 && slipCount === 0;
+    var monthEmpty = !hasAnyDailyLogEntries();
     setHistoryEmptyVisible('monthEmptyState', monthEmpty);
     if (grid) grid.classList.toggle('is-empty', monthEmpty);
 }

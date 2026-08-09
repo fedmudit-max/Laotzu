@@ -1865,15 +1865,6 @@ button {
     gap: 5px;
 }
 
-.month-legend-count {
-    font-size: 13px;
-    font-weight: 700;
-}
-
-.month-legend-count.strong { color: var(--green); }
-.month-legend-count.slip   { color: #ff3b30; }
-.month-legend-count.muted  { color: var(--text-muted); }
-
 .legend-dot {
     width: 10px;
     height: 10px;
