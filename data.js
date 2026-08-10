@@ -81,49 +81,49 @@ const JOURNEY_SHOW_RATE = new Set([75, 100, 150, 200, 300, 400, 500, 750, 1000])
 
 const BRAIN_PHASES = [
     {
-        from: 0,   to: 3,
+        from: 0,   to: 4,
         emoji: '⚡', phase: 'Withdrawal',
         desc: 'Your dopamine receptors are recalibrating. Irritability, restlessness and flatness are normal — your brain is adjusting to life without supernormal stimulation.',
     },
     {
-        from: 3,   to: 14,
+        from: 4,   to: 15,
         emoji: '🌫️', phase: 'Flatline',
         desc: 'Libido drops, motivation feels low. This is your brain downregulating dopamine sensitivity — painful but a clear sign of healing. Hold the line.',
     },
     {
-        from: 14,  to: 30,
+        from: 15,  to: 31,
         emoji: '🌱', phase: 'Early Rewiring',
         desc: 'Prefrontal cortex activity is increasing. Impulse control improves, sleep deepens, social anxiety reduces. The fog is lifting.',
     },
     {
-        from: 30,  to: 60,
+        from: 31,  to: 61,
         emoji: '⚗️', phase: 'Neuroplasticity Window',
         desc: 'Dopamine D2 receptors are recovering. Grey matter is rebuilding. Motivation and mood stabilise. This is where real change takes root.',
     },
     {
-        from: 60,  to: 90,
+        from: 61,  to: 91,
         emoji: '🔥', phase: 'Identity Shift',
         desc: 'Measurable prefrontal cortex improvement. Better decisions, emotional regulation, deeper empathy. New neural pathways are solidifying.',
     },
     {
-        from: 90,  to: 180,
+        from: 91,  to: 181,
         emoji: '💎', phase: 'Consolidation',
         desc: 'Dopamine system largely recovered. Urges are weaker and less frequent. Relationships deepen. You are not the same person who started.',
     },
     {
-        from: 180, to: 365,
+        from: 181, to: 366,
         emoji: '🦅', phase: 'Long-term Stability',
         desc: 'Brain function normalised. What once required willpower now comes from identity. This is who you are.',
     },
     {
-        from: 365, to: Infinity,
+        from: 366, to: Infinity,
         emoji: '👑', phase: 'Mastery',
         desc: 'A year of freedom. Your brain has significantly rewired. The patterns you\'ve built are deep and lasting — but the daily choice still matters.',
     },
 ];
 
 const KNOWLEDGE_FACTS = [
-    { emoji: '🧠', headline: 'Porn activates the same dopamine pathways as addictive substances.', body: 'That is why the pull can feel so strong — and why every strong day you log still counts on the Journey.' },
+    { emoji: '🧠', headline: 'Pornography can strongly engage the brain\'s reward and motivation systems.', body: 'That is why the pull can feel so strong — and why every strong day you log still counts on the Journey.' },
     { emoji: '⚡', headline: 'Urges come in waves.', body: 'You do not have to win forever in one second. Ride it without acting. The point is the choice — not a guarantee it vanishes.' },
     { emoji: '💪', headline: 'Discipline is reps, not speeches.', body: 'Each time you log strong instead of slip, you bank a decision. That is how Kings train — one measured day at a time.' },
     { emoji: '🌱', headline: 'Two weeks of strong days changes the feel of the fight.', body: 'Fog lifts, sleep often improves, and decisions get cleaner. Stay honest with the log either way.' },

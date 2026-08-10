@@ -102,13 +102,13 @@ function logYesterday(result) {
     if (result === 'strong') {
         handleStrongDayUI(applyStrongDay({ logDate: yKey, suppressUI: false }), false);
     } else {
-        applySlipDay({ logDate: yKey, calDay: getCalendarDayForWallDate(yKey) });
-    }
-
-    // End date = yesterday when the 10th slip is attributed to N-1 (not open day N).
-    if (journeyIsOver(state)) {
-        completeEndJourney(yKey);
-        return;
+        var slipResult = applySlipDay({ logDate: yKey, calDay: getCalendarDayForWallDate(yKey) });
+        // End date = yesterday when the 10th slip is attributed to N-1 (not open day N).
+        if (slipResult && slipResult.applied && journeyIsOver(state)) {
+            completeEndJourney(yKey);
+            showToast(0, '10 Powers used. Journey complete.');
+            return;
+        }
     }
 
     clampCalendarDayToRealToday();
@@ -151,10 +151,16 @@ function renderBrainCard() {
             isCurrent = false;
         }
 
-        // Display 1–3 for Withdrawal (data still uses from:0 for phase math).
+        // Display inclusive day range (from..to-1); data uses half-open [from, to).
+        // Withdrawal uses from:0 so label starts at Day 1; Mastery shows 366+.
         var labelFrom = phase.from < 1 ? 1 : phase.from;
-        var toLabel   = phase.to === Infinity ? '365+' : phase.to;
+        var toLabel   = phase.to === Infinity
+            ? (labelFrom >= 366 ? '366+' : String(labelFrom) + '+')
+            : String(Math.max(labelFrom, phase.to - 1));
         var dayRange  = 'Day ' + labelFrom + '\u2013' + toLabel;
+        if (phase.to === Infinity) {
+            dayRange = 'Day ' + toLabel;
+        }
 
         var phaseLen = phaseEnd - phase.from;
         if (phaseLen <= 0) phaseLen = 1;
@@ -174,14 +180,13 @@ function renderBrainCard() {
                 ? '<span class="science-days-range">' + (freezeStyle ? 'Ended' : '\u2713 Done') + '</span>'
                 : '<span class="science-days-range">' + dayRange + '</span>';
 
-        var progressBar = isCurrent ? (
+        // Mastery (open-ended) has no progress bar or countdown label.
+        var progressBar = (isCurrent && phase.to !== Infinity) ? (
             '<div class="science-progress-track">' +
                 '<div class="science-progress-fill" style="width:' + pct + '%"></div>' +
             '</div>' +
             '<div class="science-progress-label">' +
-                (daysLeft
-                    ? daysLeft + ' day' + (daysLeft !== 1 ? 's' : '') + ' to next phase'
-                    : 'Final stage reached') +
+                daysLeft + ' day' + (daysLeft !== 1 ? 's' : '') + ' to next phase' +
             '</div>'
         ) : '';
 

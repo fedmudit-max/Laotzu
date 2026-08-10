@@ -153,12 +153,16 @@ function recordFailure() {
     lastSlipAt = now;
 
     state.lastOpenedDate = todayKey();
-    const failures = recordSlipToday();
+    const result = recordSlipToday();
+    if (!result || !result.applied) return;
+
     if (journeyIsOver(state)) {
         completeEndJourney(todayKey());
+        showToast(0, '10 Powers used. Journey complete.');
     } else {
         chartPage = -1;
         saveAndRender();
-        showToast(0, `${failures} power${failures > 1 ? 's' : ''} used. Keep moving forward. Journey Continues.`);
+        const failures = result.failures;
+        showToast(0, `${failures} Power${failures === 1 ? '' : 's'} used. Keep moving forward. Journey Continues.`);
     }
 }

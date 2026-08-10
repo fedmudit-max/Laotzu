@@ -1187,8 +1187,16 @@ function advanceCalendarDay() {
     return true;
 }
 
-/** Log a slip for a given calendar day. Each slip uses one journey chance; slipCount tracks multiples same day. */
+/**
+ * Log a slip for a given calendar day. Each slip uses one journey chance; slipCount tracks multiples same day.
+ * No-ops when the Journey is already over or awaiting the next one (same gate as applyStrongDay).
+ * @returns {{ applied: boolean, failures: number }}
+ */
 function applySlipDay({ logDate, calDay }) {
+    if (!canLogToday()) {
+        return { applied: false, failures: state.score.failures };
+    }
+
     const firstSlipOfDay = state.todayStatus === 'none';
     const ended = streakSegmentBeforeSlip();
     state.currentJourneyStreaks.push(ended);
@@ -1218,12 +1226,12 @@ function applySlipDay({ logDate, calDay }) {
     state.todayFailCount++;
     updateBestJourney();
     markTodayStatus(logDate, 'failed');
+    return { applied: true, failures: state.score.failures };
 }
 
 /** Slip for today — single path used by manual fail button. */
 function recordSlipToday() {
-    applySlipDay({ logDate: todayKey(), calDay: state.calendarDay });
-    return state.score.failures;
+    return applySlipDay({ logDate: todayKey(), calDay: state.calendarDay });
 }
 
 // ════════════════════════════════════════════════════════
