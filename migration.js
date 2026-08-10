@@ -41,5 +41,26 @@ function runStateMigrations(merged, saved) {
     merged.dailyLog = migrateDailyLogToDateKeys(saved.dailyLog || merged.dailyLog);
     merged.longestStreakAtStreakStart = migrateLongestStreakAtStart(merged, saved);
     syncTodaySlipCountInLog(merged);
+
+    // Seed journey/app start dates for saves that predate these fields.
+    if (!merged.journeyStartDate || !/^\d{4}-\d{2}-\d{2}$/.test(merged.journeyStartDate)) {
+        merged.journeyStartDate = typeof inferJourneyStartFromLog === 'function'
+            ? inferJourneyStartFromLog(merged)
+            : (merged.lastOpenedDate || '');
+    }
+    if (!merged.appStartDate || !/^\d{4}-\d{2}-\d{2}$/.test(merged.appStartDate)) {
+        var earliest = '';
+        var log = merged.dailyLog || {};
+        for (var key in log) {
+            if (!Object.prototype.hasOwnProperty.call(log, key)) continue;
+            var entry = log[key];
+            if (!entry || typeof entry !== 'object') continue;
+            var date = entry.date || (/^\d{4}-\d{2}-\d{2}$/.test(key) ? key : '');
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
+            if (!earliest || date < earliest) earliest = date;
+        }
+        merged.appStartDate = earliest || merged.journeyStartDate || '';
+    }
+
     return merged;
 }

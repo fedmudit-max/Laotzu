@@ -210,6 +210,10 @@ function getDefaultState() {
         todayFailCount: 0,
         lastOpenedDate: '',
         lastCheckedDate: '',
+        /** Wall date (YYYY-MM-DD) of the current journey's Day 1 — resets each new journey. */
+        journeyStartDate: '',
+        /** Wall date of first-ever Day 1 (install) — never resets; month grid pre-journey grey. */
+        appStartDate: '',
         attempt: 1,
         score: { success: 0, failures: 0 },
         currentStreak: 0,
@@ -350,11 +354,19 @@ function beginJourneyAfterOnboarding() {
     if (!state.calendarDay || state.calendarDay < 1) {
         state.calendarDay = 1;
     }
+    var dayOne = todayKey();
     if (!state.lastOpenedDate) {
-        state.lastOpenedDate = todayKey();
+        state.lastOpenedDate = dayOne;
     }
     if (!state.lastCheckedDate) {
         state.lastCheckedDate = state.lastOpenedDate;
+    }
+    // Current journey Day 1 + permanent install anchor for the month grid.
+    if (!state.journeyStartDate) {
+        state.journeyStartDate = dayOne;
+    }
+    if (!state.appStartDate) {
+        state.appStartDate = state.journeyStartDate;
     }
 
     startPremiumTrial();
@@ -1027,24 +1039,77 @@ function applyStrongDay({ logDate, suppressUI = false } = {}) {
     };
 }
 
-function getJourneyAnchorWallDate() {
-    const log = state.dailyLog || {};
-    let dayOneDate = '';
-    let earliest = '';
-    for (const entry of Object.values(log)) {
+/**
+ * Infer current journey Day 1 from logs (legacy saves without journeyStartDate).
+ * Prefer entry.day === 1 whose date is latest among "day 1" markers — not oldest.
+ */
+function inferJourneyStartFromLog(s) {
+    s = s || state;
+    var log = s.dailyLog || {};
+    var dayOneDates = [];
+    var earliest = '';
+    for (var key in log) {
+        if (!Object.prototype.hasOwnProperty.call(log, key)) continue;
+        var entry = log[key];
         if (!entry || typeof entry !== 'object') continue;
-        const date = entry.date || '';
+        var date = entry.date || (/^\d{4}-\d{2}-\d{2}$/.test(key) ? key : '');
         if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
-        if (entry.day === 1) dayOneDate = date;
+        if (entry.day === 1) dayOneDates.push(date);
         if (!earliest || date < earliest) earliest = date;
     }
-    if (dayOneDate) return dayOneDate;
-    if (earliest && state.calendarDay > 1) return earliest;
-    return state.lastOpenedDate || todayKey();
+    if (dayOneDates.length) {
+        dayOneDates.sort();
+        return dayOneDates[dayOneDates.length - 1];
+    }
+    if (earliest && (s.calendarDay || 1) > 1) return earliest;
+    if (s.lastOpenedDate && /^\d{4}-\d{2}-\d{2}$/.test(s.lastOpenedDate)) {
+        return s.lastOpenedDate;
+    }
+    return todayKey();
 }
 
 /**
- * Journey Day number for a wall date (Day 1 = journey start wall day).
+ * Wall date of the current journey's Day 1.
+ * Resets on every new journey so Day always starts at 1 again.
+ */
+function getJourneyAnchorWallDate() {
+    if (state.journeyStartDate && /^\d{4}-\d{2}-\d{2}$/.test(state.journeyStartDate)) {
+        return state.journeyStartDate;
+    }
+    var inferred = inferJourneyStartFromLog(state);
+    state.journeyStartDate = inferred;
+    return inferred;
+}
+
+/**
+ * First-ever journey / install wall date — month grid greys days before this.
+ * Does not reset when a new journey begins.
+ */
+function getAppStartWallDate() {
+    if (state.appStartDate && /^\d{4}-\d{2}-\d{2}$/.test(state.appStartDate)) {
+        return state.appStartDate;
+    }
+    var log = state.dailyLog || {};
+    var earliest = '';
+    for (var key in log) {
+        if (!Object.prototype.hasOwnProperty.call(log, key)) continue;
+        var entry = log[key];
+        if (!entry || typeof entry !== 'object') continue;
+        var date = entry.date || (/^\d{4}-\d{2}-\d{2}$/.test(key) ? key : '');
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
+        if (!earliest || date < earliest) earliest = date;
+    }
+    if (earliest) {
+        state.appStartDate = earliest;
+        return earliest;
+    }
+    var start = getJourneyAnchorWallDate();
+    state.appStartDate = start;
+    return start;
+}
+
+/**
+ * Journey Day number for a wall date (Day 1 = this journey's start).
  * Keeps Day aligned with real calendar progression across gaps.
  */
 function getCalendarDayForWallDate(dateKey) {
@@ -1061,14 +1126,14 @@ function getCalendarDayForWallDate(dateKey) {
     return day;
 }
 
-/** Journey day N cannot exceed wall days from journey anchor through real today. */
+/** Journey day N cannot exceed wall days from this journey's Day 1 through real today. */
 function getMaxCalendarDayForToday() {
     return Math.max(1, daysBetweenKeys(getJourneyAnchorWallDate(), realTodayKey()) + 1);
 }
 
 /**
- * Day counter in the UI = wall days since Journey Day 1 through real today.
- * Independent of score.success (strong days). A slip day still advances "Day".
+ * Day counter in the UI = wall days since this journey's Day 1 through real today.
+ * Resets to 1 when a new journey begins.
  */
 function getDisplayCalendarDay() {
     return getMaxCalendarDayForToday();
@@ -1245,11 +1310,17 @@ function archiveCompletedJourney() {
 function beginNextJourney() {
     if (!isAwaitingNextJourney()) return;
 
+    var dayOne = todayKey();
+
     state.attempt++;
     state.score = { success: 0, failures: 0 };
     state.longestStreakAtStreakStart = state.longestStreak;
     state.currentStreak = 0;
     state.calendarDay = 1;
+    // New journey Day 1 = this wall day (install-wide appStartDate stays unchanged).
+    state.journeyStartDate = dayOne;
+    state.lastOpenedDate = dayOne;
+    state.lastCheckedDate = dayOne;
     state.currentJourneyStreaks = [];
     state.recordCelebrated = false;
     state.todayStatus = 'none';

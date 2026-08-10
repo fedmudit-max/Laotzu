@@ -522,10 +522,13 @@ function renderMonthGrid() {
         dateInfo[dateKey] = { status, slipCount };
     });
 
-    // Journey start wall date — days before this stay grey (pre-install / before Day 1).
-    const journeyStart = (typeof getJourneyAnchorWallDate === 'function')
-        ? getJourneyAnchorWallDate()
-        : (state.lastOpenedDate || realToday);
+    // Journey start wall date for current journey Day index.
+    // App install / first Day 1 — grey month cells only before this (does not reset on new journey).
+    const journeyStart = (typeof getAppStartWallDate === 'function')
+        ? getAppStartWallDate()
+        : ((typeof getJourneyAnchorWallDate === 'function')
+            ? getJourneyAnchorWallDate()
+            : (state.lastOpenedDate || realToday));
 
     // Day labels
     const DAY_LABELS = ['S','M','T','W','T','F','S'];
