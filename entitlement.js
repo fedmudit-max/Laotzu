@@ -58,8 +58,12 @@
  *   - This file has zero side effects: no DOM, no storage writes,
  *     no billing, no Firebase.
  *
+ * Product free tier (after trial or if never subscribed):
+ *   Daily strong/slip logging and journey score continue without a day limit.
+ *   Premium purchase only unlocks UI features via premiumUntil — never resets score.
+ *
  * Product rule:
- *   Local trial lasts PREMIUM_TRIAL_DAYS (30) from a valid trialStartedAt.
+ *   Local trial lasts PREMIUM_TRIAL_DAYS from a valid trialStartedAt.
  *   Trial write/seed is Storage/Journey at onboarding / Calendar Day 1 — not this file.
  *   All trial-tier UI uses Entitlement.hasPremiumAccess() only.
  *

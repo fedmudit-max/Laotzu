@@ -14,6 +14,13 @@ function showYesterdayReminder() {
     }
 }
 
+/**
+ * Day / monthly-grid rules (validated product contract):
+ *  1. Journey "Day" runs in parallel with real wall days from Journey Day 1 (install).
+ *  2. From install forward, past days should resolve to strong or slip (not empty holes).
+ *  3. Missed days through N-2 auto-write strong (green). Yesterday (N-1) is always asked.
+ *  4. Today (N) is never auto — user logs strong or slip.
+ */
 function checkNewDay() {
     if (!safeGet('onboardingComplete')) return;
 
@@ -35,81 +42,56 @@ function checkNewDay() {
         return;
     }
 
-    if (state.lastCheckedDate === today) return;
+    if (state.lastCheckedDate === today) {
+        clampCalendarDayToRealToday();
+        return;
+    }
 
     if (!state.lastOpenedDate) {
         state.lastOpenedDate = today;
         state.lastCheckedDate = today;
+        clampCalendarDayToRealToday();
         saveToStorage(state);
         return;
     }
 
-    if (state.lastOpenedDate === today) {
-        state.lastCheckedDate = today;
-        saveToStorage(state);
-        return;
-    }
+    const yesterday = getYesterdayKey(today);
+    const fillResults = autoStrongAbsentDays(today);
 
-    const diffDays = daysBetweenKeys(state.lastOpenedDate, today);
-    const yesterday = getYesterdayKey(today); // N-1
-
-    // Gap > 1 day: auto-strong through N-2, then ask about N-1; N stays unlogged
-    if (diffDays > 1) {
-        applyMultiDayCatchUp(today);
-        return;
-    }
-
-    // Gap = 1 day: ask about N-1 only; N stays unlogged
-    if (diffDays === 1) {
-        ensureTodayUnloggedIfNeeded(today);
-        if (!isWallDateLogged(yesterday)) {
-            showYesterdayReminder();
-            return;
-        }
-        advanceCalendarDay();
-        state.lastOpenedDate = today;
-        state.lastCheckedDate = today;
-        chartPage = -1;
-        saveToStorage(state);
-        renderAll();
-        return;
-    }
-}
-
-function applyMultiDayCatchUp(today) {
-    today = today || todayKey();
-    const yesterday = getYesterdayKey(today); // N-1
-    const results = autoStrongAbsentDays(today);
-
-    for (const { result, suppressUI } of results) {
+    for (const { result, suppressUI } of fillResults) {
         handleStrongDayUI(result, suppressUI);
     }
 
     ensureTodayUnloggedIfNeeded(today);
-
+    clampCalendarDayToRealToday();
     chartPage = -1;
 
-    if (results.length) {
+    if (fillResults.length) {
         saveToStorage(state);
+        const last = fillResults[fillResults.length - 1];
+        if (last && !last.suppressUI && last.result) {
+            showToast(last.result.streak, 'Missed days counted as strong 💪');
+        }
     }
 
-    const last = results[results.length - 1];
-    if (last && !last.suppressUI && last.result) {
-        showToast(last.result.streak, 'Missed days counted as strong 💪');
-    }
-
-    if (!isWallDateLogged(yesterday)) {
+    const anchor = getJourneyAnchorWallDate();
+    if (yesterday >= anchor && !isWallDateLogged(yesterday)) {
         showYesterdayReminder();
+        // Leave lastCheckedDate unset so reload re-prompts until answered.
         return;
     }
 
-    if (state.lastOpenedDate < today) {
-        advanceCalendarDay();
-    }
     state.lastOpenedDate = today;
     state.lastCheckedDate = today;
     saveToStorage(state);
     renderAll();
+}
+
+/** Same fill + yesterday ask as checkNewDay. */
+function applyMultiDayCatchUp(today) {
+    void today;
+    state.lastCheckedDate = '';
+    checkNewDay();
 }
 
 function logYesterday(result) {
@@ -119,11 +101,12 @@ function logYesterday(result) {
     if (result === 'strong') {
         handleStrongDayUI(applyStrongDay({ logDate: yKey, suppressUI: false }), false);
     } else {
-        applySlipDay({ logDate: yKey, calDay: state.calendarDay });
+        applySlipDay({ logDate: yKey, calDay: getCalendarDayForWallDate(yKey) });
     }
 
     if (journeyIsOver(state)) { completeEndJourney(); return; }
-    advanceCalendarDay();
+
+    clampCalendarDayToRealToday();
     state.lastOpenedDate = todayKey();
     state.lastCheckedDate = todayKey();
     chartPage = -1;
@@ -258,15 +241,26 @@ function renderKnowledgeCard() {
 // ════════════════════════════════════════════════════════
 
 
+/** Reset slides/dots to first screen (needed after reset — DOM keeps last active slide). */
+function resetOnboardingUI() {
+    currentSlide = 0;
+    for (var i = 0; i < TOTAL_SLIDES; i++) {
+        var slide = document.getElementById('slide-' + i);
+        var dot = document.getElementById('dot-' + i);
+        if (slide) slide.classList.toggle('active', i === 0);
+        if (dot) dot.classList.toggle('active', i === 0);
+    }
+    var btn = document.getElementById('onboardingBtn');
+    if (btn) btn.textContent = 'Next →';
+}
+
 function checkOnboarding() {
     const overlay = document.getElementById('onboardingOverlay');
-    const btn = document.getElementById('onboardingBtn');
     if (!overlay) return;
 
     const done = safeGet('onboardingComplete');
     if (!done) {
-        currentSlide = 0;
-        if (btn) btn.textContent = 'Next →';
+        resetOnboardingUI();
         overlay.style.display = 'flex';
         overlay.style.pointerEvents = 'auto';
         overlay.classList.remove('hidden');
@@ -285,9 +279,11 @@ function onboardingNext() {
         document.getElementById(`slide-${currentSlide}`).classList.add('active');
         document.getElementById(`dot-${currentSlide}`).classList.add('active');
 
-        // Last slide — change button to "Let's Begin"
+        // Last slide — final CTA
         if (currentSlide === TOTAL_SLIDES - 1) {
-            document.getElementById('onboardingBtn').textContent = "Let's Begin 💪";
+            document.getElementById('onboardingBtn').textContent = 'Start Your Journey →';
+        } else {
+            document.getElementById('onboardingBtn').textContent = 'Next →';
         }
     } else {
         completeOnboarding();

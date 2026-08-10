@@ -682,6 +682,7 @@ function journeyIsOver(s) {
 }
 
 function canLogToday() {
+    // Always available free (trial, paid, or basic after trial). Not gated by Entitlement.
     return !isAwaitingNextJourney() && !journeyIsOver(state);
 }
 
@@ -943,6 +944,7 @@ function markTodayStatus(dateKey, status) {
 
 /**
  * Log a strong day. Updates state only — UI layer handles celebrations.
+ * One wall date can only contribute once to Journey strong-day count.
  * @returns {{ streak, successCount, milestoneHit, isNewRecord, prevLongest, recordToBeat }}
  */
 function applyStrongDay({ logDate, suppressUI = false } = {}) {
@@ -959,7 +961,33 @@ function applyStrongDay({ logDate, suppressUI = false } = {}) {
     }
 
     const dateKey = clampDateKeyToRealToday(logDate || todayKey());
-    const calDay = state.calendarDay;
+
+    // Already strong that wall day — never double-count Journey score.
+    if (isWallDateLogged(dateKey)) {
+        var existing = null;
+        var log = state.dailyLog || {};
+        if (log[dateKey]) existing = log[dateKey];
+        else {
+            for (var k in log) {
+                if (log[k] && log[k].date === dateKey) { existing = log[k]; break; }
+            }
+        }
+        if (existing && logStatus(existing) === 'strong') {
+            return {
+                streak: state.currentStreak,
+                successCount: state.score.success,
+                milestoneHit: null,
+                personalBestCrossing: false,
+                isNewRecord: false,
+                prevLongest: state.longestStreak,
+                recordToBeat: state.longestStreakAtStreakStart,
+            };
+        }
+    }
+
+    // Journey day number follows wall timeline from Day 1, not a fragile counter.
+    const calDay = getCalendarDayForWallDate(dateKey);
+    if ((state.calendarDay || 1) < calDay) state.calendarDay = calDay;
 
     state.score.success++;
     state.currentStreak++;
@@ -1015,19 +1043,43 @@ function getJourneyAnchorWallDate() {
     return state.lastOpenedDate || todayKey();
 }
 
+/**
+ * Journey Day number for a wall date (Day 1 = journey start wall day).
+ * Keeps Day aligned with real calendar progression across gaps.
+ */
+function getCalendarDayForWallDate(dateKey) {
+    dateKey = clampDateKeyToRealToday(dateKey || todayKey());
+    var anchor = getJourneyAnchorWallDate();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey) || !/^\d{4}-\d{2}-\d{2}$/.test(anchor)) {
+        return Math.max(1, state.calendarDay || 1);
+    }
+    if (dateKey < anchor) return 1;
+    var max = getMaxCalendarDayForToday();
+    var day = daysBetweenKeys(anchor, dateKey) + 1;
+    if (day < 1) day = 1;
+    if (day > max) day = max;
+    return day;
+}
+
 /** Journey day N cannot exceed wall days from journey anchor through real today. */
 function getMaxCalendarDayForToday() {
     return Math.max(1, daysBetweenKeys(getJourneyAnchorWallDate(), realTodayKey()) + 1);
 }
 
-/** Day counter shown in UI — never ahead of real today. */
+/**
+ * Day counter in the UI = wall days since Journey Day 1 through real today.
+ * Independent of score.success (strong days). A slip day still advances "Day".
+ */
 function getDisplayCalendarDay() {
-    return Math.min(state.calendarDay || 1, getMaxCalendarDayForToday());
+    return getMaxCalendarDayForToday();
 }
 
 function clampCalendarDayToRealToday() {
     const max = getMaxCalendarDayForToday();
-    if ((state.calendarDay || 1) > max) {
+    // Catch up after multi-day gaps where calendarDay lagged behind wall time.
+    if ((state.calendarDay || 1) < max) {
+        state.calendarDay = max;
+    } else if ((state.calendarDay || 1) > max) {
         state.calendarDay = max;
         if (!isWallDateLogged(realTodayKey())) {
             state.todayStatus = 'none';
@@ -1038,8 +1090,13 @@ function clampCalendarDayToRealToday() {
 
 /** Step calendar day forward only when wall-clock allows it (never past real today). */
 function advanceCalendarDay() {
-    clampCalendarDayToRealToday();
-    if (state.calendarDay >= getMaxCalendarDayForToday()) {
+    // Do not pre-clamp up to max — mid catch-up needs to step 2 → 3 → 4.
+    const max = getMaxCalendarDayForToday();
+    if ((state.calendarDay || 1) > max) {
+        state.calendarDay = max;
+        return false;
+    }
+    if ((state.calendarDay || 1) >= max) {
         return false;
     }
     state.calendarDay++;
@@ -1059,6 +1116,10 @@ function applySlipDay({ logDate, calDay }) {
     state.recordCelebrated = false;
 
     const wallDate = clampDateKeyToRealToday(logDate);
+    const dayNum = getCalendarDayForWallDate(wallDate);
+    if (calDay == null || calDay < dayNum) calDay = dayNum;
+    if ((state.calendarDay || 1) < dayNum) state.calendarDay = dayNum;
+
     // Freeze UI only from this days first slip (0 or more strong) — never reuse older segments.
     if (firstSlipOfDay) {
         state.lastFreezeStreak = ended;
@@ -1097,62 +1158,50 @@ function buildGapDayQueue(lastOpenedDate, today) {
 }
 
 /**
- * Wall dates from lastOpened through N-2 (inclusive), chronological, unlogged only.
- * N-1 (yesterday) and N (today) are never included.
+ * Wall dates that must auto-log as strong (green missed days):
+ * Journey Day 1 (install / start) through N-2 inclusive.
+ * Never includes yesterday (N-1 — always asked) or today (N — always user-logged).
  */
-function collectAutoStrongDates(lastOpenedDate, today) {
+function collectAutoStrongDates(_lastOpenedDate, today) {
     today = today || todayKey();
     const nMinus2 = getDayBeforeYesterdayKey(today);
+    const anchor = getJourneyAnchorWallDate();
     const dates = [];
 
-    if (!lastOpenedDate || lastOpenedDate >= today) return dates;
-    if (daysBetweenKeys(lastOpenedDate, today) <= 1) return dates;
+    if (!anchor || !/^\d{4}-\d{2}-\d{2}$/.test(anchor)) return dates;
+    if (nMinus2 < anchor) return dates;
 
-    if (lastOpenedDate <= nMinus2 && !isWallDateLogged(lastOpenedDate)) {
-        dates.push(lastOpenedDate);
+    let d = anchor;
+    while (d <= nMinus2) {
+        if (!isWallDateLogged(d)) dates.push(d);
+        d = addDaysToKey(d, 1);
     }
-
-    buildGapDayQueue(lastOpenedDate, today).forEach(function (dateKey) {
-        if (dateKey <= nMinus2 && !isWallDateLogged(dateKey) && dates.indexOf(dateKey) === -1) {
-            dates.push(dateKey);
-        }
-    });
-
     return dates;
 }
 
 /**
- * Auto-strong for day N-2 and all earlier unlogged gap days.
- * N-1 is always asked; N is always left for the user to log.
+ * Auto-strong every unlogged wall day from Journey Day 1 through N-2.
+ * Score + dailyLog write actual "strong" (monthly grid / Journey stay aligned).
+ * N-1 is always asked; N is always left for the user.
  * @returns {Array<{result: object, suppressUI: boolean}>}
  */
 function autoStrongAbsentDays(today) {
     today = today || todayKey();
     const results = [];
-
-    if (!state.lastOpenedDate || state.lastOpenedDate === today) {
-        return results;
-    }
-
-    if (daysBetweenKeys(state.lastOpenedDate, today) <= 1) {
-        return results;
-    }
-
     const dates = collectAutoStrongDates(state.lastOpenedDate, today);
-    const lastOpened = state.lastOpenedDate;
 
     for (let i = 0; i < dates.length; i++) {
+        if (journeyIsOver(state)) break;
         const dateKey = dates[i];
         const isLast = i === dates.length - 1;
-        if (i > 0 || dateKey !== lastOpened) {
-            if (!advanceCalendarDay()) break;
-        }
         results.push({
             result: applyStrongDay({ logDate: dateKey, suppressUI: !isLast }),
             suppressUI: !isLast,
         });
     }
 
+    // Journey Day counter tracks real wall days from Day 1.
+    clampCalendarDayToRealToday();
     return results;
 }
 

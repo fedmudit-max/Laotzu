@@ -18,11 +18,12 @@ const PREMIUM_SUBSCRIPTION_DAYS = 365;
 const PREMIUM_FEATURES = [
     'Weekly timeline — one week at a time',
     'Streak, Journey & Progress milestones',
-    'Daily quotes card',
-    'Monthly grid & progress graph',
+    'Daily knowledge cards',
+    'Monthly grid',
+    'Progress',
     'Export & import progress',
 ];
 
-/** Always shown under the feature list — trial users should know backup is Premium after trial. */
+/** Shown under the feature list on the premium panel. */
 const PREMIUM_BACKUP_NOTE =
-    'Export and import require Premium after the trial. Download a backup before your free days end if you want a copy of your progress.';
+    'Daily logging stays free forever. Above features need Premium after the trial. Buying Premium never resets your Journey score.';

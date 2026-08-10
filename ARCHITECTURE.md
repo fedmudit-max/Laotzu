@@ -16,6 +16,8 @@ This document defines implementation boundaries. Changes require an implementati
 4. **Paid entitlement** comes from verified purchases (later) and is **cached locally**.
 5. **Architecture changes only when implementation reveals a real need.**
 6. **Local trial** is separate from remote paid entitlement; `hasPremiumAccess` is either/or.
+7. **Basic logging is free forever** after trial ends: strong / slip / journey score, unlimited calendar days.
+8. **Buying Premium only unlocks features** (`premiumUntil`). Journey score, streaks, and `dailyLog` are never cleared by purchase.
 
 ---
 
@@ -137,5 +139,5 @@ Entitlement.subscriptionExpiresLabel()
 | Sprint | Work |
 |--------|------|
 | **1** | Entitlement API + wire existing premium UI *(done)* |
-| **2** | Capacitor + Google Play Billing + restore · local daily check-in reminders (`@capacitor/local-notifications`) |
+| **2** | Capacitor + Google Play Billing + restore · local daily check-in reminders (`@capacitor/local-notifications`) · purchase unlocks UI only (score preserved) |
 | **3** | Firebase anonymous auth + purchase verify + closed testing |

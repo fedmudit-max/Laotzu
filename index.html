@@ -24,7 +24,7 @@
             z-index: 9999;
         }
     </style>
-    <link rel="stylesheet" href="./styles.css?v=29">
+    <link rel="stylesheet" href="./styles.css?v=41">
 </head>
 <body>
 
@@ -48,8 +48,8 @@
 
 <div class="container">
 
-    <!-- ═══ PRIMARY STACK (score + actions, no outer card) ═ -->
-    <div class="primary-stack">
+    <!-- ═══ PRIMARY STACK (score + actions — free forever) ═ -->
+    <div class="primary-stack" id="primaryStack">
 
         <!-- Day counter + Best Journey -->
         <div class="top-row">
@@ -207,15 +207,24 @@
                     <p class="history-empty-sub">Log a strong day or a slip — each day will show up here.</p>
                 </div>
             </div>
-            <div class="month-legend" id="monthLegend"></div>
+            <div class="month-legend" id="monthLegend" aria-label="Calendar color key">
+                <span class="month-legend-item">
+                    <span class="legend-swatch strong" aria-hidden="true"></span>
+                    <span>Strong day</span>
+                </span>
+                <span class="month-legend-item">
+                    <span class="legend-swatch slip" aria-hidden="true"></span>
+                    <span>Slip</span>
+                </span>
+            </div>
         </div>
     </div>
 
-    <!-- ═══ PROGRESS CHART (collapsible) ═══════════════════ -->
+    <!-- ═══ PROGRESS (collapsible) ═══════════════════ -->
     <div class="card collapse-card" id="chartPanelCard">
         <button type="button" class="collapse-header" id="chartPanelToggle" aria-expanded="false" aria-controls="chartPanelBody">
             <span class="collapse-header-row">
-                <span class="collapse-title">Progress</span>
+                <span class="collapse-title" id="chartPanelTitle">Progress</span>
                 <span class="collapse-chevron" id="chartPanelChevron" aria-hidden="true">›</span>
             </span>
         </button>
@@ -275,13 +284,12 @@
         </div>
     </div>
 
-    <!-- ═══ LEARN THE JOURNEY ════════════════════════════ -->
+    <!-- ═══ HOW KING WORKS ═══════════════════════════════ -->
     <div class="card collapse-card learn-journey-card" id="learnJourneyCard">
         <button type="button" class="collapse-header" id="learnJourneyToggle" data-action="open-learn-journey" aria-haspopup="dialog">
             <span class="collapse-header-row">
                 <span class="collapse-header-text">
-                    <span class="collapse-title">📖 Learn the Journey</span>
-                    <span class="collapse-teaser">Why streaks, journeys, and progress matter</span>
+                    <span class="collapse-title">How King Works</span>
                 </span>
                 <span class="collapse-chevron" aria-hidden="true">›</span>
             </span>
@@ -330,61 +338,104 @@
 
 </div><!-- .container -->
 
-<!-- ── Learn the Journey ── -->
+<!-- ── How King Works ── -->
 <div class="overlay learn-journey-overlay" id="learnJourneyOverlay" aria-hidden="true" role="presentation">
     <div class="overlay-card learn-journey-card-panel" role="dialog" aria-modal="true" aria-labelledby="learnJourneyTitle">
         <div class="learn-journey-header">
-            <h2 class="learn-journey-title" id="learnJourneyTitle">📖 Learn the Journey</h2>
+            <h2 class="learn-journey-title" id="learnJourneyTitle">How King Works</h2>
             <button type="button" class="learn-journey-close" data-action="close-learn-journey" aria-label="Close">✕</button>
         </div>
         <div class="learn-journey-scroll">
+
             <section class="learn-section">
-                <h3 class="learn-section-title">Why this app?</h3>
-                <p class="learn-section-body">This app helps you build self-control through consistent daily progress. It focuses on long-term improvement, not perfection.</p>
+                <h3 class="learn-section-title">Two problems</h3>
+                <p class="learn-section-label">1. When a streak goes to zero, it feels like your progress did too.</p>
+                <p class="learn-section-body">Most recovery apps ask one question: how many days can you stay strong?</p>
+                <p class="learn-section-body">And that's useful. But there's a problem.</p>
+                <p class="learn-section-body">You build a streak. You feel proud. You start feeling like you've beaten the problem.</p>
+                <p class="learn-section-body">Then you slip. The streak goes back to zero. It happens again. And again.</p>
+                <p class="learn-section-body">Soon, you start wondering if the problem isn't the system—it's you.</p>
+                <p class="learn-section-body">You forget the days you stayed strong. The effort. The progress. Everything you've accomplished seems to disappear behind one number.</p>
+                <p class="learn-section-body">You feel like you're starting over. Eventually, you give up. Maybe you even uninstall the app.</p>
             </section>
 
             <section class="learn-section">
-                <h3 class="learn-section-title">Journey vs Streak</h3>
-                <p class="learn-section-body">A streak shows your current run.</p>
-                <p class="learn-section-body">A Journey shows how much you've improved over time.</p>
-                <p class="learn-section-body">One relapse may end a streak, but it doesn't erase your progress.</p>
+                <p class="learn-section-label">2. Urges can overpower logic.</p>
+                <p class="learn-section-body">We're emotional creatures.</p>
+                <p class="learn-section-body">When a strong urge takes over, emotion can overpower reason. You may know what you should do, but knowing isn't always enough in that moment.</p>
+                <blockquote class="learn-quote learn-quote-emphasis">
+                    You need more than willpower. You need a system.
+                </blockquote>
             </section>
 
             <section class="learn-section">
-                <h3 class="learn-section-title">How to use the app</h3>
+                <h3 class="learn-section-title">A system to measure yourself</h3>
+                <p class="learn-section-body">We thought progress could be measured differently.</p>
+                <p class="learn-section-body">Don't just count your streak. Measure your Journey.</p>
+                <p class="learn-section-body">Every Journey starts with 10 Powers. Think of your Powers as something valuable—something you don't want to waste.</p>
+                <p class="learn-section-body">Every time you slip, one Power is gone.</p>
+                <p class="learn-powers" aria-label="Powers countdown">10 → 9 → 8 → 7…</p>
+                <p class="learn-section-body">When you see 9 Powers left, you should feel: “I lost one. I don't want to lose another.”</p>
+                <p class="learn-section-body">That's the idea behind loss aversion: losing something valuable can make us more careful about protecting what remains.</p>
+                <p class="learn-section-body">Your goal is to protect your Powers and see how far you can go before they're gone.</p>
+                <p class="learn-section-body">When all 10 Powers are used, that Journey ends. Then you begin again—with 10 new Powers and a new benchmark to beat.</p>
+                <blockquote class="learn-quote learn-quote-emphasis">
+                    A Power can be lost. Your progress cannot.<br>
+                    One slip may end a streak. It doesn't erase your Journey.
+                </blockquote>
+            </section>
+
+            <section class="learn-section">
+                <h3 class="learn-section-title">How far can you go?</h3>
+                <p class="learn-section-body">Your Journey Score measures how many strong days you achieve across 10 slips.</p>
+                <p class="learn-section-body">Expecting yourself to maintain a 100-day or one-year streak is like expecting to run a 42&nbsp;km marathon without training.</p>
+                <p class="learn-section-body">You don't start at 42&nbsp;km. You start at 1&nbsp;km.</p>
+                <p class="learn-section-body">Maybe you reach 1&nbsp;km and fall back. Next time, 1.5&nbsp;km. Then 2. Then 3. Then 5.</p>
+                <p class="learn-section-body">You might fall back to 3&nbsp;km—but you've already proved you can reach 5. That's progress.</p>
+                <p class="learn-section-body">Failing is part of the process. The important thing is that you record it and keep moving.</p>
+                <p class="learn-section-body">Our Journey works the same way. Across 10 slips, we measure how far you can go.</p>
+                <p class="learn-section-body">Maybe your first Journey is:</p>
+                <p class="learn-score-line"><strong>20 days / 10 slips</strong></p>
+                <p class="learn-section-body">Next time:</p>
+                <p class="learn-score-line"><strong>30 days / 10 slips</strong></p>
+                <p class="learn-score-delta">That's a 50% improvement.</p>
+                <p class="learn-section-body">You slipped. But you still improved.</p>
+                <p class="learn-section-body">Now 30 days is your personal best. Your next challenge is to go beyond it.</p>
+                <p class="learn-section-body">And the Journey can keep growing:</p>
+                <p class="learn-ladder" aria-label="Journey growth">50 → 100 → 150 → 200</p>
+                <p class="learn-section-body">A low score shows where your Journey stands today—and gives you a benchmark to improve. It may show you that you're slipping more often than you'd like.</p>
+                <p class="learn-section-body">A score in the hundreds, even with occasional slips, shows just how far you've come.</p>
+                <p class="learn-section-body">You can be imperfect and still be getting stronger. You don't have to be perfect to move forward.</p>
+                <p class="learn-section-body">A slip doesn't erase your Journey. It becomes part of it.</p>
+                <p class="learn-section-body">You can fail forward. Every Journey teaches you something.</p>
+                <blockquote class="learn-quote learn-quote-emphasis">
+                    Focus on your Journey. The streak will follow.
+                </blockquote>
+            </section>
+
+            <section class="learn-section">
+                <h3 class="learn-section-title">What you need to do</h3>
+                <p class="learn-section-body">Keep it simple.</p>
                 <ul class="learn-list">
-                    <li>Check in once a day.</li>
-                    <li>Be honest with yourself.</li>
-                    <li>Try to improve your Journey score over time.</li>
-                    <li>Don't worry about being perfect.</li>
+                    <li>Record every strong day.</li>
+                    <li>Record every slip.</li>
+                    <li>If you relapse once, log it.</li>
+                    <li>If you relapse three times in a day, log all three.</li>
                 </ul>
-            </section>
-
-            <section class="learn-section">
-                <h3 class="learn-section-title">If you relapse</h3>
-                <p class="learn-section-body">Record it and move on.</p>
-                <p class="learn-section-body">Don't quit because of one bad day. Every new day is another opportunity to improve.</p>
-            </section>
-
-            <section class="learn-section">
-                <h3 class="learn-section-title">Your goal</h3>
-                <p class="learn-section-body">Don't ask:</p>
-                <blockquote class="learn-quote">"Can I keep a perfect streak forever?"</blockquote>
-                <p class="learn-section-body">Ask:</p>
-                <blockquote class="learn-quote learn-quote-emphasis">"Can I make this Journey better than the last one?"</blockquote>
+                <p class="learn-section-body">Be honest with your numbers. They show you where you really are.</p>
+                <p class="learn-section-body">Every Journey teaches you something.</p>
+                <p class="learn-section-body">When you complete a Journey, you begin again. Every Journey gives you a new number to beat.</p>
+                <p class="learn-section-body">The goal isn't to prove that you can go 100 days once. The goal is to become someone who keeps choosing better.</p>
+                <p class="learn-section-body">That's why we don't simply count your streak. We help you understand your Journey.</p>
+                <blockquote class="learn-quote learn-quote-final">
+                    <strong>What gets measured, gets managed.</strong>
+                </blockquote>
             </section>
 
             <section class="learn-section">
                 <h3 class="learn-section-title">Your data</h3>
-                <p class="learn-section-body">Your data stays on your device. You can export and import it whenever you want.</p>
-            </section>
-
-            <section class="learn-section learn-section-final">
-                <h3 class="learn-section-title">One final thought</h3>
-                <blockquote class="learn-quote learn-quote-final">
-                    <strong>Progress is measured over months, not moments.</strong>
-                    <span>Keep showing up. Small improvements become lasting change.</span>
-                </blockquote>
+                <p class="learn-section-body">Your data stays on your device.</p>
+                <p class="learn-section-body">Your Journey belongs to you.</p>
             </section>
 
             <figure class="learn-progress-figure">
@@ -409,8 +460,6 @@
         <div class="premium-badge" id="premiumTrialBadge">Free trial</div>
         <div class="premium-title" id="premiumSheetTitle">Premium</div>
         <div class="premium-subtitle" id="premiumSheetSubtitle">Full access during your free trial.</div>
-        <ul class="premium-feature-list" id="premiumFeatureList"></ul>
-        <p class="premium-backup-note" id="premiumBackupNote"></p>
         <div class="premium-price">$4.99 / year <span class="premium-price-note" id="premiumPriceNote">after free trial</span></div>
         <button class="btn-premium-buy" type="button" data-action="premium-checkout">Subscribe to Premium</button>
         <button class="btn-premium-restore" type="button" data-action="premium-restore">Restore purchase</button>
@@ -426,7 +475,7 @@
         <div class="onboarding-slide active" id="slide-0">
             <div class="onboarding-emoji">👑</div>
             <div class="onboarding-title">Welcome to King</div>
-            <div class="onboarding-body">This is not another streak app that punishes you for slipping. King is built differently — for the long journey, not the perfect day.</div>
+            <div class="onboarding-body">This is not another streak app. King is built differently—for the long journey, not the perfect streak.</div>
         </div>
 
         <!-- Slide 2 — The problem -->
@@ -447,22 +496,34 @@
         <div class="onboarding-slide" id="slide-3">
             <div class="onboarding-emoji">📈</div>
             <div class="onboarding-title">Progress, Not Perfection</div>
-            <div class="onboarding-body">Each journey, aim for more strong days than the last. One relapse ends a streak — it doesn’t erase your Journey.</div>
-            <div class="onboarding-journey-compare" aria-label="Example journey scores">
+            <div class="onboarding-journey-compare" aria-label="Example journey improvement">
                 <div class="onb-journey-card">
                     <div class="onb-journey-label">Journey 1</div>
-                    <div class="onb-journey-row"><span>Success Days</span><strong>72</strong></div>
+                    <div class="onb-journey-row"><span>Strong Days</span><strong>25</strong></div>
                     <div class="onb-journey-row"><span>Relapses</span><strong>10</strong></div>
-                    <div class="onb-journey-row onb-journey-score"><span>Score</span><strong>72</strong></div>
+                    <div class="onb-journey-row onb-journey-score"><span>Score</span><strong>25</strong></div>
                 </div>
                 <div class="onb-journey-arrow" aria-hidden="true">↓</div>
                 <div class="onb-journey-card onb-journey-card-better">
                     <div class="onb-journey-label">Journey 2</div>
-                    <div class="onb-journey-row"><span>Success Days</span><strong>104</strong></div>
+                    <div class="onb-journey-row"><span>Strong Days</span><strong>30</strong></div>
                     <div class="onb-journey-row"><span>Relapses</span><strong>10</strong></div>
-                    <div class="onb-journey-row onb-journey-score"><span>Score</span><strong>104</strong></div>
+                    <div class="onb-journey-row onb-journey-score"><span>Score</span><strong>30</strong></div>
                 </div>
-                <p class="onb-journey-verdict">You're improving.</p>
+                <p class="onb-journey-verdict">You have improved 20%</p>
+                <div class="onb-improve-ladder" aria-label="Strong-day progression">
+                    <span>25</span>
+                    <span class="onb-improve-arrow" aria-hidden="true">→</span>
+                    <span>30</span>
+                    <span class="onb-improve-arrow" aria-hidden="true">→</span>
+                    <span>50</span>
+                    <span class="onb-improve-arrow" aria-hidden="true">→</span>
+                    <span>100</span>
+                    <span class="onb-improve-arrow" aria-hidden="true">→</span>
+                    <span>150</span>
+                    <span class="onb-improve-arrow" aria-hidden="true">→</span>
+                    <span class="onb-improve-peak">200</span>
+                </div>
             </div>
         </div>
 
@@ -577,19 +638,19 @@
     </div>
 </div>
 
-    <script defer src="./constants.js?v=10"></script>
+    <script defer src="./constants.js?v=15"></script>
     <script defer src="./data.js?v=8"></script>
     <script defer src="./migration.js?v=11"></script>
-    <script defer src="./logic.js?v=22"></script>
-    <script defer src="./entitlement.js?v=16"></script>
-    <script defer src="./billing.js?v=17"></script>
+    <script defer src="./logic.js?v=25"></script>
+    <script defer src="./entitlement.js?v=17"></script>
+    <script defer src="./billing.js?v=24"></script>
     <script defer src="./firebase.js?v=10"></script>
     <script defer src="./backup.js?v=10"></script>
     <script defer src="./ui-main.js?v=20"></script>
     <script defer src="./ui-overlays.js?v=11"></script>
     <script defer src="./ui-actions.js?v=10"></script>
-    <script defer src="./ui-history.js?v=19"></script>
-    <script defer src="./ui-day.js?v=18"></script>
+    <script defer src="./ui-history.js?v=24"></script>
+    <script defer src="./ui-day.js?v=21"></script>
     <script defer src="./boot.js?v=16"></script>
 </body>
 </html>

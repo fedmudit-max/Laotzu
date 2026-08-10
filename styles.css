@@ -145,6 +145,11 @@ body {
     line-height: 1.4;
 }
 
+.collapse-teaser:empty {
+    display: none;
+    margin: 0;
+}
+
 .collapse-chevron {
     font-size: 22px;
     font-weight: 600;
@@ -175,7 +180,7 @@ body {
     padding-top: 14px;
 }
 
-/* ── Learn the Journey entry + sheet ── */
+/* ── How King Works entry + sheet ── */
 .learn-journey-card .collapse-header {
     cursor: pointer;
 }
@@ -254,23 +259,31 @@ body {
     border-bottom: 1px solid rgba(60, 60, 67, 0.08);
 }
 
-.learn-section:last-child,
-.learn-section-final {
+.learn-section:last-of-type {
     border-bottom: none;
 }
 
 .learn-section-title {
-    margin: 0 0 8px;
+    margin: 0 0 10px;
     font-size: 15px;
-    font-weight: 700;
+    font-weight: 800;
     color: var(--text);
     letter-spacing: -0.2px;
+}
+
+.learn-section-label {
+    margin: 0 0 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.4;
+    letter-spacing: -0.15px;
 }
 
 .learn-section-body {
     margin: 0 0 8px;
     font-size: 14px;
-    line-height: 1.5;
+    line-height: 1.55;
     color: var(--text-muted);
     font-weight: 500;
 }
@@ -280,7 +293,7 @@ body {
 }
 
 .learn-list {
-    margin: 0;
+    margin: 0 0 10px;
     padding: 0 0 0 1.15em;
     font-size: 14px;
     line-height: 1.55;
@@ -296,22 +309,53 @@ body {
     margin-bottom: 0;
 }
 
+.learn-powers,
+.learn-ladder {
+    margin: 10px 0 12px;
+    padding: 12px 14px;
+    text-align: center;
+    border-radius: 12px;
+    background: rgba(52, 199, 89, 0.1);
+    border: 1px solid rgba(52, 199, 89, 0.28);
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--green);
+    letter-spacing: -0.2px;
+    font-variant-numeric: tabular-nums;
+}
+
+.learn-score-line {
+    margin: 4px 0 10px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.2px;
+}
+
+.learn-score-delta {
+    margin: 4px 0 12px;
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--green);
+    letter-spacing: -0.25px;
+}
+
 .learn-quote {
-    margin: 8px 0 12px;
-    padding: 10px 12px;
+    margin: 12px 0 4px;
+    padding: 12px 14px;
     border-left: 3px solid rgba(52, 199, 89, 0.55);
     background: rgba(52, 199, 89, 0.08);
     border-radius: 0 10px 10px 0;
     font-size: 14px;
-    line-height: 1.45;
+    line-height: 1.5;
     color: var(--text);
     font-weight: 600;
-    font-style: italic;
 }
 
 .learn-quote-emphasis {
     border-left-color: var(--green);
     background: rgba(52, 199, 89, 0.12);
+    font-style: normal;
 }
 
 .learn-quote-final {
@@ -319,6 +363,7 @@ body {
     flex-direction: column;
     gap: 8px;
     font-style: normal;
+    margin-top: 14px;
     margin-bottom: 4px;
 }
 
@@ -328,15 +373,8 @@ body {
     letter-spacing: -0.2px;
 }
 
-.learn-quote-final span {
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text-muted);
-    font-style: italic;
-}
-
 .learn-progress-figure {
-    margin: 4px 0 12px;
+    margin: 8px 0 12px;
     padding: 0;
 }
 
@@ -1830,12 +1868,67 @@ button {
 }
 
 .month-cell.future {
-    opacity: 0.25;
+    opacity: 0.28;
+    background: var(--bg);
+    border-color: var(--border);
+    color: var(--text-muted);
+}
+
+/* Before install / Calendar Day 1 — grey, not green */
+.month-cell.pre-journey {
+    background: var(--bg);
+    border-color: var(--border);
+    color: var(--text-muted);
+    opacity: 1;
+}
+
+.month-cell.today.strong {
+    box-shadow: 0 0 0 2px rgba(52, 199, 89, 0.45);
+}
+
+.month-cell.today.slip {
+    box-shadow: 0 0 0 2px rgba(255, 59, 48, 0.28);
 }
 
 .month-cell.today {
-    border-color: var(--green);
     border-width: 2px;
+}
+
+.month-legend {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-top: 12px;
+    padding-top: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.month-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.legend-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+
+.legend-swatch.strong {
+    background: var(--green);
+    border: 1px solid var(--green);
+}
+
+.legend-swatch.slip {
+    background: rgba(255, 59, 48, 0.15);
+    border: 1px solid rgba(255, 59, 48, 0.35);
 }
 
 .month-day-label {
@@ -1847,34 +1940,6 @@ button {
     text-transform: uppercase;
     letter-spacing: 0.3px;
 }
-
-.month-legend {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 16px;
-    font-size: 12px;
-    color: var(--text-muted);
-    font-weight: 500;
-}
-
-.month-legend-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.legend-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 2px;
-    display: inline-block;
-}
-
-.legend-dot.strong { background: var(--green); }
-.legend-dot.slip   { background: rgba(255,59,48,0.5); }
-.legend-dot.empty  { background: var(--bg); border: 1px solid var(--border); }
 
 /* ── PROGRESSIVE REVEAL — LOCKED SECTIONS ── */
 .next-unlock {
@@ -2444,6 +2509,47 @@ button {
     color: var(--green);
 }
 
+.onb-journey-pct {
+    margin-top: 4px;
+    font-size: 22px;
+    letter-spacing: -0.5px;
+}
+
+.onb-improve-ladder {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 4px 6px;
+    margin: 14px 0 8px;
+    padding: 12px 10px;
+    border-radius: 14px;
+    background: rgba(52, 199, 89, 0.08);
+    border: 1px solid rgba(52, 199, 89, 0.22);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--green);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.2px;
+}
+
+.onb-improve-arrow {
+    color: var(--green);
+    font-weight: 700;
+    opacity: 0.55;
+}
+
+.onb-improve-peak {
+    color: var(--green);
+    font-weight: 800;
+}
+
+/* Journey strong-day / score figures on Progress slide */
+.onboarding-journey-compare .onb-journey-card .onb-journey-row:first-of-type strong,
+.onboarding-journey-compare .onb-journey-score strong {
+    color: var(--green);
+}
+
 .onboarding-dots {
     display: flex;
     justify-content: center;
@@ -2539,6 +2645,11 @@ button {
     font-size: 13px;
     line-height: 1.45;
     color: var(--text-muted);
+}
+
+.premium-panel-status:empty {
+    display: none;
+    margin: 0;
 }
 
 .premium-panel-features {

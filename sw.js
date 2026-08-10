@@ -1,4 +1,4 @@
-const CACHE_NAME = 'king-v53';
+const CACHE_NAME = 'king-v58';
 
 const ASSETS = [
     './',

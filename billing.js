@@ -17,7 +17,12 @@ function setPremiumSectionVisible(id, visible) {
 }
 
 /** Hide premium-only sections when user has no premium access (post-onboarding).
- *  Read-only: never writes state. Trial seed lives in init / onboarding. */
+ *  Free forever regardless of trial/subscription:
+ *    day logging (strong/slip), current/best journey score, chances, urge surf, How King Works
+ *  Premium-only (hidden when trial ends until paid):
+ *    weekly timeline, milestones tabs, knowledge, month/chart, export/import
+ *  Read-only layout: never writes state. Never resets journey score.
+ */
 function applyPremiumTierLayout() {
     var show = !safeGet('onboardingComplete') || Entitlement.hasPremiumAccess();
     setPremiumSectionVisible('weeklyStreakCard', show);
@@ -28,6 +33,11 @@ function applyPremiumTierLayout() {
     setPremiumSectionVisible('exportBackupBtn', show);
     setPremiumSectionVisible('importBackupBtn', show);
     setPremiumSectionVisible('lastBackupLabel', show);
+    // Always available (even on basic tier after trial ends)
+    setPremiumSectionVisible('primaryStack', true);
+    setPremiumSectionVisible('learnJourneyCard', true);
+    setPremiumSectionVisible('premiumPanelCard', true);
+    setPremiumSectionVisible('backupResetCard', true);
     if (!show && typeof currentTab === 'number' && currentTab > 0) {
         currentTab = 0;
     }
@@ -78,11 +88,11 @@ function renderPremiumPanelContent() {
     } else if (Entitlement.isTrialActive()) {
         var left = Entitlement.daysRemaining();
         statusEl.textContent = left === 1
-            ? '1 day left on your free trial. Export/import still works now — Premium keeps backup after the trial.'
-            : left + ' days left on your free trial. Export/import works now; Premium is required to keep backup after trial.';
+            ? '1 free day left on your trial.'
+            : left + ' free days left on your trial.';
         setPremiumBackupNote(noteEl, true);
     } else {
-        statusEl.textContent = 'Subscribe to unlock timeline, milestones, quotes, charts, and export/import. Daily logging stays free.';
+        statusEl.textContent = 'Free trial ended. Daily logging stays free forever. Subscribe to unlock timeline, milestones, Monthly grid, Progress, and export/import. Your score is not affected.';
         setPremiumBackupNote(noteEl, true);
     }
 
@@ -102,20 +112,15 @@ function renderPremiumStatus() {
             cardEl.classList.remove('premium-trial-state', 'premium-expired-state');
         }
     } else if (Entitlement.isTrialActive()) {
-        var days = Entitlement.daysRemaining();
         if (titleEl) titleEl.textContent = '⭐ Premium trial';
-        if (teaserEl) {
-            teaserEl.textContent = days === 1
-                ? '1 day left · full access'
-                : days + ' days left · full access';
-        }
+        if (teaserEl) teaserEl.textContent = '';
         if (cardEl) {
             cardEl.classList.add('premium-trial-state');
             cardEl.classList.remove('premium-active-state', 'premium-expired-state');
         }
     } else {
         if (titleEl) titleEl.textContent = '⭐ Premium';
-        if (teaserEl) teaserEl.textContent = 'Upgrade to unlock all features';
+        if (teaserEl) teaserEl.textContent = 'Logging free · unlock all features';
         if (cardEl) {
             cardEl.classList.add('premium-expired-state');
             cardEl.classList.remove('premium-active-state', 'premium-trial-state');
@@ -130,13 +135,11 @@ function renderPremiumSheet() {
     var titleEl = document.getElementById('premiumSheetTitle');
     var subEl = document.getElementById('premiumSheetSubtitle');
     var trialEl = document.getElementById('premiumTrialBadge');
-    var listEl = document.getElementById('premiumFeatureList');
-    var noteEl = document.getElementById('premiumBackupNote');
     var laterBtn = document.getElementById('premiumLaterBtn');
     var buyBtn = document.querySelector('[data-action="premium-checkout"]');
     var restoreBtn = document.querySelector('[data-action="premium-restore"]');
 
-    if (!titleEl || !listEl) return;
+    if (!titleEl) return;
 
     if (Entitlement.isSubscriptionActive()) {
         titleEl.textContent = 'You\'re Premium';
@@ -145,13 +148,9 @@ function renderPremiumSheet() {
         if (laterBtn) laterBtn.textContent = 'Close';
         if (buyBtn) buyBtn.hidden = true;
         if (restoreBtn) restoreBtn.hidden = true;
-        setPremiumBackupNote(noteEl, false);
     } else if (Entitlement.isTrialActive()) {
-        var left = Entitlement.daysRemaining();
         titleEl.textContent = PREMIUM_TRIAL_DAYS + '-day Premium trial';
-        subEl.textContent = left === 1
-            ? '1 day left of full access. Subscribe to keep Premium — including export/import — after the trial.'
-            : left + ' days left of full access. Subscribe to keep Premium — including export/import — after the trial.';
+        if (subEl) subEl.textContent = '';
         if (trialEl) {
             trialEl.hidden = false;
             trialEl.textContent = 'Free trial';
@@ -159,18 +158,14 @@ function renderPremiumSheet() {
         if (laterBtn) laterBtn.textContent = 'Not now';
         if (buyBtn) buyBtn.hidden = false;
         if (restoreBtn) restoreBtn.hidden = false;
-        setPremiumBackupNote(noteEl, true);
     } else {
         titleEl.textContent = 'Your free trial has ended';
-        subEl.textContent = 'Subscribe to unlock timeline, milestones, quotes, charts, and export/import. Daily logging stays free.';
+        subEl.textContent = 'Keep logging strong days and slips for free — your Journey score is saved. Subscribe whenever you want full features; buying Premium does not reset your progress.';
         if (trialEl) trialEl.hidden = true;
         if (laterBtn) laterBtn.textContent = 'Continue with basic logging';
         if (buyBtn) buyBtn.hidden = false;
         if (restoreBtn) restoreBtn.hidden = false;
-        setPremiumBackupNote(noteEl, true);
     }
-
-    fillPremiumFeatureList(listEl);
 
     var priceNote = document.getElementById('premiumPriceNote');
     if (priceNote) {
@@ -205,18 +200,23 @@ function requirePremium() {
  * Single write path for paid EntitlementSnapshot fields (Billing / later Firebase).
  * Partial updates only; see ARCHITECTURE.md → EntitlementSnapshot.
  *
+ * Journey score is never touched here:
+ *   score, streaks, dailyLog, calendarDay, attempt, etc. stay as-is when buying Premium.
+ *
  * @param {Partial<EntitlementSnapshot>} fields
  *   v1 accepts: premiumUntil
  *   reserved (ignored until implemented): lastVerifiedAt, source
  *   never write trialStartedAt here — local trial seed owns that field
+ *   never write journey/logging fields — journey layer owns those
  */
 function updateEntitlementSnapshot(fields) {
     if (!fields || typeof fields !== 'object') return;
     if (fields.premiumUntil !== undefined) state.premiumUntil = fields.premiumUntil;
-    // S2/S3: lastVerifiedAt, source
+    // S2/S3: lastVerifiedAt, source — still only entitlement keys, not score
     saveToStorage(state);
 }
 
+/** Unlock paid features by writing premiumUntil only (score / log unchanged). */
 function activatePremiumSubscription(days) {
     days = days || PREMIUM_SUBSCRIPTION_DAYS;
     updateEntitlementSnapshot({

@@ -35,6 +35,9 @@ function syncHistoryPanels() {
     if (monthOpen || chartOpen || lifetimeOpen) ensureDeferredHeavyRendered();
     var el;
 
+    el = document.getElementById('chartPanelTitle');
+    if (el) el.textContent = 'Progress';
+
     el = document.getElementById('monthPanelBody');
     if (el) el.classList.toggle('is-open', monthOpen);
     el = document.getElementById('chartPanelBody');
@@ -467,7 +470,6 @@ function monthNav(dir) {
 
 function renderMonthGrid() {
     const grid    = document.getElementById('monthGrid');
-    const legend  = document.getElementById('monthLegend');
     const log     = state.dailyLog || {};
     const realToday = realTodayKey();
 
@@ -520,47 +522,46 @@ function renderMonthGrid() {
         dateInfo[dateKey] = { status, slipCount };
     });
 
-    if (legend) {
-        legend.innerHTML = `
-            <span class="month-legend-item">
-                <span class="legend-dot strong"></span>
-                <span>Strong</span>
-            </span>
-            <span class="month-legend-item">
-                <span class="legend-dot slip"></span>
-                <span>Slip</span>
-            </span>
-            <span class="month-legend-item">
-                <span class="legend-dot empty"></span>
-                <span>No log</span>
-            </span>`;
-    }
+    // Journey start wall date — days before this stay grey (pre-install / before Day 1).
+    const journeyStart = (typeof getJourneyAnchorWallDate === 'function')
+        ? getJourneyAnchorWallDate()
+        : (state.lastOpenedDate || realToday);
 
     // Day labels
     const DAY_LABELS = ['S','M','T','W','T','F','S'];
     let html = DAY_LABELS.map(d => `<div class="month-day-label">${d}</div>`).join('');
 
-    // Empty cells before first day
+    // Empty cells before first day of week
     for (let i = 0; i < firstDayOfWeek; i++) {
         html += `<div class="month-cell future"></div>`;
     }
 
-    // Day cells
+    // Day cells after install / Journey Day 1:
+    //   slip → red · strong log → green · unlogged past (display) → green until filled/answered
+    //   Today waits for user. Yesterday is asked via popup (not auto-filled).
     for (let d = 1; d <= daysInMonth; d++) {
         const key      = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
         const isToday  = key === realToday;
         const isFuture = key > realToday;
+        const beforeStart = key < journeyStart;
         const info     = dateInfo[key];
-        const status   = info && info.status;
+        const isSlip   = !!(info && info.status === 'slip');
         const daySlips = (info && info.slipCount) || 0;
 
         let cls = 'month-cell';
-        if (isFuture) cls += ' future';
-        else if (status === 'strong') cls += ' strong';
-        else if (status === 'slip') cls += ' slip' + (daySlips > 1 ? ' slip-multi' : '');
-        if (isToday) cls += ' today';
+        if (isFuture) {
+            cls += ' future';
+        } else if (beforeStart) {
+            cls += ' pre-journey';
+        } else if (isSlip) {
+            cls += ' slip' + (daySlips > 1 ? ' slip-multi' : '');
+        } else {
+            // Strong log, auto-strong miss, or pending today / yesterday paint → green
+            cls += ' strong';
+        }
+        if (isToday && !beforeStart) cls += ' today';
 
-        const slipBadge = status === 'slip' && daySlips > 1
+        const slipBadge = isSlip && daySlips > 1
             ? `<span class="month-slip-count">×${daySlips}</span>`
             : '';
 
