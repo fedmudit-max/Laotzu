@@ -311,9 +311,13 @@ body {
 
 .learn-powers,
 .learn-ladder {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2em 0.35em;
     margin: 10px 0 12px;
     padding: 12px 14px;
-    text-align: center;
     border-radius: 12px;
     background: rgba(52, 199, 89, 0.1);
     border: 1px solid rgba(52, 199, 89, 0.28);
@@ -322,6 +326,27 @@ body {
     color: var(--green);
     letter-spacing: -0.2px;
     font-variant-numeric: tabular-nums;
+    line-height: 1;
+}
+
+/* Numbers / arrows as flex peers so → centres on Android (Roboto baseline sits low). */
+.learn-seq-num {
+    display: inline-flex;
+    align-items: center;
+    line-height: 1;
+    font-weight: 800;
+}
+
+.learn-seq-arrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    height: 1em;
+    font-weight: 700;
+    opacity: 0.8;
+    /* Optical vertical centre on Android system fonts without shifting iOS much */
+    transform: translateY(-0.06em);
 }
 
 .learn-score-line {
@@ -579,19 +604,6 @@ body {
     letter-spacing: 0.5px;
     text-transform: uppercase;
     color: var(--green);
-}
-
-.score-unit,
-.stat-unit {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: -0.1px;
-    color: var(--text-muted);
-}
-
-.stat-unit {
-    margin-top: 2px;
-    line-height: 1.2;
 }
 
 .score-value {
@@ -2583,9 +2595,15 @@ button {
 }
 
 .onb-improve-arrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    height: 1em;
     color: var(--green);
     font-weight: 700;
     opacity: 0.55;
+    transform: translateY(-0.06em);
 }
 
 .onb-improve-peak {
