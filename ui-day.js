@@ -119,6 +119,32 @@ function logYesterday(result) {
     renderAll();
 }
 
+/**
+ * Test helper: move app calendar forward one day (same as sleeping overnight).
+ * Uses state.devDateOffset so todayKey(), logs, journey Day, and month grid all advance.
+ */
+function advanceDevDay() {
+    state.devDateOffset = (state.devDateOffset || 0) + 1;
+    // Leave lastCheckedDate on the previous app-day so checkNewDay runs catch-up.
+    monthOffset = 0;
+    saveToStorage(state);
+    checkNewDay();
+    if (typeof showToast === 'function') {
+        var off = state.devDateOffset;
+        showToast(0, 'Test day → ' + todayKey() + (off ? ' (+' + off + ')' : ''));
+    }
+    updateDevDayLabel();
+}
+
+function updateDevDayLabel() {
+    var label = document.getElementById('devDayLabel');
+    if (!label || typeof todayKey !== 'function') return;
+    var off = (state && state.devDateOffset) || 0;
+    label.textContent = off
+        ? todayKey() + ' · +' + off
+        : todayKey();
+}
+
 // ════════════════════════════════════════════════════════
 //  BRAIN RECOVERY CARD
 //  Shows current neurological phase based on streak length.
@@ -141,9 +167,10 @@ function renderBrainCard() {
     }
 
     list.innerHTML = BRAIN_PHASES.map(function (phase, idx) {
-        var isCurrent = streak > 0 && streak >= phase.from && streak < phase.to;
-        var phaseEnd = phase.to === Infinity ? 365 : phase.to;
-        var isCompleted = streak > 0 && streak >= phaseEnd;
+        // Inclusive day ranges: e.g. Withdrawal 1–3, Flatline 4–14, Early Rewiring 15–30.
+        var isOpenEnded = phase.to === Infinity;
+        var isCurrent = streak > 0 && streak >= phase.from && (isOpenEnded || streak <= phase.to);
+        var isCompleted = streak > 0 && !isOpenEnded && streak > phase.to;
 
         // Frozen position (slip day or journey end): hold as completed/grey, no live "here"
         if (freezeStyle && isCurrent) {
@@ -151,22 +178,17 @@ function renderBrainCard() {
             isCurrent = false;
         }
 
-        // Display inclusive day range (from..to-1); data uses half-open [from, to).
-        // Withdrawal uses from:0 so label starts at Day 1; Mastery shows 366+.
-        var labelFrom = phase.from < 1 ? 1 : phase.from;
-        var toLabel   = phase.to === Infinity
-            ? (labelFrom >= 366 ? '366+' : String(labelFrom) + '+')
-            : String(Math.max(labelFrom, phase.to - 1));
-        var dayRange  = 'Day ' + labelFrom + '\u2013' + toLabel;
-        if (phase.to === Infinity) {
-            dayRange = 'Day ' + toLabel;
-        }
+        var dayRange = isOpenEnded
+            ? 'Day ' + phase.from + '+'
+            : 'Day ' + phase.from + '\u2013' + phase.to;
 
-        var phaseLen = phaseEnd - phase.from;
+        // Progress within inclusive frame (day 1 of a 3-day phase = 1/3, not 1/4).
+        var phaseLen = isOpenEnded ? 1 : (phase.to - phase.from + 1);
         if (phaseLen <= 0) phaseLen = 1;
-        var daysIn   = Math.max(0, streak - phase.from);
-        var pct      = Math.min(100, Math.round((daysIn / phaseLen) * 100));
-        var daysLeft = phase.to === Infinity ? null : phaseEnd - streak;
+        var daysIn = Math.max(0, Math.min(phaseLen, streak - phase.from + 1));
+        var pct = Math.min(100, Math.round((daysIn / phaseLen) * 100));
+        // Streak days needed before the next phase starts (still >= 1 while current).
+        var daysLeft = isOpenEnded ? null : Math.max(0, phase.to - streak + 1);
 
         var cls = 'science-item';
         if (isCurrent)   cls += ' current';
@@ -181,7 +203,7 @@ function renderBrainCard() {
                 : '<span class="science-days-range">' + dayRange + '</span>';
 
         // Mastery (open-ended) has no progress bar or countdown label.
-        var progressBar = (isCurrent && phase.to !== Infinity) ? (
+        var progressBar = (isCurrent && !isOpenEnded) ? (
             '<div class="science-progress-track">' +
                 '<div class="science-progress-fill" style="width:' + pct + '%"></div>' +
             '</div>' +

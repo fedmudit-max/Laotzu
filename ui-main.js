@@ -72,6 +72,9 @@ function renderAll(options) {
         renderPremiumStatus,
         syncHistoryPanels,
     ];
+    if (typeof updateDevDayLabel === 'function') {
+        jobs.push(updateDevDayLabel);
+    }
     if (full) {
         jobs.splice(3, 0,
             renderStreakMilestones,

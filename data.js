@@ -79,39 +79,40 @@ const JOURNEY_MILESTONE_DAYS = Object.keys(JOURNEY_MILESTONES).map(Number).sort(
 // Success rate shown only at journey strong-day milestones
 const JOURNEY_SHOW_RATE = new Set([75, 100, 150, 200, 300, 400, 500, 750, 1000]);
 
+// Inclusive day ranges (streak day N is in a phase when from <= N <= to).
 const BRAIN_PHASES = [
     {
-        from: 0,   to: 4,
+        from: 1,   to: 3,
         emoji: '⚡', phase: 'Withdrawal',
         desc: 'Your dopamine receptors are recalibrating. Irritability, restlessness and flatness are normal — your brain is adjusting to life without supernormal stimulation.',
     },
     {
-        from: 4,   to: 15,
+        from: 4,   to: 14,
         emoji: '🌫️', phase: 'Flatline',
         desc: 'Libido drops, motivation feels low. This is your brain downregulating dopamine sensitivity — painful but a clear sign of healing. Hold the line.',
     },
     {
-        from: 15,  to: 31,
+        from: 15,  to: 30,
         emoji: '🌱', phase: 'Early Rewiring',
         desc: 'Prefrontal cortex activity is increasing. Impulse control improves, sleep deepens, social anxiety reduces. The fog is lifting.',
     },
     {
-        from: 31,  to: 61,
+        from: 31,  to: 60,
         emoji: '⚗️', phase: 'Neuroplasticity Window',
         desc: 'Dopamine D2 receptors are recovering. Grey matter is rebuilding. Motivation and mood stabilise. This is where real change takes root.',
     },
     {
-        from: 61,  to: 91,
+        from: 61,  to: 90,
         emoji: '🔥', phase: 'Identity Shift',
         desc: 'Measurable prefrontal cortex improvement. Better decisions, emotional regulation, deeper empathy. New neural pathways are solidifying.',
     },
     {
-        from: 91,  to: 181,
+        from: 91,  to: 180,
         emoji: '💎', phase: 'Consolidation',
         desc: 'Dopamine system largely recovered. Urges are weaker and less frequent. Relationships deepen. You are not the same person who started.',
     },
     {
-        from: 181, to: 366,
+        from: 181, to: 365,
         emoji: '🦅', phase: 'Long-term Stability',
         desc: 'Brain function normalised. What once required willpower now comes from identity. This is who you are.',
     },

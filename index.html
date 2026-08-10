@@ -24,7 +24,7 @@
             z-index: 9999;
         }
     </style>
-    <link rel="stylesheet" href="./styles.css?v=44">
+    <link rel="stylesheet" href="./styles.css?v=45">
 </head>
 <body>
 
@@ -82,6 +82,9 @@
             <button class="btn-success" id="successBtn" data-action="success">✓ I STAYED STRONG TODAY</button>
             <button class="btn-danger"  id="failBtn"    data-action="modal-fail">✕ I Slipped</button>
             <button class="btn-urge" data-action="urge">🌊 I Feel the Urge</button>
+            <button type="button" class="btn-dev-day" data-action="dev-new-day" title="Advances app calendar by 1 day for testing">
+                ⏭ New day <span class="btn-dev-day-meta" id="devDayLabel"></span>
+            </button>
         </div>
     </div>
 
@@ -644,18 +647,18 @@
 </div>
 
     <script defer src="./constants.js?v=15"></script>
-    <script defer src="./data.js?v=14"></script>
+    <script defer src="./data.js?v=15"></script>
     <script defer src="./migration.js?v=12"></script>
-    <script defer src="./logic.js?v=30"></script>
+    <script defer src="./logic.js?v=31"></script>
     <script defer src="./entitlement.js?v=17"></script>
     <script defer src="./billing.js?v=24"></script>
     <script defer src="./firebase.js?v=10"></script>
     <script defer src="./backup.js?v=10"></script>
-    <script defer src="./ui-main.js?v=22"></script>
+    <script defer src="./ui-main.js?v=23"></script>
     <script defer src="./ui-overlays.js?v=13"></script>
     <script defer src="./ui-actions.js?v=14"></script>
-    <script defer src="./ui-history.js?v=25"></script>
-    <script defer src="./ui-day.js?v=28"></script>
-    <script defer src="./boot.js?v=16"></script>
+    <script defer src="./ui-history.js?v=26"></script>
+    <script defer src="./ui-day.js?v=30"></script>
+    <script defer src="./boot.js?v=17"></script>
 </body>
 </html>

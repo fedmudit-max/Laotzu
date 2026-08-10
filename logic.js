@@ -131,11 +131,11 @@ function dailyLogStorageKey(calDay, patch) {
     return (patch && patch.date) ? patch.date : dailyLogKey(calDay);
 }
 
-/** Never store wall dates after real today (dev offset must not advance monthly grid). */
+/** Never store wall dates after app "today" (real day + optional devDateOffset). */
 function clampDateKeyToRealToday(dateKey) {
-    var real = realTodayKey();
-    if (!dateKey || !/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return real;
-    if (dateKey > real) return real;
+    var cap = todayKey();
+    if (!dateKey || !/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return cap;
+    if (dateKey > cap) return cap;
     return dateKey;
 }
 
@@ -1143,13 +1143,13 @@ function getCalendarDayForWallDate(dateKey) {
     return day;
 }
 
-/** Journey day N cannot exceed wall days from this journey's Day 1 through real today. */
+/** Journey day N cannot exceed wall days from this journey's Day 1 through app today. */
 function getMaxCalendarDayForToday() {
-    return Math.max(1, daysBetweenKeys(getJourneyAnchorWallDate(), realTodayKey()) + 1);
+    return Math.max(1, daysBetweenKeys(getJourneyAnchorWallDate(), todayKey()) + 1);
 }
 
 /**
- * Day counter in the UI = wall days since this journey's Day 1 through real today.
+ * Day counter in the UI = wall days since this journey's Day 1 through app today.
  * Resets to 1 when a new journey begins.
  */
 function getDisplayCalendarDay() {
@@ -1163,14 +1163,14 @@ function clampCalendarDayToRealToday() {
         state.calendarDay = max;
     } else if ((state.calendarDay || 1) > max) {
         state.calendarDay = max;
-        if (!isWallDateLogged(realTodayKey())) {
+        if (!isWallDateLogged(todayKey())) {
             state.todayStatus = 'none';
             state.todayFailCount = 0;
         }
     }
 }
 
-/** Step calendar day forward only when wall-clock allows it (never past real today). */
+/** Step calendar day forward only when wall-clock allows it (never past app today). */
 function advanceCalendarDay() {
     // Do not pre-clamp up to max — mid catch-up needs to step 2 → 3 → 4.
     const max = getMaxCalendarDayForToday();

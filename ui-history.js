@@ -451,15 +451,15 @@ function monthNav(dir) {
     // Don't go before the month the journey started
     // Find earliest date in dailyLog
     const log   = state.dailyLog || {};
-    const realToday = realTodayKey();
+    const appToday = todayKey();
     const dates = Object.values(log)
         .map(e => (typeof e === 'object') ? e.date : null)
-        .filter(function (d) { return d && d <= realToday; })
+        .filter(function (d) { return d && d <= appToday; })
         .sort();
 
     if (dates.length > 0) {
         const earliest   = parseDateKey(dates[0]);
-        const today      = parseDateKey(realToday);
+        const today      = parseDateKey(appToday);
         const minOffset  = (earliest.getFullYear() - today.getFullYear()) * 12
                          + (earliest.getMonth() - today.getMonth());
         if (monthOffset < minOffset) monthOffset = minOffset;
@@ -471,10 +471,11 @@ function monthNav(dir) {
 function renderMonthGrid() {
     const grid    = document.getElementById('monthGrid');
     const log     = state.dailyLog || {};
-    const realToday = realTodayKey();
+    const appToday = todayKey();
+    const todayDate = parseDateKey(appToday);
 
-    // Apply monthOffset to get the target month
-    const ref   = new Date();
+    // Apply monthOffset to get the target month (anchored to app "today", including dev offset)
+    const ref   = parseDateKey(appToday);
     ref.setDate(1);
     ref.setMonth(ref.getMonth() + monthOffset);
 
@@ -482,8 +483,7 @@ function renderMonthGrid() {
     const month          = ref.getMonth();
     const daysInMonth    = new Date(year, month + 1, 0).getDate();
     const firstDayOfWeek = new Date(year, month, 1).getDay();
-    const today          = new Date();
-    const isCurrentMonth = year === today.getFullYear() && month === today.getMonth();
+    const isCurrentMonth = year === todayDate.getFullYear() && month === todayDate.getMonth();
 
     // Month + year label (inside expanded panel nav)
     const monthName = ref.toLocaleString('default', { month: 'long', year: 'numeric' });
@@ -499,25 +499,25 @@ function renderMonthGrid() {
     if (prevBtn) {
         const dates = Object.values(log)
             .map(e => (typeof e === 'object') ? e.date : null)
-            .filter(function (d) { return d && d <= realToday; })
+            .filter(function (d) { return d && d <= appToday; })
             .sort();
         if (dates.length > 0) {
             const earliest  = parseDateKey(dates[0]);
-            const minOffset = (earliest.getFullYear() - today.getFullYear()) * 12
-                            + (earliest.getMonth() - today.getMonth());
+            const minOffset = (earliest.getFullYear() - todayDate.getFullYear()) * 12
+                            + (earliest.getMonth() - todayDate.getMonth());
             prevBtn.disabled = monthOffset <= minOffset;
         } else {
             prevBtn.disabled = monthOffset <= 0;
         }
     }
 
-    // Build date → { status, slipCount } lookup (never paint past real today)
+    // Build date → { status, slipCount } lookup (never paint past app today)
     const dateInfo = {};
     Object.values(log).forEach(entry => {
         let dateKey = (typeof entry === 'object') ? entry.date : null;
         const status  = logStatus(entry);
         if (!dateKey || !status) return;
-        if (dateKey > realToday) return;
+        if (dateKey > appToday) return;
         const slipCount = status === 'slip' ? (entry.slipCount || 1) : 0;
         dateInfo[dateKey] = { status, slipCount };
     });
@@ -528,7 +528,7 @@ function renderMonthGrid() {
         ? getAppStartWallDate()
         : ((typeof getJourneyAnchorWallDate === 'function')
             ? getJourneyAnchorWallDate()
-            : (state.lastOpenedDate || realToday));
+            : (state.lastOpenedDate || appToday));
 
     // Day labels
     const DAY_LABELS = ['S','M','T','W','T','F','S'];
@@ -544,8 +544,8 @@ function renderMonthGrid() {
     //   Today waits for user. Yesterday is asked via popup (not auto-filled).
     for (let d = 1; d <= daysInMonth; d++) {
         const key      = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-        const isToday  = key === realToday;
-        const isFuture = key > realToday;
+        const isToday  = key === appToday;
+        const isFuture = key > appToday;
         const beforeStart = key < journeyStart;
         const info     = dateInfo[key];
         const isSlip   = !!(info && info.status === 'slip');

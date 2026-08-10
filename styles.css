@@ -2259,6 +2259,36 @@ button {
 }
 .btn-urge:hover { background: #0066d6; }
 
+/* ── TEST: advance calendar day ── */
+.btn-dev-day {
+    grid-column: 1 / -1;
+    background: transparent;
+    color: var(--text-muted, #8e8e93);
+    border: 1px dashed rgba(142, 142, 147, 0.55);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    box-shadow: none;
+}
+.btn-dev-day:hover {
+    color: var(--text, #1d1d1f);
+    border-color: rgba(142, 142, 147, 0.9);
+    background: rgba(142, 142, 147, 0.08);
+}
+.btn-dev-day-meta {
+    display: block;
+    margin-top: 2px;
+    font-size: 11px;
+    font-weight: 500;
+    opacity: 0.85;
+}
+.btn-dev-day-meta:empty {
+    display: none;
+}
+
 /* ── GENERIC OVERLAY (shared by urge, journal, compare) ── */
 .overlay {
     position: fixed;
