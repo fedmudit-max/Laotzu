@@ -124,6 +124,29 @@ function handleStrongDayUI(result, suppressUI) {
 
 let lastSlipAt = 0;
 
+function completeEndJourney(endWallDate) {
+    const comparison = archiveCompletedJourney(endWallDate);
+    if (!comparison) return;
+
+    // 10th slip logged for a prior day (e.g. yesterday): Journey already ended then —
+    // today is Day 1 of the next Journey, not a forced rest day.
+    var nextAlreadyOpen = false;
+    if (typeof canBeginNextJourneyToday === 'function' && canBeginNextJourneyToday()) {
+        beginNextJourney();
+        nextAlreadyOpen = true;
+    }
+
+    chartPage = -1;
+    saveAndRender();
+    setTimeout(function () {
+        showJourneyComparison(
+            { attempt: comparison.attempt, score: comparison.score },
+            comparison.prevBestScore,
+            { nextJourneyOpenToday: nextAlreadyOpen },
+        );
+    }, 600);
+}
+
 function recordFailure() {
     const now = Date.now();
     if (now - lastSlipAt < 800) return;
@@ -132,21 +155,10 @@ function recordFailure() {
     state.lastOpenedDate = todayKey();
     const failures = recordSlipToday();
     if (journeyIsOver(state)) {
-        completeEndJourney();
+        completeEndJourney(todayKey());
     } else {
         chartPage = -1;
         saveAndRender();
         showToast(0, `${failures} chance${failures > 1 ? 's' : ''} used. Keep moving forward. Journey Continues.`);
     }
-}
-
-function completeEndJourney() {
-    const comparison = archiveCompletedJourney();
-    if (!comparison) return;
-    chartPage = -1;
-    saveAndRender();
-    setTimeout(() => showJourneyComparison(
-        { attempt: comparison.attempt, score: comparison.score },
-        comparison.prevBestScore
-    ), 600);
 }

@@ -1292,10 +1292,14 @@ function autoStrongAbsentDays(today) {
 // ════════════════════════════════════════════════════════
 
 /**
- * Archive the completed journey and wait until the next calendar day to begin the next one.
+ * Archive the completed journey.
+ * Next Journey starts on the first wall day *after* the day the Journey ended
+ * (the day of the 10th slip) — not necessarily the day the user opened the app.
+ *
+ * @param {string} [endWallDate] YYYY-MM-DD of the 10th slip (defaults to today)
  * @returns comparison data for the UI popup, or null if already archived
  */
-function archiveCompletedJourney() {
+function archiveCompletedJourney(endWallDate) {
     if (isAwaitingNextJourney()) return null;
 
     const prevBestScore = bestScoreFromCompletedJourneys(state.completedJourneys);
@@ -1317,13 +1321,21 @@ function archiveCompletedJourney() {
         date: new Date().toISOString(),
     });
 
+    var ended = clampDateKeyToRealToday(endWallDate || todayKey());
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(ended)) ended = todayKey();
+
     state.pendingNextJourney = true;
-    state.journeyEndedDate = todayKey();
+    // End on the slip's wall day (e.g. yesterday for 10th slip via "did you slip yesterday?").
+    state.journeyEndedDate = ended;
 
     return comparison;
 }
 
-/** Start the next journey after the ended journey's calendar day has passed. */
+/**
+ * Start the next journey after the ended journey's wall day has passed.
+ * Call when today > journeyEndedDate (same calendar day as end keeps the ended Journey active
+ * only when the 10th slip was today).
+ */
 function beginNextJourney() {
     if (!isAwaitingNextJourney()) return;
 
@@ -1346,4 +1358,12 @@ function beginNextJourney() {
     state.journeyEndedDate = '';
     state.lastFreezeStreak = 0;
     state.lastFreezeDate = '';
+}
+
+/** True when next Journey may start now (ended on a prior wall day). */
+function canBeginNextJourneyToday() {
+    if (!isAwaitingNextJourney()) return false;
+    var ended = state.journeyEndedDate;
+    if (!ended || !/^\d{4}-\d{2}-\d{2}$/.test(ended)) return false;
+    return todayKey() !== ended && todayKey() > ended;
 }

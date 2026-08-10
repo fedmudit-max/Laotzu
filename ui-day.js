@@ -27,7 +27,8 @@ function checkNewDay() {
     const today = todayKey();
 
     if (isAwaitingNextJourney()) {
-        if (state.journeyEndedDate && today !== state.journeyEndedDate) {
+        if (typeof canBeginNextJourneyToday === 'function' ? canBeginNextJourneyToday()
+            : (state.journeyEndedDate && today !== state.journeyEndedDate)) {
             beginNextJourney();
             state.lastOpenedDate = today;
             state.lastCheckedDate = today;
@@ -104,7 +105,11 @@ function logYesterday(result) {
         applySlipDay({ logDate: yKey, calDay: getCalendarDayForWallDate(yKey) });
     }
 
-    if (journeyIsOver(state)) { completeEndJourney(); return; }
+    // End date = yesterday when the 10th slip is attributed to N-1 (not open day N).
+    if (journeyIsOver(state)) {
+        completeEndJourney(yKey);
+        return;
+    }
 
     clampCalendarDayToRealToday();
     state.lastOpenedDate = todayKey();

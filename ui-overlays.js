@@ -300,8 +300,10 @@ function closeUrge() {
  * Shows the journey comparison card.
  * @param {object} current - { attempt, score: { success, failures } }
  * @param {{ success: number, failures: number }|null} prevBestScore - best from prior journeys
+ * @param {{ nextJourneyOpenToday?: boolean }} [opts]
  */
-function showJourneyComparison(current, prevBestScore) {
+function showJourneyComparison(current, prevBestScore, opts) {
+    opts = opts || {};
     document.getElementById('compareTitleText').textContent =
         `Journey ${current.attempt} Complete`;
 
@@ -309,7 +311,9 @@ function showJourneyComparison(current, prevBestScore) {
 
     const compareBtn = document.querySelector('.btn-compare-close');
     if (compareBtn) {
-        compareBtn.innerHTML = `Journey ${current.attempt + 1} starts tomorrow`;
+        compareBtn.innerHTML = opts.nextJourneyOpenToday
+            ? `Start Journey ${current.attempt + 1}`
+            : `Journey ${current.attempt + 1} starts tomorrow`;
     }
 
     const currentLabel = formatJourneyScore(current.score);
@@ -347,6 +351,9 @@ function showJourneyComparison(current, prevBestScore) {
         message = `You matched your best score — ${prevLabel}. Now push past it next time.`;
     } else {
         message = `Your best score stays at ${prevLabel}. This journey: ${currentLabel}. Journey ${current.attempt + 1} starts fresh.`;
+    }
+    if (opts.nextJourneyOpenToday) {
+        message += ` Journey ${current.attempt + 1} is open today (Day 1).`;
     }
     document.getElementById('compareMessage').textContent = message;
 
