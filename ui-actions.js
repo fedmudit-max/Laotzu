@@ -159,6 +159,6 @@ function recordFailure() {
     } else {
         chartPage = -1;
         saveAndRender();
-        showToast(0, `${failures} chance${failures > 1 ? 's' : ''} used. Keep moving forward. Journey Continues.`);
+        showToast(0, `${failures} power${failures > 1 ? 's' : ''} used. Keep moving forward. Journey Continues.`);
     }
 }
