@@ -133,7 +133,7 @@ const KNOWLEDGE_FACTS = [
     { emoji: '👥', headline: 'Social anxiety reduces as dopamine rebalances.', body: 'Hypersexualisation of social situations fades. Real conversations feel easier and more genuine.' },
     { emoji: '⚗️', headline: 'Grey matter volume recovers with abstinence.', body: 'Brain imaging studies show measurable grey matter restoration in regions controlling behaviour and emotion.' },
     { emoji: '🏆', headline: 'Identity change is more powerful than willpower.', body: 'The question isn\'t "can I resist today" — it\'s "who am I?" Someone who doesn\'t do this anymore doesn\'t need willpower.' },
-    { emoji: '🌊', headline: 'Urge surfing works because urges are waves.', body: 'They peak, they crest, they fall. No urge has ever lasted forever. You just have to outlast it.' },
+    { emoji: '🌊', headline: 'Urge surfing is an optional pause tool.', body: 'Ride the urge without acting on it. Breathing here is a way to wait and choose — not a guarantee the urge will disappear.' },
     { emoji: '💡', headline: 'Boredom is the #1 trigger — not stress.', body: 'Research shows idle time drives more relapses than emotional pain. Filling your time deliberately is a recovery strategy.' },
     { emoji: '🔄', headline: 'Relapse does not erase progress.', body: 'Neural pathways you\'ve built don\'t disappear. Every day of strength is permanently wired in, even after a slip.' },
     { emoji: '📈', headline: 'Recovery is not linear — and that\'s normal.', body: 'The average person attempting recovery makes multiple attempts. Each one teaches you something. You are on the right path.' },

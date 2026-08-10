@@ -166,6 +166,10 @@ function renderTopStats() {
         breakdownEl.textContent =
             `${success} strong ${success === 1 ? 'day' : 'days'} · ` +
             `${failures} ${failures === 1 ? 'slip' : 'slips'}`;
+        breakdownEl.setAttribute(
+            'title',
+            'Journey score = strong days / slips (not calendar days, not streak length)',
+        );
     }
 
     const bestEl = document.getElementById('bestJourney');
@@ -212,7 +216,7 @@ function renderChances() {
     if (labelEl) {
         labelEl.className = `chances-label ${tier}`;
         labelEl.textContent =
-            `💪 ${remaining} ${remaining === 1 ? 'chance' : 'chances'} remaining`;
+            `💪 ${remaining} ${remaining === 1 ? 'power' : 'powers'} remaining`;
     }
 }
 

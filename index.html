@@ -24,7 +24,7 @@
             z-index: 9999;
         }
     </style>
-    <link rel="stylesheet" href="./styles.css?v=41">
+    <link rel="stylesheet" href="./styles.css?v=42">
 </head>
 <body>
 
@@ -59,7 +59,8 @@
             </div>
             <div class="stat-box gold" id="bestJourneyBox">
                 <div class="stat-label gold">🏆 Best Journey</div>
-                <div class="stat-value gold" id="bestJourney">0/0</div>
+                <div class="stat-value gold" id="bestJourney" aria-describedby="bestJourneyUnit">0/0</div>
+                <div class="stat-unit" id="bestJourneyUnit">Strong days / slips</div>
                 <div class="stat-hint" id="bestJourneyHint" hidden></div>
             </div>
         </div>
@@ -67,14 +68,15 @@
         <!-- Current journey score -->
         <div class="score-card">
             <div class="score-label">Current Journey</div>
-            <div class="score-value" id="currentJourney">0/0</div>
+            <div class="score-value" id="currentJourney" aria-describedby="scoreUnitLabel">0/0</div>
+            <div class="score-unit" id="scoreUnitLabel">Strong days / slips</div>
             <div class="score-breakdown" id="currentJourneyBreakdown"></div>
         </div>
 
-        <!-- 10 chances (💪 emojis) -->
+        <!-- 10 powers (💪 emojis) -->
         <div class="chances-card">
             <div class="chances-grid" id="chancesGrid"></div>
-            <div class="chances-label" id="chancesLabel">💪 10 chances remaining</div>
+            <div class="chances-label" id="chancesLabel">💪 10 powers remaining</div>
         </div>
 
         <!-- Action buttons -->
@@ -387,7 +389,18 @@
 
             <section class="learn-section">
                 <h3 class="learn-section-title">How far can you go?</h3>
-                <p class="learn-section-body">Your Journey Score measures how many strong days you achieve across 10 slips.</p>
+                <p class="learn-section-body">Your Journey Score is written as:</p>
+                <p class="learn-score-line learn-score-format" aria-label="Score format">
+                    <strong>20 / 10</strong>
+                    <span class="learn-score-format-unit">Strong days / slips</span>
+                </p>
+                <p class="learn-section-body">That means 20 strong days logged, and 10 slips used — not calendar days, not “wins out of total days,” and not streak length / slips.</p>
+                <ul class="learn-list learn-score-not-list" aria-label="What the score is not">
+                    <li>Not days / total days</li>
+                    <li>Not successful days / opportunities</li>
+                    <li>Not streak / slips</li>
+                </ul>
+                <p class="learn-section-body">Across 10 powers (slips), we measure how many strong days you can achieve.</p>
                 <p class="learn-section-body">Expecting yourself to maintain a 100-day or one-year streak is like expecting to run a 42&nbsp;km marathon without training.</p>
                 <p class="learn-section-body">You don't start at 42&nbsp;km. You start at 1&nbsp;km.</p>
                 <p class="learn-section-body">Maybe you reach 1&nbsp;km and fall back. Next time, 1.5&nbsp;km. Then 2. Then 3. Then 5.</p>
@@ -395,9 +408,9 @@
                 <p class="learn-section-body">Failing is part of the process. The important thing is that you record it and keep moving.</p>
                 <p class="learn-section-body">Our Journey works the same way. Across 10 slips, we measure how far you can go.</p>
                 <p class="learn-section-body">Maybe your first Journey is:</p>
-                <p class="learn-score-line"><strong>20 days / 10 slips</strong></p>
+                <p class="learn-score-line"><strong>20 / 10</strong> <span class="learn-score-inline-unit">strong days / slips</span></p>
                 <p class="learn-section-body">Next time:</p>
-                <p class="learn-score-line"><strong>30 days / 10 slips</strong></p>
+                <p class="learn-score-line"><strong>30 / 10</strong> <span class="learn-score-inline-unit">strong days / slips</span></p>
                 <p class="learn-score-delta">That's a 50% improvement.</p>
                 <p class="learn-section-body">You slipped. But you still improved.</p>
                 <p class="learn-section-body">Now 30 days is your personal best. Your next challenge is to go beyond it.</p>
@@ -422,6 +435,7 @@
                     <li>If you relapse once, log it.</li>
                     <li>If you relapse three times in a day, log all three.</li>
                 </ul>
+                <p class="learn-section-body">Set a daily reminder to check in and log your day.</p>
                 <p class="learn-section-body">Be honest with your numbers. They show you where you really are.</p>
                 <p class="learn-section-body">Every Journey teaches you something.</p>
                 <p class="learn-section-body">When you complete a Journey, you begin again. Every Journey gives you a new number to beat.</p>
@@ -601,7 +615,7 @@
 <div class="overlay" id="urgeOverlay">
     <div class="overlay-card">
         <div class="urge-title">🌊 Surf the Urge</div>
-        <div class="urge-subtitle">Urges peak and fade in 5 minutes.<br>Just breathe. You can do this.</div>
+        <div class="urge-subtitle">Ride the urge without acting on it.<br>An optional pause — breathe, wait, decide.</div>
 
         <!-- Breathing ring -->
         <div class="breathing-ring-wrap">
@@ -620,8 +634,8 @@
 
         <div class="urge-phase" id="urgePhase">Inhale slowly for 4 seconds…</div>
 
-        <button class="btn-urge-survived" data-action="urgeSurvived">✓ I Survived It</button>
-        <button class="btn-urge-cancel"   data-action="closeUrge">I couldn't hold it</button>
+        <button class="btn-urge-survived" data-action="urgeSurvived">✓ I'm still holding</button>
+        <button class="btn-urge-cancel"   data-action="closeUrge">Close</button>
     </div>
 </div>
 
@@ -639,15 +653,15 @@
 </div>
 
     <script defer src="./constants.js?v=15"></script>
-    <script defer src="./data.js?v=8"></script>
+    <script defer src="./data.js?v=9"></script>
     <script defer src="./migration.js?v=12"></script>
-    <script defer src="./logic.js?v=26"></script>
+    <script defer src="./logic.js?v=28"></script>
     <script defer src="./entitlement.js?v=17"></script>
     <script defer src="./billing.js?v=24"></script>
     <script defer src="./firebase.js?v=10"></script>
     <script defer src="./backup.js?v=10"></script>
-    <script defer src="./ui-main.js?v=20"></script>
-    <script defer src="./ui-overlays.js?v=11"></script>
+    <script defer src="./ui-main.js?v=22"></script>
+    <script defer src="./ui-overlays.js?v=12"></script>
     <script defer src="./ui-actions.js?v=10"></script>
     <script defer src="./ui-history.js?v=25"></script>
     <script defer src="./ui-day.js?v=21"></script>

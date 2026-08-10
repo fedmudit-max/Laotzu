@@ -382,43 +382,60 @@ function formatJourneyScore(score) {
     return `${score.success}/${score.failures}`;
 }
 
+/**
+ * Journey score ranking (success/failures = strongDays/slips used).
+ *
+ * 1. Higher strong days always wins.
+ *    e.g. 35/10 beats 34/9 — reaching farther is what the Journey is for (all 10 powers used to go further).
+ * 2. Same strong days → fewer slips is better (more efficiency / powers remaining).
+ *    e.g. 30/9 beats 30/10, and 0/0 beats 0/5 or 0/10.
+ *
+ * 0/0 is a real score (clean Journey peak), not a placeholder: it is better than any
+ * 0/N with N > 0 because the same strong-day total was reached with fewer slips.
+ */
 function isBetterJourneyScore(success, failures, best) {
-    if (success > best.success) return true;
-    if (success < best.success) return false;
-    // Same strong-day count — at 9–10 failures the full score (including failures) counts.
-    if (failures >= MAX_FAILURES - 1) {
-        return failures >= best.failures;
-    }
-    return failures < best.failures;
+    if (!best) return true;
+    var bestSuccess = Number(best.success);
+    var bestFailures = Number(best.failures);
+    if (Number.isNaN(bestSuccess)) bestSuccess = 0;
+    if (Number.isNaN(bestFailures)) bestFailures = 0;
+    success = Number(success) || 0;
+    failures = Number(failures) || 0;
+    if (success > bestSuccess) return true;
+    if (success < bestSuccess) return false;
+    return failures < bestFailures;
 }
 
 function pickBetterJourneyScore(candidate, best) {
+    if (!best) {
+        return { success: candidate.success || 0, failures: candidate.failures || 0 };
+    }
     return isBetterJourneyScore(candidate.success, candidate.failures, best)
-        ? { success: candidate.success, failures: candidate.failures }
-        : { success: best.success, failures: best.failures };
+        ? { success: candidate.success || 0, failures: candidate.failures || 0 }
+        : { success: best.success || 0, failures: best.failures || 0 };
 }
 
 function bestScoreFromCompletedJourneys(journeys) {
     if (!journeys.length) return null;
-    return journeys.reduce(
-        (best, journey) => pickBetterJourneyScore(journey.score, best),
-        { success: 0, failures: 0 },
-    );
+    // Start from the first real archived score (do not invent an unbeatable empty 0/0 seed).
+    var first = journeys[0].score || { success: 0, failures: 0 };
+    var best = { success: first.success || 0, failures: first.failures || 0 };
+    for (var i = 1; i < journeys.length; i++) {
+        best = pickBetterJourneyScore(journeys[i].score || { success: 0, failures: 0 }, best);
+    }
+    return best;
 }
 
-/** Best score shown in the header — includes live 9/10-failure progress. */
+/** Best score shown in the header — live current can outrank stored best when truly better. */
 function getDisplayBestJourney() {
-    const { success, failures } = state.score;
-    if (failures >= MAX_FAILURES - 1) {
-        return pickBetterJourneyScore({ success, failures }, state.bestJourney);
-    }
-    return state.bestJourney;
+    return pickBetterJourneyScore(state.score, state.bestJourney);
 }
 
 function updateBestJourney() {
     const { success, failures } = state.score;
+    // Only promote when strictly better — 0/5 must not overwrite best 0/0.
     if (isBetterJourneyScore(success, failures, state.bestJourney)) {
-        state.bestJourney = { success, failures };
+        state.bestJourney = { success: success || 0, failures: failures || 0 };
     }
 }
 

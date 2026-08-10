@@ -189,8 +189,8 @@ function stopConfetti() {
 
 // ════════════════════════════════════════════════════════
 //  FEATURE 1: URGE SURFING TIMER
-//  A 5-minute countdown with a breathing cycle animation.
-//  Urges typically peak and fade within 5 minutes.
+//  Optional coping timer with a breathing cue — not a cure claim.
+//  Frame: ride the urge without acting on it.
 // ════════════════════════════════════════════════════════
 
 
@@ -205,9 +205,9 @@ function startUrgeSurf() {
     if (count > 0) {
         showCelebration({
             emoji:   '🌊',
-            stage:   'URGE SURFER',
-            title:   `${count} Urge${count !== 1 ? 's' : ''} Defeated`,
-            message: `You've beaten ${count} urge${count !== 1 ? 's' : ''} before. You know how this ends — it passes. Let's go.`,
+            stage:   'COPING TOOL',
+            title:   'Ride the urge',
+            message: `You've used this pause ${count} time${count !== 1 ? 's' : ''}. Optional support — no guarantees. Just stay with it without acting.`,
         }, {
             autoCloseMs: 2200,
             onClose: () => launchUrgeTimer(),
@@ -233,7 +233,8 @@ function launchUrgeTimer() {
         updateUrgeCountdown();
         if (urgeSecsLeft <= 0) {
             clearInterval(urgeInterval);
-            document.getElementById('urgePhase').textContent = '✅ You made it through the urge!';
+            document.getElementById('urgePhase').textContent =
+                "Time's up. If the urge is still here, you can stay with it — or close and keep choosing.";
         }
     }, 1000);
 }
@@ -253,9 +254,9 @@ function startBreathing() {
 
     const PHASES = [
         { label: 'Breathe in',  phase: 'Inhale slowly for 4 seconds…',  offset: 0,            duration: 4 },
-        { label: 'Hold',        phase: 'Hold… stay with the feeling…',   offset: 0,            duration: 4 },
+        { label: 'Hold',        phase: 'Hold… notice the urge without acting…', offset: 0,    duration: 4 },
         { label: 'Breathe out', phase: 'Exhale slowly for 4 seconds…',   offset: CIRCUMFERENCE, duration: 4 },
-        { label: 'Rest',        phase: 'Rest for 2 seconds…',            offset: CIRCUMFERENCE, duration: 2 },
+        { label: 'Rest',        phase: 'Rest. Optional pause — not a cure.', offset: CIRCUMFERENCE, duration: 2 },
     ];
 
     let phaseIndex = 0;
@@ -279,7 +280,7 @@ function urgeSurvived() {
     closeUrge();
     state.urgesSurfed = (state.urgesSurfed || 0) + 1;
     saveToStorage(state);
-    showToast(state.currentStreak, `🌊 Urge surfed! That's ${state.urgesSurfed} total. Pure strength.`);
+    showToast(state.currentStreak, `🌊 Pause used — ${state.urgesSurfed} time${state.urgesSurfed !== 1 ? 's' : ''}. Ride it without acting.`);
 }
 
 function closeUrge() {

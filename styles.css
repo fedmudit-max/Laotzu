@@ -332,6 +332,42 @@ body {
     letter-spacing: -0.2px;
 }
 
+.learn-score-format {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin: 8px 0 12px;
+    padding: 14px 14px;
+    border-radius: 12px;
+    background: rgba(52, 199, 89, 0.08);
+    border: 1px solid rgba(52, 199, 89, 0.22);
+    font-size: 22px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.4px;
+}
+
+.learn-score-format-unit,
+.learn-score-inline-unit {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: -0.1px;
+}
+
+.learn-score-inline-unit {
+    display: inline;
+    margin-left: 6px;
+    font-size: 13px;
+}
+
+.learn-score-not-list {
+    margin-top: 4px;
+    margin-bottom: 12px;
+}
+
 .learn-score-delta {
     margin: 4px 0 12px;
     font-size: 15px;
@@ -543,6 +579,19 @@ body {
     letter-spacing: 0.5px;
     text-transform: uppercase;
     color: var(--green);
+}
+
+.score-unit,
+.stat-unit {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: -0.1px;
+    color: var(--text-muted);
+}
+
+.stat-unit {
+    margin-top: 2px;
+    line-height: 1.2;
 }
 
 .score-value {
