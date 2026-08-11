@@ -2412,7 +2412,7 @@ button {
 }
 .compare-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: 10px;
     margin-bottom: 20px;
 }
@@ -2421,6 +2421,9 @@ button {
     border-radius: 14px;
     padding: 14px 10px;
     text-align: center;
+}
+.compare-stat-wide {
+    padding: 16px 12px;
 }
 .compare-stat-label {
     font-size: 10px;
@@ -2443,6 +2446,29 @@ button {
 .compare-val-new { color: var(--green); }
 .compare-val-new.worse  { color: #ff3b30; }
 .compare-val-new.same   { color: var(--text-muted); }
+.compare-improvement {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+.compare-improvement-value {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--green);
+    letter-spacing: -0.4px;
+    line-height: 1.1;
+}
+.compare-improvement-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
 .compare-message {
     font-size: 14px;
     line-height: 1.6;

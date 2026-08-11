@@ -335,33 +335,54 @@ function showJourneyComparison(current, prevBestScore, opts) {
     const currentLabel = formatJourneyScore(current.score);
     const prevLabel = prevBestScore ? formatJourneyScore(prevBestScore) : null;
     const hasComparison = prevBestScore !== null;
+    const isNewBest = hasComparison && isBetterJourneyScore(
+        current.score.success,
+        current.score.failures,
+        prevBestScore,
+    );
+    const improvePct = isNewBest && typeof getJourneyStrongDayImprovementPct === 'function'
+        ? getJourneyStrongDayImprovementPct(
+            current.score.success,
+            prevBestScore.success,
+        )
+        : null;
 
     let cssClass = '';
     if (hasComparison) {
-        const better = isBetterJourneyScore(
-            current.score.success,
-            current.score.failures,
-            prevBestScore,
-        );
         const same = current.score.success === prevBestScore.success
             && current.score.failures === prevBestScore.failures;
-        cssClass = same ? 'same' : better ? '' : 'worse';
+        cssClass = same ? 'same' : isNewBest ? '' : 'worse';
     }
 
-    document.getElementById('compareGrid').innerHTML = `
-        <div class="compare-stat">
-            <div class="compare-stat-label">${hasComparison ? 'Score vs Best Score' : 'Best Score'}</div>
-            <div class="compare-stat-values">
-                ${hasComparison ? `<span class="compare-val-old">${prevLabel}</span><span class="compare-arrow">→</span>` : ''}
-                <span class="compare-val-new ${cssClass}">${currentLabel}</span>
-            </div>
-        </div>`;
+    var improveHtml = '';
+    if (improvePct != null && improvePct > 0) {
+        improveHtml =
+            '<div class="compare-improvement" aria-label="Journey improvement">' +
+                '<span class="compare-improvement-value">' + improvePct + '% improvement</span>' +
+            '</div>';
+    }
+
+    document.getElementById('compareGrid').innerHTML =
+        '<div class="compare-stat' + (hasComparison ? ' compare-stat-wide' : '') + '">' +
+            '<div class="compare-stat-label">' +
+                (hasComparison ? (isNewBest ? 'New Best vs Previous Best' : 'Score vs Best Score') : 'Best Score') +
+            '</div>' +
+            '<div class="compare-stat-values">' +
+                (hasComparison
+                    ? '<span class="compare-val-old">' + prevLabel + '</span>' +
+                      '<span class="compare-arrow">→</span>'
+                    : '') +
+                '<span class="compare-val-new ' + cssClass + '">' + currentLabel + '</span>' +
+            '</div>' +
+            improveHtml +
+        '</div>';
 
     let message = '';
     if (!hasComparison) {
         message = `Your first journey ends here — ${currentLabel}. This is your starting best score. Every journey after this builds on it.`;
-    } else if (isBetterJourneyScore(current.score.success, current.score.failures, prevBestScore)) {
-        message = `Your next journey to go beyond ${current.score.success} days.`;
+    } else if (isNewBest) {
+        // % / previous best already shown in compare grid — keep message short.
+        message = `New personal best — ${currentLabel}. Your next journey is to go beyond ${current.score.success} days.`;
     } else if (current.score.success === prevBestScore.success
         && current.score.failures === prevBestScore.failures) {
         message = `You matched your best score — ${prevLabel}. Now push past it next time.`;

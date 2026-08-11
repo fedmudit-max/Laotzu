@@ -264,7 +264,20 @@ function mergeSavedState(saved) {
     merged.currentJourneyStreaks = saved.currentJourneyStreaks || saved.currentAttemptStreaks || defaults.currentJourneyStreaks;
     merged.urgeLog = saved.urgeLog || defaults.urgeLog;
     syncJourneyMilestoneCountsFromHistory(merged);
-    return runStateMigrations(merged, saved);
+    var migrated = runStateMigrations(merged, saved);
+    // Prefer best from completed journeys when present. Never wipe a saved
+    // legacy bestJourney when archives are empty (old data / mid-migrate).
+    if (typeof bestScoreFromCompletedJourneys === 'function') {
+        var fromCompleted = bestScoreFromCompletedJourneys(migrated.completedJourneys || []);
+        if (fromCompleted) {
+            migrated.bestJourney = pickBetterJourneyScore(
+                fromCompleted,
+                migrated.bestJourney,
+            );
+        }
+        // If no completed archives: keep merged bestJourney / highestScore as-is.
+    }
+    return migrated;
 }
 
 let state = getDefaultState();
@@ -378,21 +391,38 @@ function beginJourneyAfterOnboarding() {
 //  SCORING & JOURNEY RULES
 // ════════════════════════════════════════════════════════
 
+/**
+ * Display form for a journey score object.
+ * @param {{ success?: number, failures?: number }|null|undefined} score
+ * @returns {string} e.g. "103/10"
+ */
 function formatJourneyScore(score) {
-    return `${score.success}/${score.failures}`;
+    score = score || {};
+    return (Number(score.success) || 0) + '/' + (Number(score.failures) || 0);
 }
 
 /**
- * Journey score ranking (success/failures = strongDays/slips used).
+ * % improvement on strong days vs prior Best (e.g. 20 → 28 = 40%).
+ * @returns {number|null} rounded percent, or null if not computable
+ */
+function getJourneyStrongDayImprovementPct(currentSuccess, prevSuccess) {
+    var cur = Number(currentSuccess) || 0;
+    var prev = Number(prevSuccess) || 0;
+    if (prev <= 0 || cur <= prev) return null;
+    return Math.round(((cur - prev) / prev) * 100);
+}
+
+/**
+ * Journey score ranking (success/failures = strong days / slips used).
  *
- * 1. Higher strong days always wins.
- * 2. Same strong days → fewer slips is better (e.g. 20/9 beats 20/10).
- *
- * Provisional N/9 is not locked into bestJourney (see updateBestJourney); it only
- * wins on the header via getDisplayBestJourney. When the Journey ends at N/10,
- * that final score replaces a same-N provisional so Best does not stick on N/9.
- *
- * 0/0 is a real score (clean Journey peak), not a placeholder.
+ * Product model:
+ *  - A finished Journey always ends after 10 slips → permanent "Best Journey"
+ *    values are those full scores (e.g. 30/10 after Journey 1).
+ *  - That N/10 score is the benchmark from Journey 2 onward.
+ *  - Live current Journey displays as Best when it is ahead:
+ *      (1) more strong days than prior Best, or
+ *      (2) same strong days with fewer slips (e.g. 30/7 beats 30/10).
+ *  - Permanent bestJourney is only written when a Journey completes (10 slips).
  */
 function isBetterJourneyScore(success, failures, best) {
     if (!best) return true;
@@ -417,8 +447,8 @@ function pickBetterJourneyScore(candidate, best) {
 }
 
 function bestScoreFromCompletedJourneys(journeys) {
-    if (!journeys.length) return null;
-    // Start from the first real archived score (do not invent an unbeatable empty 0/0 seed).
+    if (!journeys || !journeys.length) return null;
+    // Completed journeys always carry the full score (ends at MAX_FAILURES slips).
     var first = journeys[0].score || { success: 0, failures: 0 };
     var best = { success: first.success || 0, failures: first.failures || 0 };
     for (var i = 1; i < journeys.length; i++) {
@@ -428,39 +458,42 @@ function bestScoreFromCompletedJourneys(journeys) {
 }
 
 /**
- * Best score shown in the header — always mix live current with stored best
- * (so 20/9 can surface over locked 20/10 mid-journey).
+ * Rebuild permanent Best only from completed (10-slip) Journey archives.
+ * First Journey mid-run has no completed best yet → 0/0 until finish.
+ */
+function syncBestJourneyFromCompleted(s) {
+    s = s || state;
+    var fromCompleted = bestScoreFromCompletedJourneys(s.completedJourneys || []);
+    if (fromCompleted) {
+        s.bestJourney = {
+            success: fromCompleted.success || 0,
+            failures: fromCompleted.failures || 0,
+        };
+    } else {
+        s.bestJourney = { success: 0, failures: 0 };
+    }
+}
+
+/**
+ * Header Best: permanent N/10 Best, or live current if it is strictly better
+ * (more strong days, or same strong with fewer slips).
  */
 function getDisplayBestJourney() {
+    // Between Journeys the live score still holds the finished N/10 until next Day 1.
     return pickBetterJourneyScore(state.score, state.bestJourney);
 }
 
 /**
- * Persist personal best.
- * - Mid-journey: fewer slips / more strong days promote as usual.
- * - Last Power (9): never lock into bestJourney — display-only via getDisplayBestJourney
- *   so finishing at N/10 is not permanently beaten by provisional N/9.
- * - Journey complete (10): lock final score if truly better, or if replacing
- *   a provisional same-strong N/9 left over from older saves.
+ * Lock permanent Best only when this Journey has used all 10 Powers.
+ * Mid-journey peaks are shown via getDisplayBestJourney, not written as Best.
  */
 function updateBestJourney() {
     const { success, failures } = state.score;
     var s = success || 0;
     var f = failures || 0;
-    var lastPower = MAX_FAILURES - 1;
 
-    // Provisional endgame: do not write N/9 as permanent best.
-    if (f === lastPower) return;
-
-    if (f >= MAX_FAILURES) {
-        var best = state.bestJourney || { success: 0, failures: 0 };
-        var bS = Number(best.success) || 0;
-        var bF = Number(best.failures) || 0;
-        if (isBetterJourneyScore(s, f, best) || (s === bS && bF === lastPower)) {
-            state.bestJourney = { success: s, failures: f };
-        }
-        return;
-    }
+    // Permanent Best Journey = full Journey score (ends at 10 slips).
+    if (f < MAX_FAILURES) return;
 
     if (isBetterJourneyScore(s, f, state.bestJourney)) {
         state.bestJourney = { success: s, failures: f };
@@ -629,36 +662,55 @@ function getNextTargetAfterMilestoneHit(fixedDay, s) {
     return nextFixed;
 }
 
-/** Subtle Best Journey card — journey 2+: full score rank vs prior completed best. */
+/** Subtle Best Journey card — journey 2+: chase vs prior completed peak. */
 function getBestJourneyHintText(s) {
     s = s || state;
     if (Math.max(1, Math.floor(Number(s.attempt) || 1)) <= 1) return null;
 
-    // Journey ended / between Journeys: no chase sublabel (was wrongly "Beat 75…").
-    if (isAwaitingNextJourney(s) || journeyIsOver(s)) return null;
-
-    if (!shouldCountCurrentJourneyForMilestones(s)) return null;
-
-    var prior = bestScoreFromCompletedJourneys(s.completedJourneys || []);
+    var journeys = s.completedJourneys || [];
     var curS = journeyScoreSuccess(s);
     var curF = (s.score && s.score.failures) || 0;
+    var finished = (typeof journeyIsOver === 'function' && journeyIsOver(s))
+        || curF >= MAX_FAILURES;
 
-    // No prior completed best yet — offer next standard Journey milestone.
+    // Between Journeys (after 10th slip archived): "New Best!" only if this finish beat prior.
+    if (isAwaitingNextJourney(s)) {
+        if (!journeys.length) return null;
+        var finishedScore = journeys[journeys.length - 1].score || s.score || {};
+        var prevBest = bestScoreFromCompletedJourneys(journeys.slice(0, -1));
+        if (!prevBest || isBetterJourneyScore(
+            finishedScore.success || 0,
+            finishedScore.failures || 0,
+            prevBest,
+        )) {
+            return 'New Best!';
+        }
+        return null;
+    }
+
+    if (!shouldCountCurrentJourneyForMilestones(s) && !finished) return null;
+
+    var prior = bestScoreFromCompletedJourneys(journeys);
+
+    // No prior completed best — offer next standard Journey day target.
     if (!prior) {
+        if (finished) return 'New Best!';
         var next = getNextStandardMilestoneDay(curS);
         return next ? 'Beat ' + next + ' to win' : null;
     }
 
-    // Live full score better than prior completed best (e.g. 20/9 over 20/10).
+    // Current leads on strong days or same strong with fewer slips.
     if (isBetterJourneyScore(curS, curF, prior)) {
-        return 'New Best! Keep Going!';
+        // 10th slip / journey over: drop "Keep Going"
+        return finished ? 'New Best!' : 'New Best! Keep Going!';
     }
+
+    if (finished) return null;
 
     if (curS < (prior.success || 0)) {
         return 'Beat ' + prior.success + ' to win';
     }
 
-    // Same or more slips at same strong days as prior best — still chasing.
     return null;
 }
 
@@ -725,9 +777,73 @@ function expandSectionMilestones(sectionDays) {
     return out;
 }
 
-/** Brain recovery Progress tab — frozen streak on multi-day slip day, else live streak. */
+/**
+ * Strong days completed in this recovery run (resets on slip).
+ * Freeze day uses frozen ended length for grey phase display.
+ */
+function getBrainCompletedStrongDays() {
+    if (typeof isStreakFreezeDay === 'function' && isStreakFreezeDay()) {
+        return getDisplayStreak();
+    }
+    if (typeof isJourneyEndedDisplay === 'function' && isJourneyEndedDisplay()) {
+        return getDisplayStreak();
+    }
+    return Math.max(0, state.currentStreak || 0);
+}
+
+/** True when completed strong days exactly close a phase (3, 14, 30, …). */
+function isBrainPhaseBoundaryComplete(completed) {
+    if (typeof BRAIN_PHASES === 'undefined' || !completed) return false;
+    for (var i = 0; i < BRAIN_PHASES.length; i++) {
+        var p = BRAIN_PHASES[i];
+        if (p.to !== Infinity && completed === p.to) return true;
+    }
+    return false;
+}
+
+/**
+ * Progress “you are here” day on the recovery continuum:
+ *  - After slip (0 strong): day 1 of Withdrawal (3 days left), next calendar day only
+ *    (slip day stays freeze/grey via UI — not this function’s job)
+ *  - After completing a phase end day (e.g. day 3 logged): next wall day = first day of next phase
+ *  - Otherwise: equals completed strong days after each log
+ */
 function getBrainProgressStreak() {
-    return getDisplayStreak();
+    var completed = getBrainCompletedStrongDays();
+    if (typeof isStreakFreezeDay === 'function' && isStreakFreezeDay()) return completed;
+    if (typeof isJourneyEndedDisplay === 'function' && isJourneyEndedDisplay()) return completed;
+
+    // Fresh run / after slip: place on Withdrawal day 1 until first strong is logged.
+    if (completed === 0) return 1;
+
+    // Phase end fully logged; new calendar day not logged yet → enter next phase day.
+    if (state.todayStatus === 'none' && isBrainPhaseBoundaryComplete(completed)) {
+        return completed + 1;
+    }
+    return completed;
+}
+
+/**
+ * Days left in a phase from completed-strong rule:
+ *  slip next day (0 done / working day 1): 3 left
+ *  after day-1 log: 2 left … day-3 log: 0 → Phase completed
+ *  next day in Flatline before day-4 log: 11 left; after day-4 log: 10 left
+ */
+function getBrainDaysLeftInPhase(phase, completed) {
+    if (!phase || phase.to === Infinity) return null;
+    var phaseLen = phase.to - phase.from + 1;
+    if (phaseLen <= 0) phaseLen = 1;
+
+    // Not yet logged any day of this phase (e.g. Flatline morning after Withdrawal done)
+    if (completed < phase.from) {
+        return phaseLen;
+    }
+    // Last day of phase fully completed
+    if (completed >= phase.to) {
+        return 0;
+    }
+    // Inside phase: remaining after this many strong days in the continuum
+    return phase.to - completed;
 }
 
 function isAwaitingNextJourney(s) {
@@ -1384,6 +1500,9 @@ function archiveCompletedJourney(endWallDate) {
     state.pendingNextJourney = true;
     // End on the slip's wall day (e.g. yesterday for 10th slip via "did you slip yesterday?").
     state.journeyEndedDate = ended;
+
+    // Permanent Best only from full 10-slip scores (also covers race if slip ran update already).
+    updateBestJourney();
 
     return comparison;
 }

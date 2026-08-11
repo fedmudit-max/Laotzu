@@ -187,7 +187,10 @@ function updateDevDayLabel() {
 
 
 function renderBrainCard() {
-    var streak = getBrainProgressStreak();
+    var workingDay = getBrainProgressStreak();
+    var completed = typeof getBrainCompletedStrongDays === 'function'
+        ? getBrainCompletedStrongDays()
+        : Math.max(0, state.currentStreak || 0);
     var list = document.getElementById('scienceList');
     if (!list || typeof BRAIN_PHASES === 'undefined') return;
 
@@ -204,8 +207,11 @@ function renderBrainCard() {
     list.innerHTML = BRAIN_PHASES.map(function (phase, idx) {
         // Inclusive day ranges: e.g. Withdrawal 1–3, Flatline 4–14, Early Rewiring 15–30.
         var isOpenEnded = phase.to === Infinity;
-        var isCurrent = streak > 0 && streak >= phase.from && (isOpenEnded || streak <= phase.to);
-        var isCompleted = streak > 0 && !isOpenEnded && streak > phase.to;
+        var isCurrent = workingDay > 0 && workingDay >= phase.from && (isOpenEnded || workingDay <= phase.to);
+        // Mark phase done once past its end day (not on the final day while still "here").
+        var isCompleted = completed > 0 && !isOpenEnded
+            && completed >= phase.to
+            && workingDay > phase.to;
 
         // Frozen position (slip day or journey end): hold as completed/grey, no live "here"
         if (freezeStyle && isCurrent) {
@@ -217,13 +223,22 @@ function renderBrainCard() {
             ? 'Day ' + phase.from + '+'
             : 'Day ' + phase.from + '\u2013' + phase.to;
 
-        // Progress within inclusive frame (day 1 of a 3-day phase = 1/3, not 1/4).
         var phaseLen = isOpenEnded ? 1 : (phase.to - phase.from + 1);
         if (phaseLen <= 0) phaseLen = 1;
-        var daysIn = Math.max(0, Math.min(phaseLen, streak - phase.from + 1));
-        var pct = Math.min(100, Math.round((daysIn / phaseLen) * 100));
-        // Remaining days after today (Withdrawal Day 1 of 1–3 → 2 left; Day 3 → 0).
-        var daysLeftInPhase = isOpenEnded ? null : Math.max(0, phase.to - streak);
+
+        var doneInPhase = 0;
+        if (completed >= phase.from) {
+            doneInPhase = Math.min(phaseLen, Math.max(0, completed - phase.from + 1));
+        }
+        var pct = Math.min(100, Math.round((doneInPhase / phaseLen) * 100));
+
+        var daysLeftInPhase = isOpenEnded
+            ? null
+            : getBrainDaysLeftInPhase(phase, completed);
+        // Day 3 of Withdrawal after that strong log, etc.
+        var phaseFullyDone = !isOpenEnded
+            && completed === phase.to
+            && state.todayStatus === 'success';
 
         var cls = 'science-item';
         if (isCurrent)   cls += ' current';
@@ -238,13 +253,12 @@ function renderBrainCard() {
                 : '<span class="science-days-range">' + dayRange + '</span>';
 
         var leftLabel = '';
-        if (daysLeftInPhase === 0) {
-            leftLabel = 'Last day of this phase';
+        if (phaseFullyDone || daysLeftInPhase === 0) {
+            leftLabel = 'Phase completed';
         } else {
             leftLabel = daysLeftInPhase + ' day' + (daysLeftInPhase !== 1 ? 's' : '') + ' left in this phase';
         }
 
-        // Mastery (open-ended) has no progress bar. Label = remaining days after today.
         var progressBar = (isCurrent && !isOpenEnded) ? (
             '<div class="science-progress-track">' +
                 '<div class="science-progress-fill" style="width:' + pct + '%"></div>' +
