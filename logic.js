@@ -634,14 +634,20 @@ function getBestJourneyHintText(s) {
     s = s || state;
     if (Math.max(1, Math.floor(Number(s.attempt) || 1)) <= 1) return null;
 
-    var prior = bestScoreFromCompletedJourneys(s.completedJourneys || []);
-    if (!prior || !shouldCountCurrentJourneyForMilestones(s)) {
-        var next = getNextStandardMilestoneDay(journeyScoreSuccess(s));
-        return next ? 'Beat ' + next + ' to win' : null;
-    }
+    // Journey ended / between Journeys: no chase sublabel (was wrongly "Beat 75…").
+    if (isAwaitingNextJourney(s) || journeyIsOver(s)) return null;
 
+    if (!shouldCountCurrentJourneyForMilestones(s)) return null;
+
+    var prior = bestScoreFromCompletedJourneys(s.completedJourneys || []);
     var curS = journeyScoreSuccess(s);
     var curF = (s.score && s.score.failures) || 0;
+
+    // No prior completed best yet — offer next standard Journey milestone.
+    if (!prior) {
+        var next = getNextStandardMilestoneDay(curS);
+        return next ? 'Beat ' + next + ' to win' : null;
+    }
 
     // Live full score better than prior completed best (e.g. 20/9 over 20/10).
     if (isBetterJourneyScore(curS, curF, prior)) {
@@ -786,11 +792,15 @@ function getDisplayStreak() {
     return Math.max(0, state.currentStreak || 0);
 }
 
+/**
+ * First day this streak strictly passes the best recorded at streak start.
+ * (e.g. previous best 2 → celebrate on day 3, not day 4.)
+ * May land on a named milestone day (3, 7, …); both can show (celebration queue).
+ */
 function isPersonalBestStreak(streak, recordToBeat) {
     return streak > recordToBeat
         && recordToBeat > 0
-        && !state.recordCelebrated
-        && !STREAK_MILESTONES[streak];
+        && !state.recordCelebrated;
 }
 
 /** True on the calendar day the user slipped — show reflect copy, not Day 1 yet. */

@@ -110,7 +110,7 @@ function switchChartMode(mode) {
 // ════════════════════════════════════════════════════════
 
 const STREAKS_PER_PAGE = 10;
-const JOURNEYS_PER_PAGE = 5;
+const JOURNEYS_PER_PAGE = 6;
 
 function getChartWindow() {
     return chartMode === 'journeys' ? JOURNEYS_PER_PAGE : STREAKS_PER_PAGE;
@@ -521,6 +521,25 @@ function renderMonthGrid() {
         const slipCount = status === 'slip' ? (entry.slipCount || 1) : 0;
         dateInfo[dateKey] = { status, slipCount };
     });
+
+    // Counts for the month being viewed (strong days + total slips, multi-slip days add up).
+    var monthPrefix = year + '-' + String(month + 1).padStart(2, '0') + '-';
+    var monthStrong = 0;
+    var monthSlips = 0;
+    Object.keys(dateInfo).forEach(function (dateKey) {
+        if (dateKey.indexOf(monthPrefix) !== 0) return;
+        var info = dateInfo[dateKey];
+        if (info.status === 'strong') monthStrong++;
+        else if (info.status === 'slip') monthSlips += (info.slipCount || 1);
+    });
+    var strongEl = document.getElementById('monthStrongStat');
+    var slipEl = document.getElementById('monthSlipStat');
+    if (strongEl) {
+        strongEl.textContent = monthStrong + ' strong day' + (monthStrong === 1 ? '' : 's');
+    }
+    if (slipEl) {
+        slipEl.textContent = monthSlips + ' slip' + (monthSlips === 1 ? '' : 's');
+    }
 
     // Journey start wall date for current journey Day index.
     // App install / first Day 1 — grey month cells only before this (does not reset on new journey).
