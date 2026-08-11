@@ -540,8 +540,8 @@ function renderMonthGrid() {
     }
 
     // Day cells after install / Journey Day 1:
-    //   slip → red · strong log → green · unlogged past (display) → green until filled/answered
-    //   Today waits for user. Yesterday is asked via popup (not auto-filled).
+    //   slip → red · strong log only if logged strong · unlogged (incl. after test New day) → neutral
+    //   Today waits for user; no optimistic green without a log entry.
     for (let d = 1; d <= daysInMonth; d++) {
         const key      = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
         const isToday  = key === appToday;
@@ -549,6 +549,7 @@ function renderMonthGrid() {
         const beforeStart = key < journeyStart;
         const info     = dateInfo[key];
         const isSlip   = !!(info && info.status === 'slip');
+        const isStrong = !!(info && info.status === 'strong');
         const daySlips = (info && info.slipCount) || 0;
 
         let cls = 'month-cell';
@@ -558,9 +559,10 @@ function renderMonthGrid() {
             cls += ' pre-journey';
         } else if (isSlip) {
             cls += ' slip' + (daySlips > 1 ? ' slip-multi' : '');
-        } else {
-            // Strong log, auto-strong miss, or pending today / yesterday paint → green
+        } else if (isStrong) {
             cls += ' strong';
+        } else {
+            cls += ' unlogged';
         }
         if (isToday && !beforeStart) cls += ' today';
 

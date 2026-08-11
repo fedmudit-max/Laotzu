@@ -1943,6 +1943,13 @@ button {
     opacity: 1;
 }
 
+/* Past/today with no log yet — neutral (not auto-green) */
+.month-cell.unlogged {
+    background: var(--bg);
+    border-color: var(--border);
+    color: var(--text-muted);
+}
+
 .month-cell.today.strong {
     box-shadow: 0 0 0 2px rgba(52, 199, 89, 0.45);
 }

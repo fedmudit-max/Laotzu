@@ -386,12 +386,14 @@ function formatJourneyScore(score) {
  * Journey score ranking (success/failures = strongDays/slips used).
  *
  * 1. Higher strong days always wins.
- *    e.g. 35/10 beats 34/9 — reaching farther is what the Journey is for (all 10 powers used to go further).
- * 2. Same strong days → fewer slips is better (more efficiency / powers remaining).
- *    e.g. 30/9 beats 30/10, and 0/0 beats 0/5 or 0/10.
+ *    e.g. 35/10 beats 34/9.
+ * 2. Same strong days, mid-journey (failures < 9):
+ *    fewer slips is better — e.g. 0/0 beats 0/5.
+ * 3. Endgame special case (failures ≥ 9 — last Power, or Journey complete):
+ *    more slips wins when strong days match so provisional N/9 loses to final N/10.
+ *    e.g. 23/10 beats 23/9. Without this, Best sticks at 23/9 after Journey ends at 23/10.
  *
- * 0/0 is a real score (clean Journey peak), not a placeholder: it is better than any
- * 0/N with N > 0 because the same strong-day total was reached with fewer slips.
+ * 0/0 is a real score (clean Journey peak), not a placeholder.
  */
 function isBetterJourneyScore(success, failures, best) {
     if (!best) return true;
@@ -403,6 +405,10 @@ function isBetterJourneyScore(success, failures, best) {
     failures = Number(failures) || 0;
     if (success > bestSuccess) return true;
     if (success < bestSuccess) return false;
+    // Same strong days — at 9–10 failures the full score counts (final */10 over */9).
+    if (failures >= MAX_FAILURES - 1) {
+        return failures >= bestFailures;
+    }
     return failures < bestFailures;
 }
 
@@ -426,14 +432,23 @@ function bestScoreFromCompletedJourneys(journeys) {
     return best;
 }
 
-/** Best score shown in the header — live current can outrank stored best when truly better. */
+/**
+ * Best score shown in the header.
+ * Live score only mixes in at 9–10 failures so provisional endgame (and final */10)
+ * can surface; earlier mid-journey does not replace a locked best via display alone.
+ */
 function getDisplayBestJourney() {
-    return pickBetterJourneyScore(state.score, state.bestJourney);
+    const { success, failures } = state.score;
+    if (failures >= MAX_FAILURES - 1) {
+        return pickBetterJourneyScore({ success: success || 0, failures: failures || 0 }, state.bestJourney);
+    }
+    return state.bestJourney;
 }
 
 function updateBestJourney() {
     const { success, failures } = state.score;
     // Only promote when strictly better — 0/5 must not overwrite best 0/0.
+    // Endgame rule: N/10 replaces N/9 with the same strong days (see isBetterJourneyScore).
     if (isBetterJourneyScore(success, failures, state.bestJourney)) {
         state.bestJourney = { success: success || 0, failures: failures || 0 };
     }

@@ -120,18 +120,39 @@ function logYesterday(result) {
 }
 
 /**
- * Test helper: move app calendar forward one day (same as sleeping overnight).
- * Uses state.devDateOffset so todayKey(), logs, journey Day, and month grid all advance.
+ * Test helper: move app calendar forward one day only.
+ * Does not auto-strong missed days, invent logs, or change score — those stay
+ * user-driven (or real overnight checkNewDay when the app resumes for real).
  */
 function advanceDevDay() {
+    if (!safeGet('onboardingComplete')) {
+        if (typeof showToast === 'function') showToast(0, 'Finish onboarding first.');
+        return;
+    }
+
     state.devDateOffset = (state.devDateOffset || 0) + 1;
-    // Leave lastCheckedDate on the previous app-day so checkNewDay runs catch-up.
     monthOffset = 0;
+
+    const today = todayKey();
+
+    if (isAwaitingNextJourney()
+        && typeof canBeginNextJourneyToday === 'function'
+        && canBeginNextJourneyToday()) {
+        beginNextJourney();
+    }
+
+    // Quiet day shift: mark app open on the new today without catch-up fills.
+    ensureTodayUnloggedIfNeeded(today);
+    state.lastOpenedDate = today;
+    state.lastCheckedDate = today;
+    clampCalendarDayToRealToday();
+    chartPage = -1;
     saveToStorage(state);
-    checkNewDay();
+    renderAll();
+
     if (typeof showToast === 'function') {
         var off = state.devDateOffset;
-        showToast(0, 'Test day → ' + todayKey() + (off ? ' (+' + off + ')' : ''));
+        showToast(0, 'Test day → ' + today + (off ? ' (+' + off + ')' : ''));
     }
     updateDevDayLabel();
 }
