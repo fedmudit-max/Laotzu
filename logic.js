@@ -405,7 +405,7 @@ function isBetterJourneyScore(success, failures, best) {
     failures = Number(failures) || 0;
     if (success > bestSuccess) return true;
     if (success < bestSuccess) return false;
-    // Same strong days — at 9–10 failures the full score counts (final */10 over */9).
+    // Same strong days — at 9-10 failures the full score counts (final N/10 over N/9).
     if (failures >= MAX_FAILURES - 1) {
         return failures >= bestFailures;
     }
@@ -434,7 +434,7 @@ function bestScoreFromCompletedJourneys(journeys) {
 
 /**
  * Best score shown in the header.
- * Live score only mixes in at 9–10 failures so provisional endgame (and final */10)
+ * Live score only mixes in at 9-10 failures so provisional endgame (and final N/10)
  * can surface; earlier mid-journey does not replace a locked best via display alone.
  */
 function getDisplayBestJourney() {
