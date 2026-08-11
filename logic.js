@@ -386,12 +386,11 @@ function formatJourneyScore(score) {
  * Journey score ranking (success/failures = strongDays/slips used).
  *
  * 1. Higher strong days always wins.
- *    e.g. 35/10 beats 34/9.
- * 2. Same strong days, mid-journey (failures < 9):
- *    fewer slips is better — e.g. 0/0 beats 0/5.
- * 3. Endgame special case (failures ≥ 9 — last Power, or Journey complete):
- *    more slips wins when strong days match so provisional N/9 loses to final N/10.
- *    e.g. 23/10 beats 23/9. Without this, Best sticks at 23/9 after Journey ends at 23/10.
+ * 2. Same strong days → fewer slips is better (e.g. 20/9 beats 20/10).
+ *
+ * Provisional N/9 is not locked into bestJourney (see updateBestJourney); it only
+ * wins on the header via getDisplayBestJourney. When the Journey ends at N/10,
+ * that final score replaces a same-N provisional so Best does not stick on N/9.
  *
  * 0/0 is a real score (clean Journey peak), not a placeholder.
  */
@@ -405,10 +404,6 @@ function isBetterJourneyScore(success, failures, best) {
     failures = Number(failures) || 0;
     if (success > bestSuccess) return true;
     if (success < bestSuccess) return false;
-    // Same strong days — at 9-10 failures the full score counts (final N/10 over N/9).
-    if (failures >= MAX_FAILURES - 1) {
-        return failures >= bestFailures;
-    }
     return failures < bestFailures;
 }
 
@@ -433,24 +428,42 @@ function bestScoreFromCompletedJourneys(journeys) {
 }
 
 /**
- * Best score shown in the header.
- * Live score only mixes in at 9-10 failures so provisional endgame (and final N/10)
- * can surface; earlier mid-journey does not replace a locked best via display alone.
+ * Best score shown in the header — always mix live current with stored best
+ * (so 20/9 can surface over locked 20/10 mid-journey).
  */
 function getDisplayBestJourney() {
-    const { success, failures } = state.score;
-    if (failures >= MAX_FAILURES - 1) {
-        return pickBetterJourneyScore({ success: success || 0, failures: failures || 0 }, state.bestJourney);
-    }
-    return state.bestJourney;
+    return pickBetterJourneyScore(state.score, state.bestJourney);
 }
 
+/**
+ * Persist personal best.
+ * - Mid-journey: fewer slips / more strong days promote as usual.
+ * - Last Power (9): never lock into bestJourney — display-only via getDisplayBestJourney
+ *   so finishing at N/10 is not permanently beaten by provisional N/9.
+ * - Journey complete (10): lock final score if truly better, or if replacing
+ *   a provisional same-strong N/9 left over from older saves.
+ */
 function updateBestJourney() {
     const { success, failures } = state.score;
-    // Only promote when strictly better — 0/5 must not overwrite best 0/0.
-    // Endgame rule: N/10 replaces N/9 with the same strong days (see isBetterJourneyScore).
-    if (isBetterJourneyScore(success, failures, state.bestJourney)) {
-        state.bestJourney = { success: success || 0, failures: failures || 0 };
+    var s = success || 0;
+    var f = failures || 0;
+    var lastPower = MAX_FAILURES - 1;
+
+    // Provisional endgame: do not write N/9 as permanent best.
+    if (f === lastPower) return;
+
+    if (f >= MAX_FAILURES) {
+        var best = state.bestJourney || { success: 0, failures: 0 };
+        var bS = Number(best.success) || 0;
+        var bF = Number(best.failures) || 0;
+        if (isBetterJourneyScore(s, f, best) || (s === bS && bF === lastPower)) {
+            state.bestJourney = { success: s, failures: f };
+        }
+        return;
+    }
+
+    if (isBetterJourneyScore(s, f, state.bestJourney)) {
+        state.bestJourney = { success: s, failures: f };
     }
 }
 
@@ -616,20 +629,31 @@ function getNextTargetAfterMilestoneHit(fixedDay, s) {
     return nextFixed;
 }
 
-/** Subtle Best Journey card — journey 2+: beat prior best, then celebrate crossing it. */
+/** Subtle Best Journey card — journey 2+: full score rank vs prior completed best. */
 function getBestJourneyHintText(s) {
     s = s || state;
     if (Math.max(1, Math.floor(Number(s.attempt) || 1)) <= 1) return null;
 
-    var prior = getCompletedJourneysBestSuccess(s);
-    var current = shouldCountCurrentJourneyForMilestones(s) ? journeyScoreSuccess(s) : 0;
-
-    if (prior > 0) {
-        return current < prior ? 'Beat ' + prior + ' to win' : 'New Best! Keep Going!';
+    var prior = bestScoreFromCompletedJourneys(s.completedJourneys || []);
+    if (!prior || !shouldCountCurrentJourneyForMilestones(s)) {
+        var next = getNextStandardMilestoneDay(journeyScoreSuccess(s));
+        return next ? 'Beat ' + next + ' to win' : null;
     }
 
-    var next = getNextStandardMilestoneDay(current);
-    return next ? 'Beat ' + next + ' to win' : null;
+    var curS = journeyScoreSuccess(s);
+    var curF = (s.score && s.score.failures) || 0;
+
+    // Live full score better than prior completed best (e.g. 20/9 over 20/10).
+    if (isBetterJourneyScore(curS, curF, prior)) {
+        return 'New Best! Keep Going!';
+    }
+
+    if (curS < (prior.success || 0)) {
+        return 'Beat ' + prior.success + ' to win';
+    }
+
+    // Same or more slips at same strong days as prior best — still chasing.
+    return null;
 }
 
 function resolveJourneyMilestoneHit(successCount) {
