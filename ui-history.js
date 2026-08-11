@@ -356,24 +356,35 @@ function renderChart() {
 
     const allTimeMax = Math.max(...points.map(p => p.val), 1);
     const yMax       = Math.max(Math.ceil(allTimeMax * 1.25 / 5) * 5, 5);
-    const bestVal = chartMode === 'journeys' ? state.bestJourney.success : state.longestStreak;
+
+    // Journeys: same live-or-permanent pick as the header Best box (realtime at 21/9).
+    const displayBest = chartMode === 'journeys' && typeof getDisplayBestJourney === 'function'
+        ? getDisplayBestJourney()
+        : null;
+    const bestVal = chartMode === 'journeys'
+        ? ((displayBest && displayBest.success) || 0)
+        : state.longestStreak;
 
     const gridLines = buildChartGridLines(yFracs, false) +
         `<line x1="${CHART_Y_GUT}" y1="${CHART_PAD_T}" x2="${CHART_Y_GUT}" y2="${CHART_PAD_T + cH}"
             stroke="rgba(0,0,0,0.12)" stroke-width="1.5"/>`;
 
     const isCurrentBest = chartMode === 'journeys'
-        ? (state.score.success || 0) > 0 &&
-            (state.score.success || 0) === (state.bestJourney && state.bestJourney.success)
+        ? !!(displayBest
+            && typeof isAwaitingNextJourney === 'function' && !isAwaitingNextJourney()
+            && (state.score.success || 0) > 0
+            && (state.score.success || 0) === (displayBest.success || 0)
+            && (state.score.failures || 0) === (displayBest.failures || 0))
         : state.currentStreak > 0 && state.currentStreak === state.longestStreak;
     const slotCount = getChartWindow();
 
+    // When live is the display best, only the live node is gold (not an older bar at a lower val).
     const pts = show.map((p, i) => ({
         x:          chartPlotX(i, slotCount),
         y:          chartYForValue(p.val, yMax),
         val:        p.val,
         label:      p.label,
-        isBest:     !p.live && p.val === bestVal && bestVal > 0,
+        isBest:     !p.live && !isCurrentBest && p.val === bestVal && bestVal > 0,
         isLive:     !!p.live,
         isLiveBest: !!p.live && isCurrentBest,
     }));

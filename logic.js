@@ -188,9 +188,32 @@ function getAutoStrongCutoffKey(today) {
     return getDayBeforeYesterdayKey(today);
 }
 
+/** Fetch dailyLog entry for a wall date (YYYY-MM-DD), optionally via cal day key. */
+function getDailyLogEntry(wallDate, calDay) {
+    var log = state.dailyLog || {};
+    if (wallDate && log[wallDate]) return log[wallDate];
+    if (calDay != null && log[dailyLogKey(calDay)]) {
+        var byDay = log[dailyLogKey(calDay)];
+        if (!wallDate || !byDay || !byDay.date || byDay.date === wallDate) return byDay;
+    }
+    if (wallDate) {
+        for (var k in log) {
+            if (!Object.prototype.hasOwnProperty.call(log, k)) continue;
+            var entry = log[k];
+            if (entry && typeof entry === 'object' && entry.date === wallDate) return entry;
+        }
+    }
+    return null;
+}
+
+/** True when this wall date has no slip logged yet (used for first-slip streak archive). */
+function isFirstSlipOnWallDate(wallDate, calDay) {
+    var entry = getDailyLogEntry(wallDate, calDay);
+    return !(entry && logStatus(entry) === 'slip');
+}
+
 function nextSlipCount(logDate, calDay) {
-    const key = logDate || dailyLogKey(calDay);
-    var prev = state.dailyLog && state.dailyLog[key];
+    var prev = getDailyLogEntry(logDate, calDay);
     if (prev && logStatus(prev) === 'slip') {
         return (prev.slipCount || 1) + 1;
     }
@@ -877,8 +900,21 @@ function canLogToday() {
 }
 
 function streakSegmentBeforeSlip() {
-    // First slip of the calendar day archives the streak built so far.
+    // First slip of *today* archives the streak built so far.
     return state.todayStatus === 'none' ? state.currentStreak : 0;
+}
+
+/**
+ * Streak length archived by a slip on wallDate (historical vs today).
+ * First slip on that wall date only; later same-day slips archive 0.
+ */
+function streakSegmentBeforeSlipOnDate(wallDate, firstSlipOfDay) {
+    if (!firstSlipOfDay) return 0;
+    if (wallDate === todayKey()) {
+        return streakSegmentBeforeSlip();
+    }
+    // Backdated first slip: archive whatever live streak still exists.
+    return state.currentStreak || 0;
 }
 
 /**
@@ -1362,23 +1398,26 @@ function applySlipDay({ logDate, calDay }) {
         return { applied: false, failures: state.score.failures };
     }
 
-    const firstSlipOfDay = state.todayStatus === 'none';
-    const ended = streakSegmentBeforeSlip();
+    const wallDate = clampDateKeyToRealToday(logDate);
+    const dayNum = getCalendarDayForWallDate(wallDate);
+    if (calDay == null || calDay < dayNum) calDay = dayNum;
+    if ((state.calendarDay || 1) < dayNum) state.calendarDay = dayNum;
+
+    const isToday = wallDate === todayKey();
+    // Historical slips must not use todayStatus — that flag is for today only.
+    const firstSlipOfDay = isFirstSlipOnWallDate(wallDate, calDay);
+    const ended = streakSegmentBeforeSlipOnDate(wallDate, firstSlipOfDay);
+
     state.currentJourneyStreaks.push(ended);
     state.score.failures++;
     state.longestStreakAtStreakStart = state.longestStreak;
     state.currentStreak = 0;
     state.recordCelebrated = false;
 
-    const wallDate = clampDateKeyToRealToday(logDate);
-    const dayNum = getCalendarDayForWallDate(wallDate);
-    if (calDay == null || calDay < dayNum) calDay = dayNum;
-    if ((state.calendarDay || 1) < dayNum) state.calendarDay = dayNum;
-
-    // Freeze UI only from this days first slip (0 or more strong) — never reuse older segments.
-    if (firstSlipOfDay) {
+    // Freeze UI only from *today's* first slip — never for backdated logs.
+    if (firstSlipOfDay && isToday) {
         state.lastFreezeStreak = ended;
-        state.lastFreezeDate = todayKey();
+        state.lastFreezeDate = wallDate;
     }
 
     writeDailyLog(calDay, {
@@ -1388,9 +1427,12 @@ function applySlipDay({ logDate, calDay }) {
         slipCount: nextSlipCount(wallDate, calDay),
     });
 
-    state.todayFailCount++;
+    // todayFailCount / todayStatus are calendar-today only.
+    if (isToday) {
+        state.todayFailCount++;
+        markTodayStatus(wallDate, 'failed');
+    }
     updateBestJourney();
-    markTodayStatus(logDate, 'failed');
     return { applied: true, failures: state.score.failures };
 }
 
