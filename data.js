@@ -43,7 +43,8 @@ const TOAST_MESSAGES = [
 ];
 
 const STREAK_MILESTONES = {
-    1:   { emoji: '⚡', stage: 'FIRST STEP',   title: 'Day 1 Done.',              message: 'First step taken. Your first target is 75 strong days. The journey has begun.' },
+    // Day 1 long copy only on first streak of a Journey (see triggerStreakMilestone).
+    1:   { emoji: '⚡', stage: 'FIRST STEP',   title: 'Day 1 Done.',              message: 'Your first target is to achieve a Journey of 75 days.' },
     3:   { emoji: '🔥', stage: 'EARLY BATTLE', title: '3-Day Streak!',            message: 'Three days of staying strong. The battle is real — and you\'re winning it.' },
     7:   { emoji: '📅', stage: 'WEEK 1',        title: 'First Full Week!',         message: 'One complete week. The Journey is real now — stay honest with strong days and slips.' },
     10:  { emoji: '🌟', stage: 'TEN DAYS',      title: '10 Days Strong!',          message: 'Double digits! Your willpower muscle is visibly growing stronger.' },

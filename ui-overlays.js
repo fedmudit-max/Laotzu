@@ -39,9 +39,25 @@ function successRateLine() {
 }
 
 function triggerStreakMilestone(streak) {
-    if (STREAK_MILESTONES[streak]) {
-        setTimeout(() => showCelebration(STREAK_MILESTONES[streak]), 400);
+    if (!STREAK_MILESTONES[streak]) return;
+
+    // Day 1 long copy only once: first streak of this Journey (no slips yet in the archive list).
+    // From the 2nd streak onward: stage + title only ("FIRST STEP" / "Day 1 Done.").
+    if (streak === 1) {
+        var base = STREAK_MILESTONES[1];
+        var firstStreakOfJourney = !(state.currentJourneyStreaks
+            && state.currentJourneyStreaks.length);
+        var data = {
+            emoji: base.emoji,
+            stage: base.stage,
+            title: base.title,
+            message: firstStreakOfJourney ? base.message : '',
+        };
+        setTimeout(function () { showCelebration(data); }, 400);
+        return;
     }
+
+    setTimeout(function () { showCelebration(STREAK_MILESTONES[streak]); }, 400);
 }
 
 function triggerPersonalBestJourneyCelebration(successCount) {

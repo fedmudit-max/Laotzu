@@ -120,9 +120,9 @@ function logYesterday(result) {
 }
 
 /**
- * Test helper: move app calendar forward one day only.
- * Does not auto-strong missed days, invent logs, or change score — those stay
- * user-driven (or real overnight checkNewDay when the app resumes for real).
+ * Test helper: move app calendar forward one day.
+ * If the day being left has no strong or slip log, it is counted as strong
+ * (same idea as missed days in product catch-up; test path only).
  */
 function advanceDevDay() {
     if (!safeGet('onboardingComplete')) {
@@ -130,10 +130,23 @@ function advanceDevDay() {
         return;
     }
 
+    var leavingDay = todayKey();
+    var filledMissed = false;
+
+    // Before the calendar moves: unlogged leaving day → strong (not slip).
+    if (!isAwaitingNextJourney()
+        && typeof journeyIsOver === 'function' && !journeyIsOver(state)
+        && typeof isWallDateLogged === 'function'
+        && !isWallDateLogged(leavingDay)
+        && typeof applyStrongDay === 'function') {
+        applyStrongDay({ logDate: leavingDay, suppressUI: true });
+        filledMissed = true;
+    }
+
     state.devDateOffset = (state.devDateOffset || 0) + 1;
     monthOffset = 0;
 
-    const today = todayKey();
+    var today = todayKey();
 
     if (isAwaitingNextJourney()
         && typeof canBeginNextJourneyToday === 'function'
@@ -141,7 +154,6 @@ function advanceDevDay() {
         beginNextJourney();
     }
 
-    // Quiet day shift: mark app open on the new today without catch-up fills.
     ensureTodayUnloggedIfNeeded(today);
     state.lastOpenedDate = today;
     state.lastCheckedDate = today;
@@ -152,7 +164,9 @@ function advanceDevDay() {
 
     if (typeof showToast === 'function') {
         var off = state.devDateOffset;
-        showToast(0, 'Test day → ' + today + (off ? ' (+' + off + ')' : ''));
+        var msg = 'Test day → ' + today + (off ? ' (+' + off + ')' : '');
+        if (filledMissed) msg = leavingDay + ' counted strong · ' + msg;
+        showToast(0, msg);
     }
     updateDevDayLabel();
 }
@@ -208,8 +222,8 @@ function renderBrainCard() {
         if (phaseLen <= 0) phaseLen = 1;
         var daysIn = Math.max(0, Math.min(phaseLen, streak - phase.from + 1));
         var pct = Math.min(100, Math.round((daysIn / phaseLen) * 100));
-        // Streak days needed before the next phase starts (still >= 1 while current).
-        var daysLeft = isOpenEnded ? null : Math.max(0, phase.to - streak + 1);
+        // Days still in this phase, including today (Flatline Day 4 of 4–14 → 11).
+        var daysLeftInPhase = isOpenEnded ? null : Math.max(0, phase.to - streak + 1);
 
         var cls = 'science-item';
         if (isCurrent)   cls += ' current';
@@ -223,13 +237,13 @@ function renderBrainCard() {
                 ? '<span class="science-days-range">' + (freezeStyle ? 'Ended' : '\u2713 Done') + '</span>'
                 : '<span class="science-days-range">' + dayRange + '</span>';
 
-        // Mastery (open-ended) has no progress bar or countdown label.
+        // Mastery (open-ended) has no progress bar. Label = remaining days in this phase.
         var progressBar = (isCurrent && !isOpenEnded) ? (
             '<div class="science-progress-track">' +
                 '<div class="science-progress-fill" style="width:' + pct + '%"></div>' +
             '</div>' +
             '<div class="science-progress-label">' +
-                daysLeft + ' day' + (daysLeft !== 1 ? 's' : '') + ' to next phase' +
+                daysLeftInPhase + ' day' + (daysLeftInPhase !== 1 ? 's' : '') + ' left in this phase' +
             '</div>'
         ) : '';
 
