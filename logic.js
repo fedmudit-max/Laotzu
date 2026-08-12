@@ -336,19 +336,24 @@ function ensureTrialStarted(s, opts) {
 }
 
 /**
- * Start of the user's journey Day 1 in local time (fallback: today).
- * Trial window runs PREMIUM_TRIAL_DAYS from this midnight.
+ * Start of first-ever install Day 1 in local time (fallback: today).
+ * Trial is PREMIUM_TRIAL_DAYS calendar days from this date — not each new Journey.
  */
 function trialStartIsoForCalendarDayOne(s) {
     s = s || state;
     var key = '';
-    var log = s.dailyLog || {};
-    var keys = Object.keys(log);
-    for (var i = 0; i < keys.length; i++) {
-        var entry = log[keys[i]];
-        if (entry && entry.day === 1 && entry.date && /^\d{4}-\d{2}-\d{2}$/.test(entry.date)) {
-            key = entry.date;
-            break;
+    if (s.appStartDate && /^\d{4}-\d{2}-\d{2}$/.test(s.appStartDate)) {
+        key = s.appStartDate;
+    }
+    if (!key) {
+        var log = s.dailyLog || {};
+        var keys = Object.keys(log);
+        for (var i = 0; i < keys.length; i++) {
+            var entry = log[keys[i]];
+            if (entry && entry.day === 1 && entry.date && /^\d{4}-\d{2}-\d{2}$/.test(entry.date)) {
+                key = entry.date;
+                break;
+            }
         }
     }
     if (!key && s.lastOpenedDate && /^\d{4}-\d{2}-\d{2}$/.test(s.lastOpenedDate)) {
@@ -364,17 +369,12 @@ function trialStartIsoForCalendarDayOne(s) {
     return localMidnight.toISOString();
 }
 
-/** Stamp trial when onboarding ends (Skip or full slides) — Calendar Day 1 window. */
+/** Stamp trial when onboarding ends — once. Never restarts an expired trial. */
 function startPremiumTrial() {
-    // Active trial: keep existing start date (do not reset the clock).
     if (state.trialStartedAt) {
         var start = new Date(state.trialStartedAt);
-        if (!Number.isNaN(start.getTime())) {
-            var ends = start.getTime() + PREMIUM_TRIAL_DAYS * MS_PER_DAY;
-            if (ends > Date.now()) return;
-        }
+        if (!Number.isNaN(start.getTime())) return;
     }
-    // Missing or expired stamp — begin from local midnight of journey Day 1.
     state.trialStartedAt = trialStartIsoForCalendarDayOne(state);
 }
 

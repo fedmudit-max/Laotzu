@@ -52,6 +52,52 @@ body {
     animation: fadeUp 0.4s ease both;
 }
 
+.premium-gated {
+    position: relative;
+}
+
+.premium-gated.is-locked > *:not(.premium-lock-veil) {
+    pointer-events: none;
+}
+
+.premium-lock-veil {
+    position: absolute;
+    inset: 0;
+    z-index: 8;
+    margin: 0;
+    border: none;
+    border-radius: inherit;
+    background: rgba(255, 255, 255, 0.42);
+    backdrop-filter: blur(1px);
+    -webkit-backdrop-filter: blur(1px);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 14px;
+    font-family: inherit;
+}
+
+.premium-lock-veil-label {
+    display: inline-block;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: rgba(29, 29, 31, 0.88);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: -0.1px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+
+#premiumBackupGate {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 8px;
+    width: 100%;
+    border-radius: 12px;
+}
+
 @keyframes fadeUp {
     from { opacity: 0; transform: translateY(20px); }
     to   { opacity: 1; transform: translateY(0); }
@@ -336,6 +382,10 @@ body {
     line-height: 1;
     font-weight: 800;
 }
+
+/* Match header slip score: 0–1 slips green, 2–3 slips yellow-orange. */
+.learn-powers .learn-pow-ok { color: var(--green); }
+.learn-powers .learn-pow-warn { color: #e6ac00; }
 
 .learn-seq-arrow {
     display: inline-flex;

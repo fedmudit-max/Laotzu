@@ -78,12 +78,24 @@ var Entitlement = (function () {
         return s || (typeof state !== 'undefined' ? state : null) || {};
     }
 
-    function getTrialEndsAt(s) {
+    function getTrialStartDateKey(s) {
         s = snapshot(s);
-        if (!s.trialStartedAt) return null;
+        if (!s.trialStartedAt) return '';
         var start = new Date(s.trialStartedAt);
-        if (Number.isNaN(start.getTime())) return null;
-        return new Date(start.getTime() + PREMIUM_TRIAL_DAYS * MS_PER_DAY);
+        if (Number.isNaN(start.getTime())) return '';
+        if (typeof dateKeyFromDate === 'function') return dateKeyFromDate(start);
+        return '';
+    }
+
+    /** First calendar day the trial is no longer active (start + PREMIUM_TRIAL_DAYS). */
+    function getTrialEndDateKey(s) {
+        var startKey = getTrialStartDateKey(s);
+        if (!startKey || typeof addDaysToKey !== 'function') return '';
+        return addDaysToKey(startKey, PREMIUM_TRIAL_DAYS);
+    }
+
+    function appTodayKey() {
+        return typeof todayKey === 'function' ? todayKey() : '';
     }
 
     function isSubscriptionActive(s) {
@@ -93,12 +105,17 @@ var Entitlement = (function () {
         return !Number.isNaN(until.getTime()) && until.getTime() > Date.now();
     }
 
-    /** True while trialStartedAt…+PREMIUM_TRIAL_DAYS is still in the future (independent of subscription). */
+    /**
+     * FUTURE AUDIT (known): trial lock uses app calendar (todayKey / New day),
+     * not Date.now() + PREMIUM_TRIAL_DAYS. If New day is removed, revert access
+     * check to wall-clock. See ARCHITECTURE.md → “FUTURE AUDIT — trial clock”.
+     */
     function isTrialActive(s) {
         s = snapshot(s);
-        var ends = getTrialEndsAt(s);
-        if (!ends) return false;
-        return ends.getTime() > Date.now();
+        var endKey = getTrialEndDateKey(s);
+        var today = appTodayKey();
+        if (!endKey || !today) return false;
+        return today < endKey;
     }
 
     /** Single access answer: paid subscription OR open trial window. */
@@ -114,11 +131,11 @@ var Entitlement = (function () {
             var subMs = until.getTime() - Date.now();
             return subMs <= 0 ? 0 : Math.ceil(subMs / MS_PER_DAY);
         }
-        var ends = getTrialEndsAt(s);
-        if (!ends) return 0;
-        var ms = ends.getTime() - Date.now();
-        if (ms <= 0) return 0;
-        return Math.ceil(ms / MS_PER_DAY);
+        var endKey = getTrialEndDateKey(s);
+        var today = appTodayKey();
+        if (!endKey || !today || today >= endKey) return 0;
+        if (typeof daysBetweenKeys !== 'function') return 0;
+        return daysBetweenKeys(today, endKey);
     }
 
     function isBasicTier(s) {

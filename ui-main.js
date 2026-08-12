@@ -76,7 +76,9 @@ function saveAndRender() {
 
 function renderAll(options) {
     options = options || {};
-    const full = !safeGet('onboardingComplete') || Entitlement.hasPremiumAccess();
+    // Always paint premium UI after onboarding so expired trial still *shows* features.
+    // Access is gated by requirePremium + lock veil (billing.js), not by skipping render.
+    const full = true;
     const jobs = [
         renderTopStats,
         renderChances,
@@ -117,7 +119,6 @@ function renderAll(options) {
 
 /** Progress tab charts and calendar — safe to run after first paint. */
 function renderDeferredHeavy() {
-    if (safeGet('onboardingComplete') && !Entitlement.hasPremiumAccess()) return;
     const jobs = [
         renderBrainCard,
         renderKnowledgeCard,

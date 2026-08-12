@@ -127,6 +127,17 @@ Rules:
 - Partial updates OK: writers pass only fields they own; unknown keys ignored by the write API until declared here.
 - Trial length is **not** stored; it is derived as `trialStartedAt + PREMIUM_TRIAL_DAYS`.
 
+### FUTURE AUDIT — trial clock vs app calendar (known)
+
+**Bug / product debt:** `isTrialActive()` currently uses **app calendar** (`todayKey()`, including `devDateOffset` / New day), not **wall-clock** `Date.now() + PREMIUM_TRIAL_DAYS`.
+
+- **Keep New day:** calendar lock is useful for testers (7 New days → lock).
+- **Remove New day:** revert trial *access* to `Date.now()` (standard 7×24h). Keep: never restart an expired `trialStartedAt`; seed from `appStartDate` only.
+
+Each install/APK has its own `localStorage` — a new test app always gets a fresh trial. That is not a shared-device lock.
+
+Flag on next audit if New day is gone or production trial must match Play’s 7×24h clock.
+
 ---
 
 ## Entitlement Public API
@@ -145,7 +156,7 @@ Entitlement.subscriptionExpiresLabel()
 
 ## Version 1 Definition of Done
 
-- [x] User gets a local trial (`PREMIUM_TRIAL_DAYS = 30`).
+- [x] User gets a local trial (`PREMIUM_TRIAL_DAYS` in `constants.js`).
 - [x] Trial expiry locks premium features.
 - [ ] Google Play purchase unlocks premium.
 - [ ] Restore purchases works.

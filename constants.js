@@ -20,7 +20,7 @@ const PREMIUM_FEATURES = [
     'Streak, Journey & Progress milestones',
     'Daily knowledge cards',
     'Monthly grid',
-    'Progress',
+    'Progress Graph',
     'Export & import progress',
 ];
 

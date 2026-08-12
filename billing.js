@@ -16,31 +16,69 @@ function setPremiumSectionVisible(id, visible) {
     if (el) el.hidden = !visible;
 }
 
-/** Hide premium-only sections when user has no premium access (post-onboarding).
- *  Free forever regardless of trial/subscription:
- *    day logging (strong/slip), current/best journey score, chances, urge surf, How King Works
- *  Premium-only (hidden when trial ends until paid):
- *    weekly timeline, milestones tabs, knowledge, month/chart, export/import
- *  Read-only layout: never writes state. Never resets journey score.
+/** Show premium sections always; lock interaction when trial/sub is inactive.
+ *  Free forever: day logging, current/best journey score, chances, urge, How King Works, reset.
+ *  Premium (visible but locked after trial): weekly timeline, milestones, knowledge,
+ *    month/chart, export/import.
  */
 function applyPremiumTierLayout() {
-    var show = !safeGet('onboardingComplete') || Entitlement.hasPremiumAccess();
-    setPremiumSectionVisible('weeklyStreakCard', show);
-    setPremiumSectionVisible('milestonesCard', show);
-    setPremiumSectionVisible('knowledgeCard', show);
-    setPremiumSectionVisible('monthPanelCard', show);
-    setPremiumSectionVisible('chartPanelCard', show);
-    setPremiumSectionVisible('exportBackupBtn', show);
-    setPremiumSectionVisible('importBackupBtn', show);
-    setPremiumSectionVisible('lastBackupLabel', show);
-    // Always available (even on basic tier after trial ends)
+    var unlocked = !safeGet('onboardingComplete') || Entitlement.hasPremiumAccess();
+    var gatedIds = [
+        'weeklyStreakCard',
+        'milestonesCard',
+        'knowledgeCard',
+        'monthPanelCard',
+        'chartPanelCard',
+        'premiumBackupGate',
+    ];
+    for (var i = 0; i < gatedIds.length; i++) {
+        setPremiumGated(gatedIds[i], !unlocked);
+    }
     setPremiumSectionVisible('primaryStack', true);
     setPremiumSectionVisible('learnJourneyCard', true);
     setPremiumSectionVisible('premiumPanelCard', true);
     setPremiumSectionVisible('backupResetCard', true);
-    if (!show && typeof currentTab === 'number' && currentTab > 0) {
-        currentTab = 0;
+    setPremiumSectionVisible('exportBackupBtn', true);
+    setPremiumSectionVisible('importBackupBtn', true);
+    setPremiumSectionVisible('lastBackupLabel', true);
+}
+
+function setPremiumGated(id, locked) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.hidden = false;
+    el.classList.add('premium-gated');
+    el.classList.toggle('is-locked', !!locked);
+    syncPremiumLockVeil(el, locked);
+}
+
+function syncPremiumLockVeil(el, locked) {
+    var veil = null;
+    var kids = el.children;
+    for (var i = 0; i < kids.length; i++) {
+        if (kids[i].classList && kids[i].classList.contains('premium-lock-veil')) {
+            veil = kids[i];
+            break;
+        }
     }
+    if (!locked) {
+        if (veil) veil.hidden = true;
+        return;
+    }
+    if (!veil) {
+        veil = document.createElement('button');
+        veil.type = 'button';
+        veil.className = 'premium-lock-veil';
+        veil.setAttribute('aria-label', 'Unlock with Premium');
+        veil.innerHTML = '<span class="premium-lock-veil-label">🔒 Unlock with Premium</span>';
+        veil.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            requirePremium();
+        });
+        el.appendChild(veil);
+    }
+    veil.hidden = false;
 }
 
 function togglePremiumPanel() {
@@ -92,7 +130,7 @@ function renderPremiumPanelContent() {
             : left + ' free days left on your trial.';
         setPremiumBackupNote(noteEl, true);
     } else {
-        statusEl.textContent = 'Free trial ended. Daily logging stays free forever. Subscribe to unlock timeline, milestones, Monthly grid, Progress, and export/import. Your score is not affected.';
+        statusEl.textContent = 'Free trial ended. Daily logging stays free forever. Subscribe to unlock timeline, milestones, Monthly grid, Progress Graph, and export/import. Your score is not affected.';
         setPremiumBackupNote(noteEl, true);
     }
 

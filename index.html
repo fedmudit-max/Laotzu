@@ -24,7 +24,7 @@
             z-index: 9999;
         }
     </style>
-    <link rel="stylesheet" href="./styles.css?v=54">
+    <link rel="stylesheet" href="./styles.css?v=58">
 </head>
 <body>
 
@@ -226,7 +226,7 @@
     <div class="card collapse-card" id="chartPanelCard">
         <button type="button" class="collapse-header" id="chartPanelToggle" aria-expanded="false" aria-controls="chartPanelBody">
             <span class="collapse-header-row">
-                <span class="collapse-title" id="chartPanelTitle">Progress</span>
+                <span class="collapse-title" id="chartPanelTitle">Progress Graph</span>
                 <span class="collapse-chevron" id="chartPanelChevron" aria-hidden="true">›</span>
             </span>
         </button>
@@ -329,9 +329,11 @@
         </button>
         <div class="collapse-body" id="backupResetBody">
             <div class="actions-stack">
-                <button class="btn-backup" type="button" id="exportBackupBtn" data-action="export-backup">Export Progress</button>
-                <button class="btn-backup" type="button" id="importBackupBtn" data-action="import-backup">Import Progress</button>
-                <p class="backup-status" id="lastBackupLabel">Last exported: Never</p>
+                <div class="premium-gated" id="premiumBackupGate">
+                    <button class="btn-backup" type="button" id="exportBackupBtn" data-action="export-backup">Export Progress</button>
+                    <button class="btn-backup" type="button" id="importBackupBtn" data-action="import-backup">Import Progress</button>
+                    <p class="backup-status" id="lastBackupLabel">Last exported: Never</p>
+                </div>
                 <button class="btn-reset" type="button" data-action="modal-reset">↺ Reset All Data</button>
             </div>
             <input type="file" id="importFileInput" accept=".json,application/json" hidden>
@@ -407,7 +409,7 @@
                 <p class="learn-section-body">Think of your Powers as something valuable — something you don't want to waste.</p>
                 <p class="learn-section-body">Every time you slip, one Power is gone.</p>
                 <p class="learn-powers" aria-label="Powers countdown">
-                    <span class="learn-seq-num">10</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span class="learn-seq-num">9</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span class="learn-seq-num">8</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span class="learn-seq-num">7…</span>
+                    <span class="learn-seq-num learn-pow-ok">10</span><span class="learn-seq-arrow learn-pow-ok" aria-hidden="true">→</span><span class="learn-seq-num learn-pow-ok">9</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span class="learn-seq-num learn-pow-warn">8</span><span class="learn-seq-arrow learn-pow-warn" aria-hidden="true">→</span><span class="learn-seq-num learn-pow-warn">7…</span>
                 </p>
                 <p class="learn-section-body">When you see 9 Powers left, you should feel:</p>
                 <p class="learn-section-body"><strong>“I lost one. I don't want to lose another.”</strong></p>
@@ -490,7 +492,7 @@
                 <p class="learn-section-body">And now 30 days is your personal best.</p>
                 <p class="learn-section-body">Your next challenge is to go beyond it.</p>
                 <p class="learn-ladder" aria-label="Journey growth">
-                    <span class="learn-seq-num">50</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span class="learn-seq-num">100</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span class="learn-seq-num">150</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span class="learn-seq-num">200</span>
+                    <span class="learn-seq-num">50</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span class="learn-seq-num">75</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span class="learn-seq-num">100</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span class="learn-seq-num">150</span>
                 </p>
                 <p class="learn-section-body">The Journey can keep growing.</p>
                 <p class="learn-section-body">You don't have to be perfect to become stronger.</p>
@@ -740,18 +742,18 @@
     </div>
 </div>
 
-    <script defer src="./constants.js?v=15"></script>
-    <script defer src="./data.js?v=17"></script>
+    <script defer src="./constants.js?v=16"></script>
+    <script defer src="./data.js?v=18"></script>
     <script defer src="./migration.js?v=12"></script>
-    <script defer src="./logic.js?v=53"></script>
-    <script defer src="./entitlement.js?v=17"></script>
-    <script defer src="./billing.js?v=24"></script>
+    <script defer src="./logic.js?v=54"></script>
+    <script defer src="./entitlement.js?v=19"></script>
+    <script defer src="./billing.js?v=26"></script>
     <script defer src="./firebase.js?v=11"></script>
     <script defer src="./backup.js?v=11"></script>
-    <script defer src="./ui-main.js?v=26"></script>
-    <script defer src="./ui-overlays.js?v=16"></script>
+    <script defer src="./ui-main.js?v=27"></script>
+    <script defer src="./ui-overlays.js?v=17"></script>
     <script defer src="./ui-actions.js?v=17"></script>
-    <script defer src="./ui-history.js?v=35"></script>
+    <script defer src="./ui-history.js?v=36"></script>
     <script defer src="./ui-day.js?v=44"></script>
     <script defer src="./boot.js?v=17"></script>
 </body>

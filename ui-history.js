@@ -36,7 +36,7 @@ function syncHistoryPanels() {
     var el;
 
     el = document.getElementById('chartPanelTitle');
-    if (el) el.textContent = 'Progress';
+    if (el) el.textContent = 'Progress Graph';
 
     el = document.getElementById('monthPanelBody');
     if (el) el.classList.toggle('is-open', monthOpen);

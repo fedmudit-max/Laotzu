@@ -77,9 +77,6 @@ const JOURNEY_MILESTONES = {
 /** Sorted milestone thresholds — single source for counters and backfill. */
 const JOURNEY_MILESTONE_DAYS = Object.keys(JOURNEY_MILESTONES).map(Number).sort((a, b) => a - b);
 
-// Success rate shown only at journey strong-day milestones
-const JOURNEY_SHOW_RATE = new Set([75, 100, 150, 200, 300, 400, 500, 750, 1000]);
-
 // Inclusive day ranges (streak day N is in a phase when from <= N <= to).
 const BRAIN_PHASES = [
     {

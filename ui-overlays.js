@@ -25,19 +25,6 @@ function showToast(streak, customMsg) {
 //  CELEBRATIONS  — popup + confetti
 // ════════════════════════════════════════════════════════
 
-function getSuccessRate() {
-    const totalDays = state.calendarDay - 1; // days elapsed so far
-    if (totalDays < 1) return null;
-    const rate = Math.round((state.score.success / totalDays) * 100);
-    return { rate, success: state.score.success, total: totalDays };
-}
-
-function successRateLine() {
-    const r = getSuccessRate();
-    if (!r) return '';
-    return `\n\n📊 ${r.success} strong days out of ${r.total} — you're at ${r.rate}% success rate. Not perfection. Progress.`;
-}
-
 function triggerStreakMilestone(streak) {
     if (!STREAK_MILESTONES[streak]) return;
 
@@ -69,9 +56,6 @@ function triggerPersonalBestJourneyCelebration(successCount) {
 function triggerJourneyMilestone(days) {
     var data = buildJourneyMilestoneCelebration(days);
     if (!data) return;
-    if (JOURNEY_SHOW_RATE.has(days)) {
-        data.message += successRateLine();
-    }
     setTimeout(function () { showCelebration(data); }, 400);
 }
 
