@@ -6,7 +6,3 @@
 function initFirebase() {
     // No-op until Firebase is configured.
 }
-
-function syncEntitlementFromServer() {
-    return Promise.resolve(null);
-}

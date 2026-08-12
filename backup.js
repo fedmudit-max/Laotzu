@@ -179,6 +179,8 @@ function restoreImportBackup(backup) {
         return;
     }
     replaceState(mergeSavedState(backup.state));
+    if (typeof healStrandedJourneyEnd === 'function') healStrandedJourneyEnd();
+    if (typeof recomputeCurrentStreak === 'function') recomputeCurrentStreak();
     if (backup.onboardingComplete === true) {
         safeSet('onboardingComplete', 'true');
     } else if (backup.onboardingComplete === false) {

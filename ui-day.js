@@ -24,27 +24,43 @@ function showYesterdayReminder() {
 function checkNewDay() {
     if (!safeGet('onboardingComplete')) return;
 
+    // Safety net before day roll / next-journey logic.
+    if (typeof healStrandedJourneyEnd === 'function' && healStrandedJourneyEnd()) {
+        saveToStorage(state);
+    }
+
     const today = todayKey();
 
     if (isAwaitingNextJourney()) {
         if (typeof canBeginNextJourneyToday === 'function' ? canBeginNextJourneyToday()
             : (state.journeyEndedDate && today !== state.journeyEndedDate)) {
             beginNextJourney();
-            state.lastOpenedDate = today;
-            state.lastCheckedDate = today;
             chartPage = -1;
-            saveToStorage(state);
-            renderAll();
+            // Day 1 is today (opened the day after end) — nothing to backfill.
+            if (state.journeyStartDate === today) {
+                state.lastOpenedDate = today;
+                state.lastCheckedDate = today;
+                clampCalendarDayToRealToday();
+                saveToStorage(state);
+                renderAll();
+                return;
+            }
+            // Returned after a gap (e.g. end Mon, open Thu): Day 1 = end+1.
+            // Fall through so auto-strong (through N-2) + yesterday ask fill the grid.
         } else {
             state.lastCheckedDate = today;
             saveToStorage(state);
             renderAll();
+            return;
         }
-        return;
     }
 
     if (state.lastCheckedDate === today) {
         clampCalendarDayToRealToday();
+        if (typeof isYesterdayLogPending === 'function' && isYesterdayLogPending()) {
+            renderAll();
+            showYesterdayReminder();
+        }
         return;
     }
 
@@ -70,13 +86,16 @@ function checkNewDay() {
     if (fillResults.length) {
         saveToStorage(state);
         const last = fillResults[fillResults.length - 1];
-        if (last && !last.suppressUI && last.result) {
+        if (last && !last.suppressUI && last.result && last.result.applied !== false) {
             showToast(last.result.streak, 'Missed days counted as strong 💪');
         }
     }
 
     const anchor = getJourneyAnchorWallDate();
     if (yesterday >= anchor && !isWallDateLogged(yesterday)) {
+        // Paint auto-strong / score updates before the overlay (don't leave stale header).
+        saveToStorage(state);
+        renderAll();
         showYesterdayReminder();
         // Leave lastCheckedDate unset so reload re-prompts until answered.
         return;
@@ -86,13 +105,6 @@ function checkNewDay() {
     state.lastCheckedDate = today;
     saveToStorage(state);
     renderAll();
-}
-
-/** Same fill + yesterday ask as checkNewDay. */
-function applyMultiDayCatchUp(today) {
-    void today;
-    state.lastCheckedDate = '';
-    checkNewDay();
 }
 
 function logYesterday(result) {
@@ -152,6 +164,15 @@ function advanceDevDay() {
         && typeof canBeginNextJourneyToday === 'function'
         && canBeginNextJourneyToday()) {
         beginNextJourney();
+        // Let checkNewDay backfill Day 1..(N-2) when the test calendar jumped multiple days.
+        state.lastCheckedDate = '';
+        checkNewDay();
+        if (typeof showToast === 'function') {
+            var off2 = state.devDateOffset;
+            showToast(0, 'Test day → ' + today + (off2 ? ' (+' + off2 + ')' : ''));
+        }
+        updateDevDayLabel();
+        return;
     }
 
     ensureTodayUnloggedIfNeeded(today);

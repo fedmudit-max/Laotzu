@@ -39,6 +39,26 @@ This document defines implementation boundaries. Changes require an implementati
 
 ---
 
+## Journey state fields
+
+Source of truth for field meaning: comment at the top of `logic.js`. Do not treat date fields as interchangeable.
+
+| Field | Meaning |
+|--------|---------|
+| `todayKey()` | App today (real local date + optional `devDateOffset`) |
+| `calendarDay` | Journey Day N from `journeyStartDate` through today |
+| `journeyStartDate` | Current Journey Day 1 (resets; = previous end + 1) |
+| `appStartDate` | First-ever Day 1 (never resets) |
+| `lastOpenedDate` | Last day the user was active (absence detection) |
+| `lastCheckedDate` | Last finished day-roll (empty while yesterday popup waits) |
+| `journeyEndedDate` / `pendingNextJourney` | 10th-slip date / between-journey lock |
+| `todayStatus` / `todayFailCount` | **Today only** — never bump from a historical slip |
+| `currentStreak` | Recompute from `dailyLog` (not logging order) |
+| `score` / `bestJourney` | Strong/slips; permanent Best only at 10 slips |
+| `dailyLog` | Per wall date strong or slip |
+
+---
+
 ## Daily reminders (deferred to Capacitor)
 
 **Not in v1 web/PWA.** Browser service-worker timers are unreliable after the app is fully closed and must not be marketed as local alarms.

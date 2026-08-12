@@ -1,6 +1,25 @@
 /**
  * logic.js — State, storage, dates, and business rules.
  * No DOM — UI lives in ui-main.js, ui-actions.js, ui-overlays.js, ui-history.js, ui-day.js, boot.js.
+ *
+ * STATE FIELD CHEAT SHEET (pick the right date — they are not interchangeable)
+ *
+ * App "today"         todayKey()              Real local date + optional state.devDateOffset (test "New day")
+ * calendarDay         Display Journey Day N   Wall days from journeyStartDate through today (clamped)
+ * journeyStartDate    Current Journey Day 1   Resets on beginNextJourney (ended + 1, not "return day")
+ * appStartDate        First-ever Day 1        Never resets; month grid greys days before install
+ * lastOpenedDate      Last active calendar day  Set on log / catch-up; used to detect absence
+ * lastCheckedDate     Last successful day-roll  Unset while yesterday popup is waiting
+ * journeyEndedDate    Wall date of 10th slip    Empty unless pendingNextJourney
+ * pendingNextJourney  Between journeys          Logging blocked until canBeginNextJourneyToday
+ * todayStatus         today only                none | success | failed — never for yesterday
+ * todayFailCount      Slips logged today only   Historical slips must not increment this
+ * currentStreak       Live consecutive strong   Always recompute from dailyLog (not tap order)
+ * longestStreak       All-time streak peak
+ * score.success/fail  Journey strong / slips    Permanent bestJourney writes only at 10 slips
+ * dailyLog            YYYY-MM-DD → strong|slip  Source of truth for calendar + streak recompute
+ * lastFreezeStreak/Date  UI grey after today's first slip only
+ * See also ARCHITECTURE.md → Journey state fields.
  */
 
 // ════════════════════════════════════════════════════════
@@ -58,17 +77,6 @@ function safeRemove(key) {
     try { sessionStorage.removeItem(key); } catch { /* ignore */ }
     delete _memStorage[key];
 }
-
-
-
-
-
-
-
-
-
-
-
 
 // ════════════════════════════════════════════════════════
 //  DATES — local timezone; never parse YYYY-MM-DD as UTC
@@ -169,11 +177,6 @@ function ensureTodayUnloggedIfNeeded(today) {
     }
 }
 
-/** Day N — today (always user-logged; never auto). */
-function getTodayWallKey() {
-    return todayKey();
-}
-
 /** Day N-1 — yesterday (always asked; never auto-logged). */
 function getYesterdayKey(today) {
     return addDaysToKey(today || todayKey(), -1);
@@ -182,10 +185,6 @@ function getYesterdayKey(today) {
 /** Day N-2 — last day that may be auto-logged as strong. */
 function getDayBeforeYesterdayKey(today) {
     return addDaysToKey(today || todayKey(), -2);
-}
-
-function getAutoStrongCutoffKey(today) {
-    return getDayBeforeYesterdayKey(today);
 }
 
 /** Fetch dailyLog entry for a wall date (YYYY-MM-DD), optionally via cal day key. */
@@ -212,6 +211,12 @@ function isFirstSlipOnWallDate(wallDate, calDay) {
     return !(entry && logStatus(entry) === 'slip');
 }
 
+/** 'strong' | 'slip' | null for a wall date — one outcome per day (slip allows multiples). */
+function getWallDateLogStatus(wallDate) {
+    var entry = getDailyLogEntry(wallDate);
+    return entry ? logStatus(entry) : null;
+}
+
 function nextSlipCount(logDate, calDay) {
     var prev = getDailyLogEntry(logDate, calDay);
     if (prev && logStatus(prev) === 'slip') {
@@ -219,8 +224,6 @@ function nextSlipCount(logDate, calDay) {
     }
     return 1;
 }
-
-/** Re-key legacy day-N entries to YYYY-MM-DD when a date is stored on the entry. */
 
 // ════════════════════════════════════════════════════════
 //  STATE
@@ -263,10 +266,6 @@ function getDefaultState() {
         premiumUntil: '',
     };
 }
-
-/** Infer personal-best baseline for saves that predate longestStreakAtStreakStart. */
-
-/** Backfill slipCount on today's log entry from todayFailCount (legacy saves). */
 
 function mergeSavedState(saved) {
     const defaults = getDefaultState();
@@ -481,23 +480,6 @@ function bestScoreFromCompletedJourneys(journeys) {
 }
 
 /**
- * Rebuild permanent Best only from completed (10-slip) Journey archives.
- * First Journey mid-run has no completed best yet → 0/0 until finish.
- */
-function syncBestJourneyFromCompleted(s) {
-    s = s || state;
-    var fromCompleted = bestScoreFromCompletedJourneys(s.completedJourneys || []);
-    if (fromCompleted) {
-        s.bestJourney = {
-            success: fromCompleted.success || 0,
-            failures: fromCompleted.failures || 0,
-        };
-    } else {
-        s.bestJourney = { success: 0, failures: 0 };
-    }
-}
-
-/**
  * Header Best: permanent N/10 Best, or live current if it is strictly better
  * (more strong days, or same strong with fewer slips).
  */
@@ -558,12 +540,6 @@ function ensureJourneyMilestoneCounts(s) {
     }
 }
 
-function journeyMilestoneCount(day, s) {
-    s = s || state;
-    ensureJourneyMilestoneCounts(s);
-    return Math.max(0, Math.floor(Number(s.journeyMilestones[day]) || 0));
-}
-
 /** Journeys (completed + current) whose peak strong-day count reached at least `day`. */
 function countJourneysPeakingAtLeast(day, s) {
     s = s || state;
@@ -605,10 +581,6 @@ function isJourneyMilestoneRevealed(unlockAt) {
     return journeyScoreSuccess() >= unlockAt || maxJourneyStrongDaysEver() >= unlockAt;
 }
 
-function getJourneyMilestoneDisplaySuccess() {
-    return journeyScoreSuccess();
-}
-
 function shouldJourneyMilestoneGlow(day) {
     return journeyScoreSuccess() >= day;
 }
@@ -642,16 +614,6 @@ function getCompletedJourneysBestSuccess(s) {
     s = s || state;
     var best = bestScoreFromCompletedJourneys(s.completedJourneys || []);
     return best ? Math.max(0, best.success || 0) : 0;
-}
-
-function getPrevStandardMilestoneDay(beforeDay) {
-    var prev = null;
-    for (var i = 0; i < JOURNEY_MILESTONE_DAYS.length; i++) {
-        var d = JOURNEY_MILESTONE_DAYS[i];
-        if (d >= beforeDay) break;
-        prev = d;
-    }
-    return prev;
 }
 
 function getNextStandardMilestoneDay(afterDay) {
@@ -899,22 +861,84 @@ function canLogToday() {
     return !isAwaitingNextJourney() && !journeyIsOver(state);
 }
 
-function streakSegmentBeforeSlip() {
-    // First slip of *today* archives the streak built so far.
-    return state.todayStatus === 'none' ? state.currentStreak : 0;
+/**
+ * Yesterday (N-1) still needs a user answer — today (N) must wait.
+ * Not used on Journey Day 1 (yesterday is before this journey's start).
+ */
+function isYesterdayLogPending() {
+    if (typeof isAwaitingNextJourney === 'function' && isAwaitingNextJourney()) return false;
+    if (typeof journeyIsOver === 'function' && journeyIsOver(state)) return false;
+    var today = todayKey();
+    var yesterday = getYesterdayKey(today);
+    var anchor = typeof getJourneyAnchorWallDate === 'function'
+        ? getJourneyAnchorWallDate()
+        : '';
+    if (!anchor || !/^\d{4}-\d{2}-\d{2}$/.test(anchor)) return false;
+    if (yesterday < anchor) return false;
+    return !isWallDateLogged(yesterday);
 }
 
 /**
- * Streak length archived by a slip on wallDate (historical vs today).
- * First slip on that wall date only; later same-day slips archive 0.
+ * Consecutive strong days ending the day before wallDate (from dailyLog).
+ */
+function streakCountStrongEndingBefore(wallDate) {
+    var streak = 0;
+    var d = addDaysToKey(wallDate, -1);
+    var anchor = getJourneyAnchorWallDate();
+    while (d >= anchor) {
+        if (getWallDateLogStatus(d) === 'strong') {
+            streak++;
+            d = addDaysToKey(d, -1);
+        } else {
+            break;
+        }
+    }
+    return streak;
+}
+
+/**
+ * Streak length archived by a slip on wallDate (first slip of that day only).
  */
 function streakSegmentBeforeSlipOnDate(wallDate, firstSlipOfDay) {
     if (!firstSlipOfDay) return 0;
-    if (wallDate === todayKey()) {
-        return streakSegmentBeforeSlip();
+    return streakCountStrongEndingBefore(wallDate);
+}
+
+/**
+ * Live streak from chronological logs — not logging order.
+ * Slip today → 0 even if yesterday is logged strong afterward.
+ */
+function recomputeCurrentStreak(s) {
+    s = s || state;
+    var today = todayKey();
+    var anchor = getJourneyAnchorWallDate(s);
+    if (!anchor || anchor > today) {
+        s.currentStreak = 0;
+        return 0;
     }
-    // Backdated first slip: archive whatever live streak still exists.
-    return state.currentStreak || 0;
+
+    if (s.todayStatus === 'failed' || getWallDateLogStatus(today) === 'slip') {
+        s.currentStreak = 0;
+        return 0;
+    }
+
+    var streak = 0;
+    var d = today;
+    if (getWallDateLogStatus(today) !== 'strong') {
+        d = addDaysToKey(today, -1);
+    }
+
+    while (d >= anchor) {
+        if (getWallDateLogStatus(d) === 'strong') {
+            streak++;
+            d = addDaysToKey(d, -1);
+        } else {
+            break;
+        }
+    }
+
+    s.currentStreak = streak;
+    return streak;
 }
 
 /**
@@ -969,18 +993,6 @@ function getWeeklyInsightDay(progress) {
     return progress + 1;
 }
 
-/** Latest wall-date (YYYY-MM-DD) with a strong-day log entry. */
-function getLastStrongLogDate() {
-    const log = state.dailyLog || {};
-    let latest = '';
-    for (const entry of Object.values(log)) {
-        if (logStatus(entry) !== 'strong') continue;
-        const date = typeof entry === 'object' && entry.date ? entry.date : '';
-        if (/^\d{4}-\d{2}-\d{2}$/.test(date) && date > latest) latest = date;
-    }
-    return latest;
-}
-
 /**
  * After a full 7-day week, show a fresh timeline from the next calendar day.
  * While Day 7 is still logged strong today, freeze the week on Day 7 —
@@ -999,12 +1011,6 @@ function getWeeklyStreakDay(streak) {
     if (!streak || streak <= 0) return 0;
     if (shouldRefreshWeeklyTimeline(streak)) return 0;
     return ((streak - 1) % 7) + 1;
-}
-
-/** Which 7-day week of the current streak (1-based). */
-function getWeeklyStreakWeek(streak) {
-    if (!streak || streak <= 0) return 0;
-    return Math.floor((streak - 1) / 7) + 1;
 }
 
 /** Measured layout: pre-day span + day dot centers (% of track width). */
@@ -1175,11 +1181,12 @@ function markTodayStatus(dateKey, status) {
 /**
  * Log a strong day. Updates state only — UI layer handles celebrations.
  * One wall date can only contribute once to Journey strong-day count.
- * @returns {{ streak, successCount, milestoneHit, isNewRecord, prevLongest, recordToBeat }}
+ * @returns {{ applied: boolean, streak, successCount, milestoneHit, isNewRecord, prevLongest, recordToBeat }}
  */
 function applyStrongDay({ logDate, suppressUI = false } = {}) {
     if (!canLogToday()) {
         return {
+            applied: false,
             streak: state.currentStreak,
             successCount: state.score.success,
             milestoneHit: null,
@@ -1192,27 +1199,32 @@ function applyStrongDay({ logDate, suppressUI = false } = {}) {
 
     const dateKey = clampDateKeyToRealToday(logDate || todayKey());
 
-    // Already strong that wall day — never double-count Journey score.
-    if (isWallDateLogged(dateKey)) {
-        var existing = null;
-        var log = state.dailyLog || {};
-        if (log[dateKey]) existing = log[dateKey];
-        else {
-            for (var k in log) {
-                if (log[k] && log[k].date === dateKey) { existing = log[k]; break; }
-            }
-        }
-        if (existing && logStatus(existing) === 'strong') {
-            return {
-                streak: state.currentStreak,
-                successCount: state.score.success,
-                milestoneHit: null,
-                personalBestCrossing: false,
-                isNewRecord: false,
-                prevLongest: state.longestStreak,
-                recordToBeat: state.longestStreakAtStreakStart,
-            };
-        }
+    // Today cannot be logged until yesterday (N-1) is answered.
+    if (dateKey === todayKey() && typeof isYesterdayLogPending === 'function' && isYesterdayLogPending()) {
+        return {
+            applied: false,
+            streak: state.currentStreak,
+            successCount: state.score.success,
+            milestoneHit: null,
+            personalBestCrossing: false,
+            isNewRecord: false,
+            prevLongest: state.longestStreak,
+            recordToBeat: state.longestStreakAtStreakStart,
+        };
+    }
+
+    // One outcome per wall date — never overwrite slip with strong (UI + catch-up safe).
+    if (getWallDateLogStatus(dateKey)) {
+        return {
+            applied: false,
+            streak: state.currentStreak,
+            successCount: state.score.success,
+            milestoneHit: null,
+            personalBestCrossing: false,
+            isNewRecord: false,
+            prevLongest: state.longestStreak,
+            recordToBeat: state.longestStreakAtStreakStart,
+        };
     }
 
     // Journey day number follows wall timeline from Day 1, not a fragile counter.
@@ -1220,9 +1232,10 @@ function applyStrongDay({ logDate, suppressUI = false } = {}) {
     if ((state.calendarDay || 1) < calDay) state.calendarDay = calDay;
 
     state.score.success++;
-    state.currentStreak++;
-
     writeDailyLog(calDay, { status: 'strong', day: calDay, date: dateKey });
+
+    markTodayStatus(logDate || todayKey(), 'success');
+    recomputeCurrentStreak();
 
     const prevLongest = state.longestStreak;
     const recordToBeat = state.longestStreakAtStreakStart;
@@ -1242,11 +1255,9 @@ function applyStrongDay({ logDate, suppressUI = false } = {}) {
     var personalBestCrossing = isPersonalBestJourneyCrossing(state.score.success);
 
     updateBestJourney();
-    // Status follows simulated "today" so Next Day can re-open the log buttons;
-    // wall log stays ≤ real today for the monthly grid.
-    markTodayStatus(logDate || todayKey(), 'success');
 
     return {
+        applied: true,
         streak: state.currentStreak,
         successCount: state.score.success,
         milestoneHit: resolveJourneyMilestoneHit(state.score.success),
@@ -1371,23 +1382,6 @@ function clampCalendarDayToRealToday() {
     }
 }
 
-/** Step calendar day forward only when wall-clock allows it (never past app today). */
-function advanceCalendarDay() {
-    // Do not pre-clamp up to max — mid catch-up needs to step 2 → 3 → 4.
-    const max = getMaxCalendarDayForToday();
-    if ((state.calendarDay || 1) > max) {
-        state.calendarDay = max;
-        return false;
-    }
-    if ((state.calendarDay || 1) >= max) {
-        return false;
-    }
-    state.calendarDay++;
-    state.todayStatus = 'none';
-    state.todayFailCount = 0;
-    return true;
-}
-
 /**
  * Log a slip for a given calendar day. Each slip uses one journey chance; slipCount tracks multiples same day.
  * No-ops when the Journey is already over or awaiting the next one (same gate as applyStrongDay).
@@ -1403,6 +1397,16 @@ function applySlipDay({ logDate, calDay }) {
     if (calDay == null || calDay < dayNum) calDay = dayNum;
     if ((state.calendarDay || 1) < dayNum) state.calendarDay = dayNum;
 
+    // Today cannot be logged until yesterday (N-1) is answered.
+    if (wallDate === todayKey() && typeof isYesterdayLogPending === 'function' && isYesterdayLogPending()) {
+        return { applied: false, failures: state.score.failures };
+    }
+
+    // Never overwrite a strong day with slip — keeps log and score aligned.
+    if (getWallDateLogStatus(wallDate) === 'strong') {
+        return { applied: false, failures: state.score.failures };
+    }
+
     const isToday = wallDate === todayKey();
     // Historical slips must not use todayStatus — that flag is for today only.
     const firstSlipOfDay = isFirstSlipOnWallDate(wallDate, calDay);
@@ -1411,7 +1415,6 @@ function applySlipDay({ logDate, calDay }) {
     state.currentJourneyStreaks.push(ended);
     state.score.failures++;
     state.longestStreakAtStreakStart = state.longestStreak;
-    state.currentStreak = 0;
     state.recordCelebrated = false;
 
     // Freeze UI only from *today's* first slip — never for backdated logs.
@@ -1432,6 +1435,7 @@ function applySlipDay({ logDate, calDay }) {
         state.todayFailCount++;
         markTodayStatus(wallDate, 'failed');
     }
+    recomputeCurrentStreak();
     updateBestJourney();
     return { applied: true, failures: state.score.failures };
 }
@@ -1444,15 +1448,6 @@ function recordSlipToday() {
 // ════════════════════════════════════════════════════════
 //  ABSENCE / CATCH-UP
 // ════════════════════════════════════════════════════════
-
-function buildGapDayQueue(lastOpenedDate, today) {
-    const diffDays = daysBetweenKeys(lastOpenedDate, today);
-    const queue = [];
-    for (let i = 1; i <= diffDays; i++) {
-        queue.push(addDaysToKey(lastOpenedDate, i));
-    }
-    return queue;
-}
 
 /**
  * Wall dates that must auto-log as strong (green missed days):
@@ -1507,6 +1502,65 @@ function autoStrongAbsentDays(today) {
 // ════════════════════════════════════════════════════════
 
 /**
+ * Best-effort wall date for a stranded 10-slip finish (no journeyEndedDate yet).
+ */
+function inferJourneyEndWallDate(s) {
+    s = s || state;
+    if (s.journeyEndedDate && /^\d{4}-\d{2}-\d{2}$/.test(s.journeyEndedDate)) {
+        return clampDateKeyToRealToday(s.journeyEndedDate);
+    }
+    if (s.lastFreezeDate && /^\d{4}-\d{2}-\d{2}$/.test(s.lastFreezeDate)) {
+        return clampDateKeyToRealToday(s.lastFreezeDate);
+    }
+    var log = s.dailyLog || {};
+    var latest = '';
+    for (var k in log) {
+        if (!Object.prototype.hasOwnProperty.call(log, k)) continue;
+        var entry = log[k];
+        if (!entry || logStatus(entry) !== 'slip') continue;
+        var d = (entry.date && /^\d{4}-\d{2}-\d{2}$/.test(entry.date))
+            ? entry.date
+            : (/^\d{4}-\d{2}-\d{2}$/.test(k) ? k : '');
+        if (d && d > latest) latest = d;
+    }
+    if (latest) return clampDateKeyToRealToday(latest);
+    return todayKey();
+}
+
+/**
+ * Safety net: failures >= 10 but archive never ran (corrupt save / interrupted finish).
+ * Restores pendingNextJourney (+ journeyEndedDate). Idempotent.
+ * @returns {boolean} true if state was repaired
+ */
+function healStrandedJourneyEnd(s) {
+    s = s || state;
+    if (typeof journeyIsOver !== 'function' || !journeyIsOver(s)) return false;
+    if (isAwaitingNextJourney(s)) return false;
+
+    var attempt = Math.max(1, Math.floor(Number(s.attempt) || 1));
+    var journeys = s.completedJourneys || [];
+    var alreadyArchived = false;
+    for (var i = 0; i < journeys.length; i++) {
+        if (Math.max(1, Math.floor(Number(journeys[i].attempt) || 1)) === attempt) {
+            alreadyArchived = true;
+            break;
+        }
+    }
+
+    if (alreadyArchived) {
+        s.pendingNextJourney = true;
+        if (!s.journeyEndedDate || !/^\d{4}-\d{2}-\d{2}$/.test(s.journeyEndedDate)) {
+            s.journeyEndedDate = inferJourneyEndWallDate(s);
+        }
+        if (typeof updateBestJourney === 'function') updateBestJourney();
+        return true;
+    }
+
+    // Full archive path (sets pending + ended date + permanent Best).
+    return !!archiveCompletedJourney(inferJourneyEndWallDate(s));
+}
+
+/**
  * Archive the completed journey.
  * Next Journey starts on the first wall day *after* the day the Journey ended
  * (the day of the 10th slip) — not necessarily the day the user opened the app.
@@ -1553,18 +1607,27 @@ function archiveCompletedJourney(endWallDate) {
  * Start the next journey after the ended journey's wall day has passed.
  * Call when today > journeyEndedDate (same calendar day as end keeps the ended Journey active
  * only when the 10th slip was today).
+ *
+ * New Journey Day 1 is always the calendar day after journeyEndedDate (not "return day"),
+ * so Mon end → Tue Day 1 even if the user first opens on Thu (no month-grid gaps).
  */
 function beginNextJourney() {
     if (!isAwaitingNextJourney()) return;
 
+    var ended = state.journeyEndedDate;
     var dayOne = todayKey();
+    if (ended && /^\d{4}-\d{2}-\d{2}$/.test(ended)) {
+        dayOne = addDaysToKey(ended, 1);
+        if (dayOne > todayKey()) dayOne = todayKey();
+    }
 
     state.attempt++;
     state.score = { success: 0, failures: 0 };
     state.longestStreakAtStreakStart = state.longestStreak;
     state.currentStreak = 0;
-    state.calendarDay = 1;
-    // New journey Day 1 = this wall day (install-wide appStartDate stays unchanged).
+    // Day index from new Day 1 → today (catch-up / clamp may still advance).
+    state.calendarDay = Math.max(1, daysBetweenKeys(dayOne, todayKey()) + 1);
+    // install-wide appStartDate stays unchanged.
     state.journeyStartDate = dayOne;
     state.lastOpenedDate = dayOne;
     state.lastCheckedDate = dayOne;

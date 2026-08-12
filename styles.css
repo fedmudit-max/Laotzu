@@ -357,42 +357,6 @@ body {
     letter-spacing: -0.2px;
 }
 
-.learn-score-format {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    margin: 8px 0 12px;
-    padding: 14px 14px;
-    border-radius: 12px;
-    background: rgba(52, 199, 89, 0.08);
-    border: 1px solid rgba(52, 199, 89, 0.22);
-    font-size: 22px;
-    font-weight: 800;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.4px;
-}
-
-.learn-score-format-unit,
-.learn-score-inline-unit {
-    display: block;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-muted);
-    letter-spacing: -0.1px;
-}
-
-.learn-score-inline-unit {
-    display: inline;
-    margin-left: 6px;
-    font-size: 13px;
-}
-
-.learn-score-not-list {
-    margin-top: 4px;
-    margin-bottom: 12px;
-}
-
 .learn-score-delta {
     margin: 4px 0 12px;
     font-size: 15px;
@@ -445,6 +409,14 @@ body {
     height: auto;
     border-radius: 12px;
     background: #fff;
+}
+
+.learn-progress-caption {
+    margin-top: 10px;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--text-muted);
+    text-align: center;
 }
 
 .btn-learn-done {
@@ -875,17 +847,6 @@ button {
 
 .tab-content { display: none; }
 .tab-content.active { display: block; }
-
-.tab-intro {
-    font-size: 11px;
-    font-weight: 500;
-    font-style: italic;
-    color: var(--text-muted);
-    line-height: 1.45;
-    margin: 0 0 12px;
-}
-
-.tab-intro + .section-label { margin-top: 0; }
 
 /* ── WEEKLY STREAK TRACK ─────────────────────────── */
 .weekly-streak-card {
@@ -1489,12 +1450,6 @@ button {
     color: var(--text);
 }
 
-.chart-subtitle {
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--text-muted);
-}
-
 .chart-outer {
     display: flex;
     align-items: stretch;
@@ -1605,8 +1560,6 @@ button {
     justify-content: flex-end;
     padding-right: 2px;
 }
-
-.chart-yaxis { display: none; }
 
 @keyframes chart-dot-live-glow {
     0%, 100% {
@@ -1784,61 +1737,6 @@ button {
     font-weight: 300;
     line-height: 1;
     display: inline-block;
-}
-
-/* ── BRAIN RECOVERY CARD ── */
-.brain-header {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    margin-bottom: 12px;
-}
-
-.brain-icon {
-    font-size: 36px;
-    flex-shrink: 0;
-}
-
-.brain-phase {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--text);
-    letter-spacing: -0.3px;
-}
-
-.brain-days {
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--green);
-    margin-top: 2px;
-}
-
-.brain-desc {
-    font-size: 14px;
-    color: var(--text-muted);
-    line-height: 1.6;
-    margin-bottom: 16px;
-}
-
-.brain-progress-track {
-    height: 6px;
-    background: rgba(0,0,0,0.06);
-    border-radius: 99px;
-    overflow: hidden;
-    margin-bottom: 8px;
-}
-
-.brain-progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--green-light), var(--green));
-    border-radius: 99px;
-    transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.brain-next {
-    font-size: 12px;
-    color: var(--text-muted);
-    font-weight: 500;
 }
 
 /* ── MONTHLY GRID ── */
@@ -2462,13 +2360,6 @@ button {
     letter-spacing: -0.4px;
     line-height: 1.1;
 }
-.compare-improvement-label {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-}
 .compare-message {
     font-size: 14px;
     line-height: 1.6;
@@ -2638,12 +2529,6 @@ button {
     font-weight: 800;
     letter-spacing: -0.3px;
     color: var(--green);
-}
-
-.onb-journey-pct {
-    margin-top: 4px;
-    font-size: 22px;
-    letter-spacing: -0.5px;
 }
 
 .onb-improve-ladder {
@@ -2830,36 +2715,6 @@ button {
     color: #1d1d1f;
 }
 
-.btn-premium-status {
-    width: 100%;
-    padding: 14px 16px;
-    border: none;
-    border-radius: 12px;
-    font-size: 15px;
-    font-weight: 700;
-    font-family: inherit;
-    cursor: pointer;
-    background: linear-gradient(180deg, #ffd60a, #ff9f0a);
-    color: #1d1d1f;
-    margin-bottom: 4px;
-}
-
-.btn-premium-status.premium-active {
-    background: linear-gradient(180deg, #30d158, #34c759);
-    color: #fff;
-}
-
-.btn-premium-status.premium-trial {
-    background: linear-gradient(180deg, #e8f7ec, #d4f1dc);
-    color: #1d1d1f;
-    border: 1px solid rgba(52, 199, 89, 0.35);
-}
-
-.btn-premium-status.premium-expired {
-    background: linear-gradient(180deg, #1d1d1f, #2c2c2e);
-    color: #fff;
-}
-
 .premium-overlay .premium-card {
     max-width: 360px;
     text-align: center;
@@ -2891,33 +2746,6 @@ button {
     line-height: 1.5;
     color: var(--text-muted);
     margin-bottom: 18px;
-}
-
-.premium-feature-list {
-    list-style: none;
-    text-align: left;
-    margin: 0 0 12px;
-    padding: 0;
-}
-
-.premium-feature-list li {
-    font-size: 14px;
-    line-height: 1.45;
-    padding: 8px 0 8px 24px;
-    position: relative;
-    border-bottom: 1px solid var(--border);
-}
-
-.premium-feature-list li:last-child {
-    border-bottom: none;
-}
-
-.premium-feature-list li::before {
-    content: '✓';
-    position: absolute;
-    left: 0;
-    color: var(--green);
-    font-weight: 700;
 }
 
 .premium-backup-note {

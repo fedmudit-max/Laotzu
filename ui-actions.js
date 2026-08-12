@@ -9,6 +9,11 @@
 
 function handleSuccess() {
     if (isAwaitingNextJourney()) return;
+    if (typeof isYesterdayLogPending === 'function' && isYesterdayLogPending()) {
+        showYesterdayReminder();
+        showToast(0, 'Log yesterday first.');
+        return;
+    }
     if (state.todayStatus === 'failed') {
         showToast(0, 'You already slipped today. Stay strong tomorrow!');
         return;
@@ -18,6 +23,12 @@ function handleSuccess() {
 }
 
 function showModal(action) {
+    if ((action === 'success' || action === 'fail')
+        && typeof isYesterdayLogPending === 'function' && isYesterdayLogPending()) {
+        showYesterdayReminder();
+        showToast(0, 'Log yesterday first.');
+        return;
+    }
     pendingAction = action;
     document.getElementById('modalMessage').textContent =
         action === 'success' ? 'Mark today as successful?' :
@@ -101,6 +112,7 @@ function resetAll() {
 function recordSuccess() {
     state.lastOpenedDate = todayKey();
     const result = applyStrongDay({ logDate: todayKey(), suppressUI: false });
+    if (!result || !result.applied) return;
     handleStrongDayUI(result, false);
     chartPage = -1;
     saveAndRender();
@@ -108,7 +120,7 @@ function recordSuccess() {
 }
 
 function handleStrongDayUI(result, suppressUI) {
-    if (!result || suppressUI) return;
+    if (!result || suppressUI || result.applied === false) return;
     if (result.isNewRecord) {
         setTimeout(() => showCelebration({
             emoji: '🏆',
@@ -154,7 +166,18 @@ function recordFailure() {
 
     state.lastOpenedDate = todayKey();
     const result = recordSlipToday();
-    if (!result || !result.applied) return;
+    if (!result || !result.applied) {
+        // Stranded 10/10 (logging blocked, never archived) — recover via normal end path.
+        if (typeof journeyIsOver === 'function' && journeyIsOver(state)
+            && typeof isAwaitingNextJourney === 'function' && !isAwaitingNextJourney()) {
+            var endDay = typeof inferJourneyEndWallDate === 'function'
+                ? inferJourneyEndWallDate()
+                : todayKey();
+            completeEndJourney(endDay);
+            showToast(0, '10 Powers used. Journey complete.');
+        }
+        return;
+    }
 
     if (journeyIsOver(state)) {
         completeEndJourney(todayKey());

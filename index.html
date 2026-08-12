@@ -24,7 +24,7 @@
             z-index: 9999;
         }
     </style>
-    <link rel="stylesheet" href="./styles.css?v=52">
+    <link rel="stylesheet" href="./styles.css?v=54">
 </head>
 <body>
 
@@ -541,12 +541,15 @@
                 <img
                     class="learn-progress-img"
                     src="./assets/progress-ideal-vs-actual.png"
-                    alt="What we think progress looks like: a straight line up over time. What progress actually looks like: an upward trend with ups and downs."
+                    alt="Chart comparing ideal progress as a straight upward line versus actual progress as an upward trend with ups and downs."
                     width="800"
                     height="300"
                     loading="lazy"
                     decoding="async"
                 >
+                <figcaption class="learn-progress-caption">
+                    Ideal progress vs actual progress — growth still trends up through setbacks.
+                </figcaption>
             </figure>
         </div>
         <button type="button" class="btn-learn-done" data-action="close-learn-journey">Got it</button>
@@ -649,11 +652,11 @@
 </div>
 
 <!-- ── Yesterday reminder overlay ── -->
-<div class="overlay" id="reminderOverlay">
-    <div class="overlay-card" style="text-align:center;">
+<div class="overlay overlay-yesterday" id="reminderOverlay" role="dialog" aria-modal="true" aria-labelledby="yesterdayTitle">
+    <div class="overlay-card" style="text-align:center;" onclick="event.stopPropagation()">
         <div style="font-size:48px;margin-bottom:12px;">📅</div>
-        <div style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px;letter-spacing:-0.3px;">Did you stay strong yesterday?</div>
-        <div style="font-size:14px;color:var(--text-muted);line-height:1.5;margin-bottom:24px;">You forgot to log. How was yesterday?</div>
+        <div id="yesterdayTitle" style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px;letter-spacing:-0.3px;">Did you stay strong yesterday?</div>
+        <div style="font-size:14px;color:var(--text-muted);line-height:1.5;margin-bottom:24px;">Log yesterday before you can log today.</div>
         <div style="display:flex;gap:12px;">
             <button data-action="yesterday-strong" style="flex:1;padding:13px;background:linear-gradient(180deg,var(--green-light),var(--green));color:white;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;">✓ I Stayed Strong</button>
             <button data-action="yesterday-slip" style="flex:1;padding:13px;background:linear-gradient(180deg,#ff453a,#ff3b30);color:white;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;">✕ I Slipped</button>
@@ -740,16 +743,16 @@
     <script defer src="./constants.js?v=15"></script>
     <script defer src="./data.js?v=17"></script>
     <script defer src="./migration.js?v=12"></script>
-    <script defer src="./logic.js?v=45"></script>
+    <script defer src="./logic.js?v=53"></script>
     <script defer src="./entitlement.js?v=17"></script>
     <script defer src="./billing.js?v=24"></script>
-    <script defer src="./firebase.js?v=10"></script>
-    <script defer src="./backup.js?v=10"></script>
-    <script defer src="./ui-main.js?v=23"></script>
+    <script defer src="./firebase.js?v=11"></script>
+    <script defer src="./backup.js?v=11"></script>
+    <script defer src="./ui-main.js?v=26"></script>
     <script defer src="./ui-overlays.js?v=16"></script>
-    <script defer src="./ui-actions.js?v=14"></script>
+    <script defer src="./ui-actions.js?v=17"></script>
     <script defer src="./ui-history.js?v=35"></script>
-    <script defer src="./ui-day.js?v=39"></script>
+    <script defer src="./ui-day.js?v=44"></script>
     <script defer src="./boot.js?v=17"></script>
 </body>
 </html>

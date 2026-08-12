@@ -46,6 +46,18 @@ function init() {
     if (ensureTrialStarted(state)) {
         saveToStorage(state);
     }
+    // Corrupt / interrupted 10-slip finish → archive so the user is not stuck.
+    if (typeof healStrandedJourneyEnd === 'function' && healStrandedJourneyEnd()) {
+        saveToStorage(state);
+    }
+    // Heal stale currentStreak from older saves (log order ≠ calendar order).
+    if (typeof recomputeCurrentStreak === 'function') {
+        var beforeStreak = state.currentStreak;
+        recomputeCurrentStreak();
+        if (beforeStreak !== state.currentStreak) {
+            saveToStorage(state);
+        }
+    }
 }
 
 // ════════════════════════════════════════════════════════
@@ -233,6 +245,15 @@ function renderButtons() {
         successBtn.textContent = '✓ I STAYED STRONG TODAY';
         failBtn.disabled = true;
         failBtn.textContent = 'New journey starts tomorrow';
+        return;
+    }
+
+    if (typeof isYesterdayLogPending === 'function' && isYesterdayLogPending()) {
+        successBtn.disabled = true;
+        successBtn.classList.remove('logged');
+        successBtn.textContent = 'Log yesterday first';
+        failBtn.disabled = true;
+        failBtn.textContent = 'Yesterday waiting';
         return;
     }
 
