@@ -1,4 +1,4 @@
-const CACHE_NAME = 'king-v58';
+const CACHE_NAME = 'king-v59';
 
 const ASSETS = [
     './',
@@ -23,6 +23,7 @@ const ASSETS = [
     './assets/icon-512.png',
     './assets/icon-192-maskable.png',
     './assets/icon-512-maskable.png',
+    './assets/progress-ideal-vs-actual.png',
 ];
 
 self.addEventListener('install', function (event) {
@@ -65,8 +66,14 @@ function staleWhileRevalidate(request) {
 }
 
 function cacheFirst(request) {
-    return caches.match(request).then(function (cached) {
-        return cached || fetch(request);
+    return caches.open(CACHE_NAME).then(function (cache) {
+        return cache.match(request).then(function (cached) {
+            if (cached) return cached;
+            return fetch(request).then(function (response) {
+                if (response && response.ok) cache.put(request, response.clone());
+                return response;
+            });
+        });
     });
 }
 
