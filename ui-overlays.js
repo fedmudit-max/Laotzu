@@ -1,6 +1,6 @@
 /**
  * ui-overlays.js — Popups and timers: toast, celebrations, urge surf, journey compare.
- * Edit here: popup text wiring, confetti, 15-min urge timer.
+ * Edit here: popup text wiring, confetti, urge timer.
  */
 
 // ════════════════════════════════════════════════════════
