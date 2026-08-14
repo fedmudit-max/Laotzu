@@ -46,7 +46,7 @@
  *
  * Public API:
  *   Entitlement.hasPremiumAccess()  — trial || subscription
- *   Entitlement.isTrialActive()     — calendar window only (not exclusive of sub)
+ *   Entitlement.isTrialActive()     — wall-clock window only (not exclusive of sub)
  *   Entitlement.isSubscriptionActive()
  *   Entitlement.daysRemaining()
  *   Entitlement.shouldShowPaywall()
@@ -78,24 +78,12 @@ var Entitlement = (function () {
         return s || (typeof state !== 'undefined' ? state : null) || {};
     }
 
-    function getTrialStartDateKey(s) {
+    function getTrialEndsAt(s) {
         s = snapshot(s);
-        if (!s.trialStartedAt) return '';
+        if (!s.trialStartedAt) return null;
         var start = new Date(s.trialStartedAt);
-        if (Number.isNaN(start.getTime())) return '';
-        if (typeof dateKeyFromDate === 'function') return dateKeyFromDate(start);
-        return '';
-    }
-
-    /** First calendar day the trial is no longer active (start + PREMIUM_TRIAL_DAYS). */
-    function getTrialEndDateKey(s) {
-        var startKey = getTrialStartDateKey(s);
-        if (!startKey || typeof addDaysToKey !== 'function') return '';
-        return addDaysToKey(startKey, PREMIUM_TRIAL_DAYS);
-    }
-
-    function appTodayKey() {
-        return typeof todayKey === 'function' ? todayKey() : '';
+        if (Number.isNaN(start.getTime())) return null;
+        return new Date(start.getTime() + PREMIUM_TRIAL_DAYS * MS_PER_DAY);
     }
 
     function isSubscriptionActive(s) {
@@ -105,17 +93,12 @@ var Entitlement = (function () {
         return !Number.isNaN(until.getTime()) && until.getTime() > Date.now();
     }
 
-    /**
-     * FUTURE AUDIT (known): trial lock uses app calendar (todayKey / New day),
-     * not Date.now() + PREMIUM_TRIAL_DAYS. If New day is removed, revert access
-     * check to wall-clock. See ARCHITECTURE.md → “FUTURE AUDIT — trial clock”.
-     */
+    /** True while trialStartedAt + PREMIUM_TRIAL_DAYS is still in the future (wall-clock). */
     function isTrialActive(s) {
         s = snapshot(s);
-        var endKey = getTrialEndDateKey(s);
-        var today = appTodayKey();
-        if (!endKey || !today) return false;
-        return today < endKey;
+        var ends = getTrialEndsAt(s);
+        if (!ends) return false;
+        return ends.getTime() > Date.now();
     }
 
     /** Single access answer: paid subscription OR open trial window. */
@@ -131,11 +114,11 @@ var Entitlement = (function () {
             var subMs = until.getTime() - Date.now();
             return subMs <= 0 ? 0 : Math.ceil(subMs / MS_PER_DAY);
         }
-        var endKey = getTrialEndDateKey(s);
-        var today = appTodayKey();
-        if (!endKey || !today || today >= endKey) return 0;
-        if (typeof daysBetweenKeys !== 'function') return 0;
-        return daysBetweenKeys(today, endKey);
+        var ends = getTrialEndsAt(s);
+        if (!ends) return 0;
+        var ms = ends.getTime() - Date.now();
+        if (ms <= 0) return 0;
+        return Math.ceil(ms / MS_PER_DAY);
     }
 
     function isBasicTier(s) {

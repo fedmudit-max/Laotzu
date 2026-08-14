@@ -97,7 +97,6 @@ function showFileProtocolBanner() {
             onboardingSkip: completeOnboarding,
             'yesterday-strong': function () { logYesterday('strong'); },
             'yesterday-slip': function () { logYesterday('slip'); },
-            'dev-new-day': advanceDevDay,
             closeCelebration: closeCelebration,
             modalCancel: closeModal,
             modalConfirm: confirmAction,

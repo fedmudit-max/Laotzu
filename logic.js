@@ -4,7 +4,7 @@
  *
  * STATE FIELD CHEAT SHEET (pick the right date — they are not interchangeable)
  *
- * App "today"         todayKey()              Real local date + optional state.devDateOffset (test "New day")
+ * App "today"         todayKey()              Real local calendar date
  * calendarDay         Display Journey Day N   Wall days from journeyStartDate through today (clamped)
  * journeyStartDate    Current Journey Day 1   Resets on beginNextJourney (ended + 1, not "return day")
  * appStartDate        First-ever Day 1        Never resets; month grid greys days before install
@@ -110,14 +110,8 @@ function dayOfYearFromKey(key) {
     return Math.floor((d - start) / MS_PER_DAY);
 }
 
-function realTodayKey() {
-    return dateKeyFromDate(new Date());
-}
-
 function todayKey() {
-    var offset = (state && state.devDateOffset) || 0;
-    if (!offset) return realTodayKey();
-    return addDaysToKey(realTodayKey(), offset);
+    return dateKeyFromDate(new Date());
 }
 
 // ════════════════════════════════════════════════════════
@@ -139,7 +133,7 @@ function dailyLogStorageKey(calDay, patch) {
     return (patch && patch.date) ? patch.date : dailyLogKey(calDay);
 }
 
-/** Never store wall dates after app "today" (real day + optional devDateOffset). */
+/** Never store wall dates after app "today". */
 function clampDateKeyToRealToday(dateKey) {
     var cap = todayKey();
     if (!dateKey || !/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return cap;
@@ -261,7 +255,6 @@ function getDefaultState() {
         /** Length archived on the first slip of that calendar day (for freeze UI only). */
         lastFreezeStreak: 0,
         lastFreezeDate: '',
-        devDateOffset: 0,
         trialStartedAt: '',
         premiumUntil: '',
     };
@@ -1037,10 +1030,9 @@ function getWeeklyDotCenterPct(day) {
     return (day / WEEKLY_TRACK_UNITS) * 100;
 }
 
-/** Wall-clock ms for intra-day math (follows dev day offset when testing). */
+/** Wall-clock ms for intra-day weekly-track math. */
 function getWeeklyClockMs() {
-    const offset = (state && state.devDateOffset) || 0;
-    return Date.now() + offset * MS_PER_DAY;
+    return Date.now();
 }
 
 /**

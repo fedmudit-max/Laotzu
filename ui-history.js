@@ -570,7 +570,7 @@ function renderMonthGrid() {
     }
 
     // Day cells after install / Journey Day 1:
-    //   slip → red · strong log only if logged strong · unlogged (incl. after test New day) → neutral
+    //   slip → red · strong log only if logged strong · unlogged → neutral
     //   Today waits for user; no optimistic green without a log entry.
     for (let d = 1; d <= daysInMonth; d++) {
         const key      = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;

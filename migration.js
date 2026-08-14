@@ -48,6 +48,8 @@ function runStateMigrations(merged, saved) {
             ? inferJourneyStartFromLog(merged)
             : (merged.lastOpenedDate || '');
     }
+    delete merged.devDateOffset;
+
     if (!merged.appStartDate || !/^\d{4}-\d{2}-\d{2}$/.test(merged.appStartDate)) {
         var earliest = '';
         var log = merged.dailyLog || {};

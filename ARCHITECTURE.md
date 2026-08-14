@@ -45,7 +45,7 @@ Source of truth for field meaning: comment at the top of `logic.js`. Do not trea
 
 | Field | Meaning |
 |--------|---------|
-| `todayKey()` | App today (real local date + optional `devDateOffset`) |
+| `todayKey()` | App today (real local calendar date) |
 | `calendarDay` | Journey Day N from `journeyStartDate` through today |
 | `journeyStartDate` | Current Journey Day 1 (resets; = previous end + 1) |
 | `appStartDate` | First-ever Day 1 (never resets) |
@@ -127,16 +127,7 @@ Rules:
 - Partial updates OK: writers pass only fields they own; unknown keys ignored by the write API until declared here.
 - Trial length is **not** stored; it is derived as `trialStartedAt + PREMIUM_TRIAL_DAYS`.
 
-### FUTURE AUDIT — trial clock vs app calendar (known)
-
-**Bug / product debt:** `isTrialActive()` currently uses **app calendar** (`todayKey()`, including `devDateOffset` / New day), not **wall-clock** `Date.now() + PREMIUM_TRIAL_DAYS`.
-
-- **Keep New day:** calendar lock is useful for testers (7 New days → lock).
-- **Remove New day:** revert trial *access* to `Date.now()` (standard 7×24h). Keep: never restart an expired `trialStartedAt`; seed from `appStartDate` only.
-
-Each install/APK has its own `localStorage` — a new test app always gets a fresh trial. That is not a shared-device lock.
-
-Flag on next audit if New day is gone or production trial must match Play’s 7×24h clock.
+Trial access is wall-clock: `trialStartedAt + PREMIUM_TRIAL_DAYS` vs `Date.now()`. Never restart an expired `trialStartedAt`; seed from `appStartDate` only. Each install has its own `localStorage`.
 
 ---
 
