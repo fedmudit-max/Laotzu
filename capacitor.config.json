@@ -1,0 +1,15 @@
+{
+  "appId": "com.kingtracker.app",
+  "appName": "King",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false
+  },
+  "ios": {
+    "contentInset": "automatic",
+    "preferredContentMode": "mobile"
+  }
+}

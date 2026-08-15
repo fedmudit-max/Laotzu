@@ -64,7 +64,7 @@ Source of truth for field meaning: comment at the top of `logic.js`. Do not trea
 
 **Not in v1 web/PWA.** Browser service-worker timers are unreliable after the app is fully closed and must not be marketed as local alarms.
 
-**When we add them:** Capacitor shell (Sprint 2 area), via **`@capacitor/local-notifications`** (or native AlarmManager equivalent) for OS-scheduled daily check-in. Same UX intent as Loop Habits: enable + time, fire while closed. Prefer native local notifications over FCM for daily reminders.
+**When we add them:** Capacitor shell (`www/` + `npx cap sync`), via **`@capacitor/local-notifications`** (or native AlarmManager equivalent) for OS-scheduled daily check-in. Same UX intent as Loop Habits: enable + time, fire while closed. Prefer native local notifications over FCM for daily reminders.
 
 **Do not** reintroduce best-effort web `Notification` / SW `setTimeout` scheduling for this product surface.
 
@@ -186,5 +186,5 @@ Google Play (later)
 | Sprint | Work |
 |--------|------|
 | **1** | Entitlement API + wire existing premium UI *(done)* |
-| **2** | Capacitor + Google Play Billing + restore · local daily check-in reminders (`@capacitor/local-notifications`) · purchase unlocks UI only (score preserved) |
+| **2** | Capacitor wrapper (`npm run cap:sync`) + Google Play Billing + restore · local daily check-in reminders (`@capacitor/local-notifications`) · purchase unlocks UI only (score preserved) |
 | **3** | Firebase anonymous auth + purchase verify + closed testing |

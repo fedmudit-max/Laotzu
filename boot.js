@@ -2,7 +2,20 @@
  * boot.js — Service worker, button router, app startup. Load last.
  */
 
+function isCapacitorNative() {
+    try {
+        return !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function'
+            && window.Capacitor.isNativePlatform());
+    } catch (e) {
+        return false;
+    }
+}
+
 function registerServiceWorkerDeferred() {
+    // Native Capacitor apps ship files in the bundle — do not use a service worker
+    // (Capacitor WebView is https://localhost, which is not GitHub Pages).
+    if (isCapacitorNative()) return;
+
     // PWA install (Android app icon / standalone) needs HTTPS or localhost + SW.
     // file:// always becomes a plain Chrome shortcut — cannot install as app.
     if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
