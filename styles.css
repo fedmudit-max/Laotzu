@@ -2731,8 +2731,8 @@ button {
     font-weight: 700;
     font-family: inherit;
     cursor: pointer;
-    background: linear-gradient(180deg, #ffd60a, #ff9f0a);
-    color: #1d1d1f;
+    background: linear-gradient(180deg, var(--green-light), var(--green));
+    color: #fff;
 }
 
 .premium-overlay .premium-card {
