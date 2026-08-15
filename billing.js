@@ -1,15 +1,108 @@
 /**
- * billing.js — Premium UI, checkout hooks, and (later) Google Play Billing.
+ * billing.js — Premium UI, checkout hooks, store offer, and (later) Google Play Billing.
  *
  * Ownership:
  *   - UI: paywall sheet, panel copy, section visibility
- *   - Gate helpers that ask Entitlement then show UI
+ *   - Gate helpers that ask Entitlement.getAccess() then show UI
+ *   - Store offer (localized price) — never mixed into Entitlement
  *   - Future: purchase / restore / entitlement write path
  *
- * Does not decide premium access — asks Entitlement.hasPremiumAccess().
+ * Does not decide premium access — asks Entitlement.getAccess().
  */
 
 let premiumPanelOpen = false;
+let selectedPremiumPlanId = 'annual';
+let lastPremiumModalOpts = null;
+let storePremiumOffer = null;
+
+function planDiscountPercent(listAmount, amount) {
+    var list = Number(listAmount);
+    var sale = Number(amount);
+    if (!(list > 0) || !(sale >= 0) || sale >= list) return 0;
+    return Math.round(((list - sale) / list) * 100);
+}
+
+function planPeriodSuffix(period, id) {
+    if (period === 'year' || id === 'annual') return '/year';
+    return '/month';
+}
+
+function normalizePremiumPlan(p) {
+    p = p || {};
+    var id = p.id || p.period || 'monthly';
+    var listAmount = p.listAmount != null ? Number(p.listAmount) : 0;
+    var amount = p.amount != null ? Number(p.amount) : 0;
+    var period = p.period || (id === 'annual' ? 'year' : 'month');
+    var plan = { id: id, period: period };
+
+    if (amount > 0) {
+        plan.amount = amount;
+        plan.price = '₹' + amount + planPeriodSuffix(period, id);
+    } else {
+        plan.price = p.price ? String(p.price) : '';
+    }
+
+    if (listAmount > 0 && amount > 0 && listAmount > amount) {
+        plan.listAmount = listAmount;
+        plan.listPrice = '₹' + listAmount;
+        plan.discountPct = planDiscountPercent(listAmount, amount);
+    }
+
+    if (id === 'annual') {
+        plan.message = p.message || PREMIUM_ANNUAL_VALUE_MESSAGE;
+    } else if (p.message) {
+        plan.message = p.message;
+    }
+    return plan;
+}
+
+function normalizePremiumPlans(plans) {
+    var src = plans && plans.length ? plans : PREMIUM_PLANS_MOCK;
+    return src.map(normalizePremiumPlan);
+}
+
+/**
+ * Billing will call this when Play/App Store returns localized products.
+ * @param {{ price?: string, trialDays?: number, plans?: Array, source?: string }|null} offer
+ */
+function setPremiumOfferFromStore(offer) {
+    if (!offer || typeof offer !== 'object') {
+        storePremiumOffer = null;
+        return;
+    }
+    var plans = offer.plans;
+    if ((!plans || !plans.length) && offer.price) {
+        plans = [{ id: 'monthly', price: offer.price }];
+    }
+    if (!plans || !plans.length) {
+        storePremiumOffer = null;
+        return;
+    }
+    storePremiumOffer = {
+        trialDays: offer.trialDays != null ? Number(offer.trialDays) : PREMIUM_TRIAL_DAYS,
+        plans: normalizePremiumPlans(plans),
+        source: offer.source || 'store',
+    };
+}
+
+/**
+ * Offer for the Premium modal only.
+ * Access must not read this — Entitlement.getAccess() owns “is Premium?”.
+ */
+function getPremiumOffer() {
+    if (storePremiumOffer && storePremiumOffer.plans && storePremiumOffer.plans.length) {
+        return {
+            trialDays: storePremiumOffer.trialDays || PREMIUM_TRIAL_DAYS,
+            plans: storePremiumOffer.plans,
+            source: storePremiumOffer.source || 'store',
+        };
+    }
+    return {
+        trialDays: PREMIUM_TRIAL_DAYS,
+        plans: normalizePremiumPlans(PREMIUM_PLANS_MOCK),
+        source: 'mock',
+    };
+}
 
 function setPremiumSectionVisible(id, visible) {
     var el = document.getElementById(id);
@@ -22,7 +115,8 @@ function setPremiumSectionVisible(id, visible) {
  *    month/chart, export/import.
  */
 function applyPremiumTierLayout() {
-    var unlocked = !safeGet('onboardingComplete') || Entitlement.hasPremiumAccess();
+    var access = Entitlement.getAccess();
+    var unlocked = !safeGet('onboardingComplete') || access.active;
     var gatedIds = [
         'weeklyStreakCard',
         'milestonesCard',
@@ -169,7 +263,15 @@ function renderPremiumStatus() {
     if (premiumPanelOpen) renderPremiumPanelContent();
 }
 
-function renderPremiumSheet() {
+function renderPremiumSheet(opts) {
+    opts = opts || {};
+    var base = getPremiumOffer();
+    var offer = {
+        trialDays: opts.trialDays != null ? opts.trialDays : base.trialDays,
+        plans: normalizePremiumPlans(opts.plans && opts.plans.length ? opts.plans : base.plans),
+    };
+    lastPremiumModalOpts = offer;
+
     var titleEl = document.getElementById('premiumSheetTitle');
     var subEl = document.getElementById('premiumSheetSubtitle');
     var trialEl = document.getElementById('premiumTrialBadge');
@@ -187,7 +289,7 @@ function renderPremiumSheet() {
         if (buyBtn) buyBtn.hidden = true;
         if (restoreBtn) restoreBtn.hidden = true;
     } else if (Entitlement.isTrialActive()) {
-        titleEl.textContent = PREMIUM_TRIAL_DAYS + '-day Premium trial';
+        titleEl.textContent = offer.trialDays + '-day Premium trial';
         if (subEl) subEl.textContent = '';
         if (trialEl) {
             trialEl.hidden = false;
@@ -205,18 +307,91 @@ function renderPremiumSheet() {
         if (restoreBtn) restoreBtn.hidden = false;
     }
 
-    var priceNote = document.getElementById('premiumPriceNote');
-    if (priceNote) {
-        priceNote.textContent = 'after ' + PREMIUM_TRIAL_DAYS + '-day trial';
+    renderPremiumPlans(offer);
+}
+
+function planLabel(id) {
+    return id === 'annual' ? 'Annual' : 'Monthly';
+}
+
+function selectPremiumPlan(planId) {
+    selectedPremiumPlanId = planId || 'annual';
+    renderPremiumPlans(lastPremiumModalOpts || getPremiumOffer());
+}
+
+function renderPremiumPlans(offer) {
+    offer = offer || getPremiumOffer();
+    var block = document.getElementById('premiumPriceBlock');
+    var subscribed = Entitlement.isSubscriptionActive();
+    if (!block) return;
+
+    if (subscribed) {
+        block.hidden = true;
+        block.innerHTML = '';
+        return;
     }
+
+    block.hidden = false;
+    var plans = offer.plans || [];
+    var selected = selectedPremiumPlanId;
+    var hasSelected = plans.some(function (p) { return p.id === selected; });
+    if (!hasSelected) {
+        selectedPremiumPlanId = (plans.some(function (p) { return p.id === 'annual'; }) ? 'annual' : (plans[0] && plans[0].id) || 'monthly');
+        selected = selectedPremiumPlanId;
+    }
+
+    var note = Entitlement.isTrialActive()
+        ? '<div class="premium-price-note">after ' + offer.trialDays + '-day trial</div>'
+        : '';
+
+    block.innerHTML = plans.map(function (p) {
+        var cls = 'premium-plan' + (p.id === 'annual' ? ' is-featured' : '') + (p.id === selected ? ' is-selected' : '');
+        var msg = p.message ? '<div class="premium-plan-message">' + p.message + '</div>' : '';
+        var list = p.listPrice
+            ? '<span class="premium-plan-list">' + p.listPrice + '</span>'
+            : '';
+        var off = p.discountPct
+            ? '<span class="premium-plan-off">' + p.discountPct + '% off</span>'
+            : '';
+        return '<button type="button" class="' + cls + '" data-action="premium-plan-' + p.id + '">' +
+            '<div class="premium-plan-label">' + planLabel(p.id) + '</div>' +
+            '<div class="premium-plan-price">' +
+                list +
+                '<span class="premium-plan-sale">' + (p.price || '') + '</span>' +
+                off +
+            '</div>' +
+            msg +
+            '</button>';
+    }).join('') + note;
+}
+
+/**
+ * Premium modal UI. Receives localized plans; does not decide access or fetch the store.
+ * @param {{ trialDays?: number, plans?: Array, price?: string }} opts
+ */
+function showPremiumModal(opts) {
+    var overlay = document.getElementById('premiumOverlay');
+    if (!overlay) return;
+    var offer = getPremiumOffer();
+    opts = opts || {};
+    var plans = opts.plans;
+    if ((!plans || !plans.length) && opts.price) {
+        plans = [{ id: 'monthly', price: opts.price }];
+    }
+    renderPremiumSheet({
+        trialDays: opts.trialDays != null ? opts.trialDays : offer.trialDays,
+        plans: plans && plans.length ? plans : offer.plans,
+    });
+    overlay.classList.add('active');
+    overlay.setAttribute('aria-hidden', 'false');
 }
 
 function openPremiumSheet() {
-    var overlay = document.getElementById('premiumOverlay');
-    if (!overlay) return;
-    renderPremiumSheet();
-    overlay.classList.add('active');
-    overlay.setAttribute('aria-hidden', 'false');
+    var offer = getPremiumOffer();
+    showPremiumModal({
+        trialDays: offer.trialDays,
+        plans: offer.plans,
+    });
 }
 
 function closePremiumSheet() {
@@ -229,7 +404,7 @@ function closePremiumSheet() {
 /** Gate: ask Entitlement, show paywall if denied. Never during / right before onboarding is done without access. */
 function requirePremium() {
     if (safeGet('onboardingComplete') !== 'true') return false;
-    if (Entitlement.hasPremiumAccess()) return true;
+    if (Entitlement.getAccess().active) return true;
     openPremiumSheet();
     return false;
 }
@@ -283,6 +458,23 @@ function startPremiumCheckout() {
     window.open(PREMIUM_CHECKOUT_URL, '_blank', 'noopener,noreferrer');
 }
 
+function handlePremiumAction(action) {
+    if (action.indexOf('premium-plan-') === 0) {
+        selectPremiumPlan(action.slice('premium-plan-'.length));
+        return true;
+    }
+    var actions = {
+        'open-premium': openPremiumSheet,
+        'close-premium': closePremiumSheet,
+        'premium-checkout': startPremiumCheckout,
+        'premium-restore': restorePremiumAccess,
+        'premium-later': closePremiumSheet,
+    };
+    if (!actions[action]) return false;
+    actions[action]();
+    return true;
+}
+
 function restorePremiumAccess() {
     if (Entitlement.isSubscriptionActive()) {
         unlockPremiumFeatures();
@@ -305,19 +497,6 @@ function onPremiumActivated() {
     closePremiumSheet();
     unlockPremiumFeatures();
     showToast(0, 'Welcome to Premium 👑');
-}
-
-function handlePremiumAction(action) {
-    var actions = {
-        'open-premium': openPremiumSheet,
-        'close-premium': closePremiumSheet,
-        'premium-checkout': startPremiumCheckout,
-        'premium-restore': restorePremiumAccess,
-        'premium-later': closePremiumSheet,
-    };
-    if (!actions[action]) return false;
-    actions[action]();
-    return true;
 }
 
 function initPremiumStartup() {

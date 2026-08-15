@@ -26,6 +26,7 @@ This document defines implementation boundaries. Changes require an implementati
 | Concern | Owner |
 |---------|--------|
 | Google Play purchase / restore | **Billing** (`billing.js`) |
+| Localized Premium price (store offer) | **Billing** (`getPremiumOffer`) |
 | Trial calculation / access answers | **Entitlement** (`entitlement.js`) |
 | Journey scoring, days, slips | **Journey / Logic** (`logic.js`) |
 | Schema upgrades on load | **Migration** (`migration.js`) |
@@ -134,13 +135,37 @@ Trial access is wall-clock: `trialStartedAt + PREMIUM_TRIAL_DAYS` vs `Date.now()
 ## Entitlement Public API
 
 ```text
-Entitlement.hasPremiumAccess()     // trialActive || subscriptionActive
+Entitlement.getAccess()            // { active, expiresAt } — is Premium?
+Entitlement.hasPremiumAccess()     // getAccess().active  (trial || subscription)
 Entitlement.isTrialActive()        // trial window only (independent of sub)
 Entitlement.isSubscriptionActive()
 Entitlement.daysRemaining()
 Entitlement.shouldShowPaywall()
 Entitlement.isBasicTier()
 Entitlement.subscriptionExpiresLabel()
+```
+
+### Access vs price (keep separate)
+
+Unlocking King **never** reads a price. The Premium modal is a display shell:
+
+```text
+showPremiumModal({ trialDays, plans })
+```
+
+Today `plans` are a mock (`PREMIUM_PLANS_MOCK`: monthly ₹199→₹149, annual ₹1999→₹1499). Later Play/App Store calls `setPremiumOfferFromStore({ trialDays, plans })` with localized strings; the modal API does not change.
+
+```text
+Entitlement.getAccess()
+        ↓
+  active?  YES → unlock Premium features
+           NO  → showPremiumModal({ trialDays, plans })
+
+Google Play (later)
+        ↓
+  localized monthly + annual prices
+        ↓
+  same showPremiumModal(...)
 ```
 
 ---

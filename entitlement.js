@@ -45,13 +45,16 @@
  *   ✗ State
  *
  * Public API:
- *   Entitlement.hasPremiumAccess()  — trial || subscription
+ *   Entitlement.getAccess()         — { active, expiresAt }  (is this user Premium?)
+ *   Entitlement.hasPremiumAccess()  — getAccess().active
  *   Entitlement.isTrialActive()     — wall-clock window only (not exclusive of sub)
  *   Entitlement.isSubscriptionActive()
  *   Entitlement.daysRemaining()
  *   Entitlement.shouldShowPaywall()
  *   Entitlement.isBasicTier()
  *   Entitlement.subscriptionExpiresLabel()
+ *
+ * Price is not this layer. Store offer lives in Billing (Play localized price).
  *
  * Architectural rules:
  *   - No module outside this file may decide premium access.
@@ -106,6 +109,27 @@ var Entitlement = (function () {
         return isSubscriptionActive(s) || isTrialActive(s);
     }
 
+    /** ISO end of the current access window, or null if not Premium. */
+    function getAccessExpiresAt(s) {
+        s = snapshot(s);
+        if (isSubscriptionActive(s) && s.premiumUntil) return s.premiumUntil;
+        var ends = getTrialEndsAt(s);
+        if (ends && ends.getTime() > Date.now()) return ends.toISOString();
+        return null;
+    }
+
+    /**
+     * The only “is Premium?” snapshot the rest of the app should need.
+     * Does not include price — Billing owns the store offer.
+     */
+    function getAccess(s) {
+        var active = hasPremiumAccess(s);
+        return {
+            active: active,
+            expiresAt: active ? getAccessExpiresAt(s) : null,
+        };
+    }
+
     function daysRemaining(s) {
         s = snapshot(s);
         if (isSubscriptionActive(s)) {
@@ -138,6 +162,7 @@ var Entitlement = (function () {
     }
 
     return {
+        getAccess: getAccess,
         hasPremiumAccess: hasPremiumAccess,
         isTrialActive: isTrialActive,
         isSubscriptionActive: isSubscriptionActive,

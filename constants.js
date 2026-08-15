@@ -10,10 +10,16 @@ const URGE_DURATION_SECS = 5 * 60;
 const TOTAL_SLIDES = 5;
 const BACKUP_FORMAT = 'king-backup';
 const BACKUP_VERSION = 1;
-/** Local free trial length. Use 30 for production; temporarily 7 for mobile/local lock tests. */
-const PREMIUM_TRIAL_DAYS = 7;
+/** Local free trial length. Access window is trialStartedAt + this many days. */
+const PREMIUM_TRIAL_DAYS = 30;
 const PREMIUM_CHECKOUT_URL = '';
 const PREMIUM_SUBSCRIPTION_DAYS = 365;
+const PREMIUM_ANNUAL_VALUE_MESSAGE = 'Best value for the long journey';
+/** Dev mock until Play/App Store supplies localized plan prices. Display-only. */
+const PREMIUM_PLANS_MOCK = [
+    { id: 'monthly', listAmount: 199, amount: 149, period: 'month' },
+    { id: 'annual', listAmount: 1999, amount: 1499, period: 'year', message: PREMIUM_ANNUAL_VALUE_MESSAGE },
+];
 /** Feature bullets on paywall + premium panel. */
 const PREMIUM_FEATURES = [
     'Weekly timeline — one week at a time',
