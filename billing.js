@@ -222,7 +222,7 @@ function renderPremiumPanelContent() {
     if (!statusEl || !listEl) return;
 
     if (Entitlement.isSubscriptionActive()) {
-        statusEl.textContent = 'Premium active until ' + Entitlement.subscriptionExpiresLabel() + '. Thank you for supporting King.';
+        statusEl.textContent = 'Premium is active. Billing and renewal are managed in Google Play.';
         setPremiumBackupNote(noteEl, false);
     } else if (Entitlement.isTrialActive()) {
         var left = Entitlement.daysRemaining();
@@ -245,7 +245,7 @@ function renderPremiumStatus() {
 
     if (Entitlement.isSubscriptionActive()) {
         if (titleEl) titleEl.textContent = '👑 Premium';
-        if (teaserEl) teaserEl.textContent = 'Active · renews ' + Entitlement.subscriptionExpiresLabel();
+        if (teaserEl) teaserEl.textContent = 'Active · Google Play';
         if (cardEl) {
             cardEl.classList.add('premium-active-state');
             cardEl.classList.remove('premium-trial-state', 'premium-expired-state');
@@ -290,7 +290,7 @@ function renderPremiumSheet(opts) {
 
     if (Entitlement.isSubscriptionActive()) {
         titleEl.textContent = 'You\'re Premium';
-        subEl.textContent = 'Full access until ' + Entitlement.subscriptionExpiresLabel() + '. Thank you for supporting King.';
+        subEl.textContent = 'Full access is on. Google Play manages your subscription; this app only caches access for offline use.';
         if (trialEl) trialEl.hidden = true;
         if (laterBtn) laterBtn.textContent = 'Close';
         if (buyBtn) buyBtn.hidden = true;
@@ -424,13 +424,15 @@ function requirePremium() {
  * Journey score is never touched here:
  *   score, streaks, dailyLog, calendarDay, attempt, etc. stay as-is when buying Premium.
  *
- * Paid `premiumUntil` is written only after a verified Play/App Store purchase
- * or restore — never from a URL, query param, or client-side “success” flag.
+ * Paid `premiumUntil` is written only after a Play Billing client query
+ * returns PURCHASED for a King product (purchase or restore). That is
+ * Play-client-confirmed, not Firebase / Play Developer API server verification.
+ * Never from a URL, query param, or client-side “success” flag.
  *
  * @param {Partial<EntitlementSnapshot>} fields
- *   requires source 'play' or 'restore' (verified purchase path)
- *   v1 accepts: premiumUntil, source
- *   reserved: lastVerifiedAt
+ *   requires source 'play' or 'restore' (Play client path)
+ *   v1 accepts: premiumUntil, lastVerifiedAt, source
+ *   lastVerifiedAt here = last successful Play client query, until server verify exists
  *   never write trialStartedAt here — local trial seed owns that field
  *   never write journey/logging fields — journey layer owns those
  */
@@ -443,12 +445,26 @@ function updateEntitlementSnapshot(fields) {
     saveToStorage(state);
 }
 
-function playProductIdForPlan(planId) {
+function playIsoBillingPeriod(period) {
+    return period === 'year' ? 'P1Y' : 'P1M';
+}
+
+function playOfferSpec(row) {
+    row = row || {};
+    return {
+        productId: row.productId || '',
+        basePlanId: row.basePlanId || '',
+        offerId: row.offerId || '',
+        billingPeriod: playIsoBillingPeriod(row.period),
+    };
+}
+
+function playOfferSpecForPlan(planId) {
     var list = typeof PREMIUM_PLAY_PRODUCTS !== 'undefined' ? PREMIUM_PLAY_PRODUCTS : [];
     for (var i = 0; i < list.length; i++) {
-        if (list[i].id === planId) return list[i].productId;
+        if (list[i].id === planId) return playOfferSpec(list[i]);
     }
-    return '';
+    return null;
 }
 
 function playPlanForProductId(productId) {
@@ -464,10 +480,11 @@ function plansFromPlayProducts(products) {
     var list = products || [];
     for (var i = 0; i < list.length; i++) {
         var row = playPlanForProductId(list[i].productId);
-        if (!row || !list[i].price) continue;
+        if (!row || !list[i].price || list[i].hasSelectedOffer === false) continue;
         out.push({
             id: row.id,
             period: row.period,
+            // Play formattedPrice of the selected base plan/offer, not a rupee mock.
             price: list[i].price,
             message: row.id === 'annual' ? PREMIUM_ANNUAL_VALUE_MESSAGE : '',
         });
@@ -481,7 +498,9 @@ function plansFromPlayProducts(products) {
 
 function loadPlayOffers() {
     if (!getKingBillingPlugin()) return;
-    callKingBilling('queryProducts', { productIds: PREMIUM_PLAY_PRODUCT_IDS }).then(function (result) {
+    callKingBilling('queryProducts', {
+        products: PREMIUM_PLAY_PRODUCTS.map(playOfferSpec),
+    }).then(function (result) {
         if (!result || !result.ok) return;
         var plans = plansFromPlayProducts(result.products);
         if (!plans.length) return;
@@ -506,15 +525,15 @@ function startPremiumCheckout() {
         showToast(0, 'Subscribe uses Google Play on the Android app.');
         return;
     }
-    var productId = playProductIdForPlan(selectedPremiumPlanId);
-    if (!productId) {
+    var spec = playOfferSpecForPlan(selectedPremiumPlanId);
+    if (!spec || !spec.productId) {
         showToast(0, 'Pick a Premium plan first.');
         return;
     }
     if (playCheckoutInFlight) return;
     playCheckoutInFlight = true;
     setCheckoutBusy(true);
-    callKingBilling('purchase', { productId: productId })
+    callKingBilling('purchase', spec)
         .then(function (result) {
             if (result && result.canceled) return;
             if (result && result.ok && findActivePlaySubscription(result.purchases)) {
@@ -524,6 +543,10 @@ function startPremiumCheckout() {
             }
             if (result && result.responseCode === 7 /* ITEM_ALREADY_OWNED */) {
                 return restoreAfterAlreadyOwned();
+            }
+            if (result && result.message === 'no-matching-offer') {
+                showToast(0, 'No matching Play base plan for this product. Set basePlanId in PREMIUM_PLAY_PRODUCTS after creating it in Play Console.');
+                return;
             }
             if (!result || !result.ok) {
                 showToast(0, 'Couldn’t start Google Play checkout. Use a Play testing build and a network connection.');
@@ -624,15 +647,15 @@ function findActivePlaySubscription(purchases) {
     return null;
 }
 
-function cachePremiumUntilIso() {
+function playAccessCacheUntilIso() {
     var days = typeof PREMIUM_PLAY_CACHE_DAYS === 'number' ? PREMIUM_PLAY_CACHE_DAYS : 3;
     return new Date(Date.now() + days * MS_PER_DAY).toISOString();
 }
 
 /**
- * Apply Play query/restore results. Paid cache is written only for an active
- * Play subscription; missing Play ownership clears a previous play/restore grant.
- * Offline / Play-unavailable results must not wipe a cached paid window.
+ * Apply Play *client* query/restore results. PURCHASED refreshes a local offline
+ * cache (not extra subscription days). No Play result / errors leave the cache
+ * alone. Play says not owned → clear a previous play/restore cache.
  */
 function applyPlayPurchaseQuery(result, source) {
     if (!result || !result.ok) return { applied: false, active: false, unavailable: true };
@@ -640,7 +663,7 @@ function applyPlayPurchaseQuery(result, source) {
     var nowIso = new Date().toISOString();
     if (purchase) {
         updateEntitlementSnapshot({
-            premiumUntil: cachePremiumUntilIso(),
+            premiumUntil: playAccessCacheUntilIso(),
             lastVerifiedAt: nowIso,
             source: source === 'restore' ? 'restore' : 'play',
         });
@@ -709,6 +732,8 @@ function bindPlayPurchasesListener() {
     playPurchasesListenerBound = true;
     plugin.addListener('purchasesUpdated', function (result) {
         if (!result || !result.ok) return;
+        // Resume query can return [] while the Play sheet is up — do not treat that as "not owned".
+        if (playCheckoutInFlight && !findActivePlaySubscription(result.purchases)) return;
         applyPlayPurchaseQuery(result, state.source === 'restore' ? 'restore' : 'play');
         unlockPremiumFeatures();
     });

@@ -1,5 +1,48 @@
 apply plugin: 'com.android.application'
 
+def kingProjectRoot = rootProject.projectDir.parentFile
+
+def resolveKingNode() {
+    def named = System.getenv('NODE')
+    if (named && file(named).exists()) {
+        return named
+    }
+    def home = System.getenv('HOME') ?: ''
+    def candidates = new ArrayList<String>()
+    candidates.add('/opt/homebrew/bin/node')
+    candidates.add('/usr/local/bin/node')
+    def nvmRoot = new File(home, '.nvm/versions/node')
+    if (nvmRoot.directory) {
+        def versions = nvmRoot.listFiles()?.findAll { it.directory }?.sort { it.name }
+        versions?.reverseEach {
+            candidates.add(new File(it, 'bin/node').absolutePath)
+        }
+    }
+    def found = candidates.find { file(it).exists() }
+    return found ?: 'node'
+}
+
+tasks.register('syncKingWebAssets', Exec) {
+    group = 'king'
+    description = 'Copy repo-root PWA files into www and Android assets'
+    workingDir kingProjectRoot
+    commandLine resolveKingNode(), 'scripts/copy-web.js'
+    inputs.file("${kingProjectRoot}/scripts/copy-web.js")
+    inputs.file("${kingProjectRoot}/index.html")
+    inputs.file("${kingProjectRoot}/manifest.json")
+    inputs.files(fileTree(kingProjectRoot) {
+        include '*.js', '*.css'
+        exclude 'www/**', 'android/**', 'ios/**', 'node_modules/**', 'scripts/**'
+    })
+    inputs.dir("${kingProjectRoot}/assets")
+    outputs.dir("${kingProjectRoot}/www")
+    outputs.dir("${kingProjectRoot}/android/app/src/main/assets/public")
+}
+
+afterEvaluate {
+    tasks.named('preBuild').configure { dependsOn 'syncKingWebAssets' }
+}
+
 android {
     namespace = "com.kingtracker.app"
     compileSdk = rootProject.ext.compileSdkVersion

@@ -13,7 +13,7 @@ This document defines implementation boundaries. Changes require an implementati
 1. **One write path** updates entitlement state.
 2. **`entitlement.js` only answers entitlement questions** (zero side effects).
 3. **Journey data stays local.**
-4. **Paid entitlement** comes from a Play purchase/restore query (client cache) and is **cached locally**. Firebase server verify is still later.
+4. **Paid entitlement** for this phase is **Play-client-confirmed** (`queryPurchases` / purchase callback) and **cached locally**. That is not server verification. **Do not build** Firebase / Play Developer API / Firestore entitlement until a real Play purchase has been proven on a testing track. After that, production should become: Play token → Cloud Function → Play Developer API → Firestore.
 5. **Architecture changes only when implementation reveals a real need.**
 6. **Local trial** is separate from remote paid entitlement; `hasPremiumAccess` is either/or.
 7. **Basic logging is free forever** after trial ends: strong / slip / journey score, unlimited calendar days.
@@ -120,8 +120,8 @@ Shared shape of premium entitlement fields on journey `state`.
 | Field | Type | Owner of writes | Status |
 |-------|------|-----------------|--------|
 | `trialStartedAt` | ISO-8601 string or `''` | Onboarding + init (`logic.js`; start of Calendar Day 1) | **v1 live** |
-| `premiumUntil` | ISO-8601 string or `''` | `updateEntitlementSnapshot` only after Play `PURCHASED` query (source `play` or `restore`) | **live** |
-| `lastVerifiedAt` | ISO-8601 string or `''` | Billing after a successful Play query (client). Firebase server verify later | **client cache** |
+| `premiumUntil` | ISO-8601 string or `''` | Local **offline cache** expiry after last Play client `PURCHASED`. Not the Play subscription term. Firebase later becomes authority | **cache, not proof of 3 extra paid days** |
+| `lastVerifiedAt` | ISO-8601 string or `''` | Sprint 3A: last Play client confirmation. Production: Firebase / Play Developer API | **not server-verified yet** |
 | `source` | `'local-trial' \| 'play' \| 'restore' \| 'dev' \| ''` | same write path as paid fields; `play`/`restore` required to set `premiumUntil` | **live** |
 
 Rules:
@@ -188,4 +188,5 @@ Google Play (KingBilling)
 |--------|------|
 | **1** | Entitlement API + wire existing premium UI *(done)* |
 | **2** | Capacitor wrapper · local daily reminders *(Android AlarmManager)* *(done)* |
-| **3** | Google Play products + `KingBilling` purchase/restore · then Firebase purchase-token verify + closed testing |
+| **3A** | Play Console products + prove buy/restore on a Play testing build *(client-confirmed cache only)* |
+| **3B** | Firebase purchase-token verify → Play Developer API → Firestore *(after 3A works)* · closed testing |

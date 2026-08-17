@@ -63,6 +63,7 @@ final class PlayBillingStore implements PurchasesUpdatedListener {
     private final BillingClient client;
     private final List<ReadyJob> readyWork = new ArrayList<>();
     private final Map<String, ProductDetails> catalog = new HashMap<>();
+    private final Map<String, PlayOfferSelector.Spec> offerSpecs = new HashMap<>();
 
     private boolean connecting;
     private boolean connected;
@@ -107,9 +108,23 @@ final class PlayBillingStore implements PurchasesUpdatedListener {
         );
     }
 
-    void queryProductDetails(@NonNull List<String> productIds, @NonNull CatalogCallback callback) {
+    @Nullable
+    PlayOfferSelector.Spec offerSpec(String productId) {
+        return offerSpecs.get(productId);
+    }
+
+    void rememberOfferSpec(@NonNull PlayOfferSelector.Spec spec) {
+        if (!spec.productId.isEmpty()) offerSpecs.put(spec.productId, spec);
+    }
+
+    void queryProductDetails(@NonNull List<PlayOfferSelector.Spec> specs, @NonNull CatalogCallback callback) {
+        for (PlayOfferSelector.Spec spec : specs) rememberOfferSpec(spec);
+        List<String> ids = new ArrayList<>();
+        for (PlayOfferSelector.Spec spec : specs) {
+            if (!spec.productId.isEmpty()) ids.add(spec.productId);
+        }
         whenReady(
-            () -> startProductQuery(productIds, callback),
+            () -> startProductQuery(ids, callback),
             result -> callback.onResult(result, Collections.emptyList())
         );
     }
@@ -145,30 +160,50 @@ final class PlayBillingStore implements PurchasesUpdatedListener {
         });
     }
 
-    void launchPurchase(@NonNull Activity activity, @NonNull String productId, @NonNull LaunchCallback callback) {
-        ProductDetails cached = catalog.get(productId);
-        if (cached != null) {
-            whenReady(() -> startFlow(activity, cached, callback), callback::onLaunch);
-            return;
-        }
-        queryProductDetails(Collections.singletonList(productId), (result, products) -> {
-            if (result.getResponseCode() != BillingClient.BillingResponseCode.OK || products.isEmpty()) {
+    void launchPurchase(
+        @NonNull Activity activity,
+        @NonNull PlayOfferSelector.Spec spec,
+        @NonNull LaunchCallback callback
+    ) {
+        rememberOfferSpec(spec);
+        // Always re-query: cached ProductDetails offer tokens can go stale.
+        queryProductDetails(Collections.singletonList(spec), (result, products) -> {
+            if (result.getResponseCode() != BillingClient.BillingResponseCode.OK) {
                 callback.onLaunch(result);
                 return;
             }
-            startFlow(activity, products.get(0), callback);
+            ProductDetails details = findProduct(products, spec.productId);
+            if (details == null) {
+                callback.onLaunch(errorResult(BillingClient.BillingResponseCode.ITEM_UNAVAILABLE, "no-product-details"));
+                return;
+            }
+            startFlow(activity, details, spec, callback);
         });
     }
 
-    private void startFlow(Activity activity, ProductDetails details, LaunchCallback callback) {
+    @Nullable
+    private static ProductDetails findProduct(List<ProductDetails> products, String productId) {
+        if (products == null || productId == null) return null;
+        for (ProductDetails details : products) {
+            if (productId.equals(details.getProductId())) return details;
+        }
+        return null;
+    }
+
+    private void startFlow(
+        Activity activity,
+        ProductDetails details,
+        PlayOfferSelector.Spec spec,
+        LaunchCallback callback
+    ) {
         main.post(() -> {
             if (activity.isFinishing()) {
                 callback.onLaunch(errorResult(BillingClient.BillingResponseCode.ERROR, "no-activity"));
                 return;
             }
-            ProductDetails.SubscriptionOfferDetails offer = pickOffer(details);
+            ProductDetails.SubscriptionOfferDetails offer = PlayOfferSelector.pick(details, spec);
             if (offer == null) {
-                callback.onLaunch(errorResult(BillingClient.BillingResponseCode.ITEM_UNAVAILABLE, "no-offer"));
+                callback.onLaunch(errorResult(BillingClient.BillingResponseCode.ITEM_UNAVAILABLE, "no-matching-offer"));
                 return;
             }
             BillingFlowParams.ProductDetailsParams productParams =
@@ -181,25 +216,6 @@ final class PlayBillingStore implements PurchasesUpdatedListener {
                 .build();
             callback.onLaunch(client.launchBillingFlow(activity, flowParams));
         });
-    }
-
-    @Nullable
-    static ProductDetails.SubscriptionOfferDetails pickOffer(ProductDetails details) {
-        List<ProductDetails.SubscriptionOfferDetails> offers = details.getSubscriptionOfferDetails();
-        if (offers == null || offers.isEmpty()) return null;
-        return offers.get(0);
-    }
-
-    @Nullable
-    static ProductDetails.PricingPhase paidPhase(ProductDetails details) {
-        ProductDetails.SubscriptionOfferDetails offer = pickOffer(details);
-        if (offer == null) return null;
-        List<ProductDetails.PricingPhase> phases = offer.getPricingPhases().getPricingPhaseList();
-        if (phases == null || phases.isEmpty()) return null;
-        for (ProductDetails.PricingPhase phase : phases) {
-            if (phase.getPriceAmountMicros() > 0) return phase;
-        }
-        return phases.get(0);
     }
 
     private void whenReady(@NonNull Runnable work, @NonNull Consumer<BillingResult> onFail) {

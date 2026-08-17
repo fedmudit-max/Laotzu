@@ -47,23 +47,16 @@ public class BillingPlugin extends Plugin {
 
     @PluginMethod
     public void queryProducts(PluginCall call) {
-        JSArray raw = call.getArray("productIds");
-        List<String> ids = new ArrayList<>();
-        if (raw != null) {
-            for (int i = 0; i < raw.length(); i++) {
-                String id = raw.optString(i, "");
-                if (id != null && !id.isEmpty()) ids.add(id);
-            }
-        }
-        store.queryProductDetails(ids, (result, products) ->
-            call.resolve(wrapProducts(result, products))
+        List<PlayOfferSelector.Spec> specs = readOfferSpecs(call);
+        store.queryProductDetails(specs, (result, products) ->
+            call.resolve(wrapProducts(result, products, store))
         );
     }
 
     @PluginMethod
     public void purchase(PluginCall call) {
-        String productId = call.getString("productId", "");
-        if (productId == null || productId.isEmpty()) {
+        PlayOfferSelector.Spec spec = specFromCall(call);
+        if (spec.productId.isEmpty()) {
             call.reject("product-id-required");
             return;
         }
@@ -74,7 +67,7 @@ public class BillingPlugin extends Plugin {
             return;
         }
         pendingPurchase = call;
-        store.launchPurchase(activity, productId, launchResult -> {
+        store.launchPurchase(activity, spec, launchResult -> {
             int code = launchResult.getResponseCode();
             if (code == BillingClient.BillingResponseCode.OK) return;
             JSObject data = wrapPurchases(
@@ -90,6 +83,7 @@ public class BillingPlugin extends Plugin {
 
     @Override
     protected void handleOnResume() {
+        if (pendingPurchase != null) return;
         store.querySubscriptions((result, purchases) -> {
             if (result.getResponseCode() != BillingClient.BillingResponseCode.OK) return;
             notifyListeners("purchasesUpdated", wrapPurchasesResult(result, purchases));
@@ -127,7 +121,56 @@ public class BillingPlugin extends Plugin {
         return out;
     }
 
-    private static JSObject wrapProducts(BillingResult result, List<ProductDetails> products) {
+    private static List<PlayOfferSelector.Spec> readOfferSpecs(PluginCall call) {
+        List<PlayOfferSelector.Spec> specs = new ArrayList<>();
+        JSArray products = call.getArray("products");
+        if (products != null) {
+            for (int i = 0; i < products.length(); i++) {
+                org.json.JSONObject rawRow = products.optJSONObject(i);
+                if (rawRow == null) continue;
+                try {
+                    specs.add(specFromObject(JSObject.fromJSONObject(rawRow)));
+                } catch (org.json.JSONException ignored) {
+                    // skip malformed product rows
+                }
+            }
+        }
+        if (!specs.isEmpty()) return specs;
+        JSArray raw = call.getArray("productIds");
+        if (raw != null) {
+            for (int i = 0; i < raw.length(); i++) {
+                String id = raw.optString(i, "");
+                if (id != null && !id.isEmpty()) {
+                    specs.add(new PlayOfferSelector.Spec(id, "", "", ""));
+                }
+            }
+        }
+        return specs;
+    }
+
+    private static PlayOfferSelector.Spec specFromCall(PluginCall call) {
+        return new PlayOfferSelector.Spec(
+            call.getString("productId", ""),
+            call.getString("basePlanId", ""),
+            call.getString("offerId", ""),
+            call.getString("billingPeriod", "")
+        );
+    }
+
+    private static PlayOfferSelector.Spec specFromObject(JSObject row) {
+        return new PlayOfferSelector.Spec(
+            row.optString("productId", ""),
+            row.optString("basePlanId", ""),
+            row.optString("offerId", ""),
+            row.optString("billingPeriod", "")
+        );
+    }
+
+    private static JSObject wrapProducts(
+        BillingResult result,
+        List<ProductDetails> products,
+        PlayBillingStore store
+    ) {
         JSObject out = new JSObject();
         int code = result.getResponseCode();
         out.put("ok", code == BillingClient.BillingResponseCode.OK);
@@ -136,21 +179,26 @@ public class BillingPlugin extends Plugin {
         JSArray list = new JSArray();
         if (products != null) {
             for (ProductDetails details : products) {
-                list.put(productObject(details));
+                list.put(productObject(details, store.offerSpec(details.getProductId())));
             }
         }
         out.put("products", list);
         return out;
     }
 
-    private static JSObject productObject(ProductDetails details) {
+    private static JSObject productObject(ProductDetails details, PlayOfferSelector.Spec spec) {
         JSObject o = new JSObject();
         o.put("productId", details.getProductId());
         o.put("title", details.getTitle() != null ? details.getTitle() : "");
         o.put("name", details.getName() != null ? details.getName() : "");
-        ProductDetails.PricingPhase phase = PlayBillingStore.paidPhase(details);
+        // Same pick as launchBillingFlow — never Play's offer list order.
+        ProductDetails.SubscriptionOfferDetails offer = PlayOfferSelector.pick(details, spec);
+        ProductDetails.PricingPhase phase = offer != null ? PlayOfferSelector.recurringPhase(offer) : null;
         o.put("price", phase != null && phase.getFormattedPrice() != null ? phase.getFormattedPrice() : "");
         o.put("billingPeriod", phase != null && phase.getBillingPeriod() != null ? phase.getBillingPeriod() : "");
+        o.put("basePlanId", offer != null && offer.getBasePlanId() != null ? offer.getBasePlanId() : "");
+        o.put("offerId", offer != null && offer.getOfferId() != null ? offer.getOfferId() : "");
+        o.put("hasSelectedOffer", offer != null);
         return o;
     }
 
