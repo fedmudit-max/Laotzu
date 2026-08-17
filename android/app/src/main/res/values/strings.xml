@@ -4,4 +4,12 @@
     <string name="title_activity_main">King</string>
     <string name="package_name">com.kingtracker.app</string>
     <string name="custom_url_scheme">com.kingtracker.app</string>
+    <string name="reminder_channel_name">Daily reminder</string>
+    <string name="reminder_channel_desc">Daily check-in reminder to log your day</string>
+    <string name="reminder_title">Time to log today</string>
+    <string name="reminder_body">How did today go?</string>
+    <string name="reminder_test_title">Test reminder</string>
+    <string name="reminder_test_body">How did today go?</string>
+    <string name="reminder_action_strong">I STAYED STRONG TODAY</string>
+    <string name="reminder_action_slip">I slipped</string>
 </resources>

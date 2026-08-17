@@ -22,6 +22,38 @@ function handleSuccess() {
     showModal('success');
 }
 
+/** Log from the reminder notification — no confirm modal (the tap is the confirm). */
+function applyNotificationLog(kind) {
+    if (safeGet('onboardingComplete') !== 'true') return;
+    if (kind !== 'strong' && kind !== 'slip') return;
+    if (isAwaitingNextJourney()) {
+        showToast(0, 'Start your next journey first.');
+        return;
+    }
+    if (typeof isYesterdayLogPending === 'function' && isYesterdayLogPending()) {
+        showYesterdayReminder();
+        showToast(0, 'Log yesterday first.');
+        return;
+    }
+    if (kind === 'strong') {
+        if (state.todayStatus === 'failed') {
+            showToast(0, 'You already slipped today. Stay strong tomorrow!');
+            return;
+        }
+        if (state.todayStatus === 'success') {
+            showToast(0, 'Already logged strong today.');
+            return;
+        }
+        recordSuccess();
+        return;
+    }
+    if (state.todayStatus === 'success') {
+        showToast(0, 'Already logged strong today.');
+        return;
+    }
+    recordFailure();
+}
+
 function showModal(action) {
     if ((action === 'success' || action === 'fail')
         && typeof isYesterdayLogPending === 'function' && isYesterdayLogPending()) {

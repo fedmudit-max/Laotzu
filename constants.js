@@ -28,6 +28,7 @@ const PREMIUM_FEATURES = [
     'Monthly grid',
     'Progress Graph',
     'Export & import progress',
+    'Daily reminder to log your day',
 ];
 
 /** Shown under the feature list on the premium panel. */

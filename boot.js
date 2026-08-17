@@ -191,6 +191,7 @@ function showFileProtocolBanner() {
     function startApp() {
         try { initFirebase(); } catch (err) { console.error('King firebase init failed:', err); }
         try { init(); } catch (err) { console.error('King init failed:', err); }
+        try { initReminders(); } catch (err) { console.error('King reminder init failed:', err); }
         initPremiumStartup();
         paintApp(true);
         try { checkOnboarding(); } catch (err) { console.error('King onboarding failed:', err); }
@@ -204,6 +205,7 @@ function showFileProtocolBanner() {
     document.addEventListener('visibilitychange', function () {
         if (document.visibilityState === 'visible') {
             refreshOnAppOpen();
+            if (typeof consumeReminderLogAction === 'function') consumeReminderLogAction();
             if (safeGet('onboardingComplete')) {
                 try { updateWeeklyTravelerPosition(); } catch (err) { console.error('King weekly render failed:', err); }
             }

@@ -22,6 +22,12 @@ function toggleLifetimePanel() {
     syncHistoryPanels();
 }
 
+function toggleRemindPanel() {
+    if (!requirePremium()) return;
+    remindPanelOpen = !remindPanelOpen;
+    syncHistoryPanels();
+}
+
 function toggleBackupResetPanel() {
     backupResetPanelOpen = !backupResetPanelOpen;
     syncHistoryPanels();
@@ -31,6 +37,7 @@ function syncHistoryPanels() {
     var monthOpen = monthPanelOpen;
     var chartOpen = chartPanelOpen;
     var lifetimeOpen = lifetimePanelOpen;
+    var remindOpen = remindPanelOpen;
     var backupOpen = backupResetPanelOpen;
     if (monthOpen || chartOpen || lifetimeOpen) ensureDeferredHeavyRendered();
     var el;
@@ -44,6 +51,8 @@ function syncHistoryPanels() {
     if (el) el.classList.toggle('is-open', chartOpen);
     el = document.getElementById('lifetimePanelBody');
     if (el) el.classList.toggle('is-open', lifetimeOpen);
+    el = document.getElementById('remindPanelBody');
+    if (el) el.classList.toggle('is-open', remindOpen);
     el = document.getElementById('backupResetBody');
     if (el) el.classList.toggle('is-open', backupOpen);
     el = document.getElementById('monthPanelChevron');
@@ -52,6 +61,8 @@ function syncHistoryPanels() {
     if (el) el.classList.toggle('open', chartOpen);
     el = document.getElementById('lifetimePanelChevron');
     if (el) el.classList.toggle('open', lifetimeOpen);
+    el = document.getElementById('remindPanelChevron');
+    if (el) el.classList.toggle('open', remindOpen);
     el = document.getElementById('backupResetChevron');
     if (el) el.classList.toggle('open', backupOpen);
     el = document.getElementById('monthPanelToggle');
@@ -60,6 +71,8 @@ function syncHistoryPanels() {
     if (el) el.setAttribute('aria-expanded', chartOpen ? 'true' : 'false');
     el = document.getElementById('lifetimePanelToggle');
     if (el) el.setAttribute('aria-expanded', lifetimeOpen ? 'true' : 'false');
+    el = document.getElementById('remindPanelToggle');
+    if (el) el.setAttribute('aria-expanded', remindOpen ? 'true' : 'false');
     el = document.getElementById('backupResetToggle');
     if (el) el.setAttribute('aria-expanded', backupOpen ? 'true' : 'false');
 
@@ -86,6 +99,13 @@ function syncHistoryPanels() {
         lifetimeBtn.addEventListener('click', function (e) {
             e.preventDefault();
             toggleLifetimePanel();
+        });
+    }
+    var remindBtn = document.getElementById('remindPanelToggle');
+    if (remindBtn) {
+        remindBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            toggleRemindPanel();
         });
     }
     var backupBtn = document.getElementById('backupResetToggle');
@@ -251,7 +271,7 @@ function clamp(val, min, max) { return Math.min(max, Math.max(min, val)); }
 
 const CHART_H       = 180;
 const CHART_PAD_T   = 24;
-const CHART_PAD_B   = 18;
+const CHART_PAD_B   = 28;
 const CHART_Y_GUT   = 36;
 const CHART_PLOT_W  = 400;
 const CHART_VW      = CHART_Y_GUT + CHART_PLOT_W;

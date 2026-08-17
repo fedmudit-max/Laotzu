@@ -2,14 +2,17 @@
   "appId": "com.kingtracker.app",
   "appName": "King",
   "webDir": "www",
+  "backgroundColor": "#f2f2f7",
   "server": {
     "androidScheme": "https"
   },
   "android": {
     "allowMixedContent": false
   },
-  "ios": {
-    "contentInset": "automatic",
-    "preferredContentMode": "mobile"
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "css",
+      "style": "LIGHT"
+    }
   }
 }

@@ -31,6 +31,7 @@ This document defines implementation boundaries. Changes require an implementati
 | Journey scoring, days, slips | **Journey / Logic** (`logic.js`) |
 | Schema upgrades on load | **Migration** (`migration.js`) |
 | Import / export | **Backup** (`backup.js`) |
+| Daily check-in reminder | **Reminder** (`reminder.js` + native AlarmManager) |
 | Local persistence | **Storage** (in `logic.js`: load/save/safeGet) |
 | Auth, Cloud Functions, verified cache | **Firebase** (`firebase.js`) — Sprint 3 |
 | Rendering, paywall UI, gates that *show* UI | **UI** (`ui-*.js`, parts of `billing.js`) |
@@ -60,13 +61,13 @@ Source of truth for field meaning: comment at the top of `logic.js`. Do not trea
 
 ---
 
-## Daily reminders (deferred to Capacitor)
+## Daily reminders
 
-**Not in v1 web/PWA.** Browser service-worker timers are unreliable after the app is fully closed and must not be marketed as local alarms.
+**Native only (Android).** Not in the GitHub Pages PWA. Do not use web `Notification` or service-worker timers.
 
-**When we add them:** Capacitor shell (`www/` + `npx cap sync`), via **`@capacitor/local-notifications`** (or native AlarmManager equivalent) for OS-scheduled daily check-in. Same UX intent as Loop Habits: enable + time, fire while closed. Prefer native local notifications over FCM for daily reminders.
+OS-scheduled check-in: **`KingReminder` plugin** wrapping **AlarmManager `setAndAllowWhileIdle()`** (inexact). No `SCHEDULE_EXACT_ALARM` / `USE_EXACT_ALARM` / `WAKE_LOCK` (`setAndAllowWhileIdle` already wakes for the receiver). Fires with the app open, backgrounded, locked, or closed; reboot reschedules via `BOOT_COMPLETED` (`ReminderBootReceiver` is `exported="false"`; system broadcasts still arrive). Android may delay delivery under Doze / battery saver — this is a habit nudge, not an alarm clock. Notification channel `king_daily_reminder_v2` uses **`IMPORTANCE_DEFAULT`** (shade + sound, no heads-up). Persist `{enabled, hour, minute}` in `kingReminder` (JS) and matching native SharedPreferences. Native also stores the last logged wall date; if today is already logged (strong or slip), **do not notify** and move the next alarm to tomorrow. JS syncs that date from `dailyLog` via `setLoggedDate`. **At most one daily notification per calendar day** (`notifiedDate`); ignoring it does not send another until tomorrow. The in-app 2-minute test is separate.
 
-**Do not** reintroduce best-effort web `Notification` / SW `setTimeout` scheduling for this product surface.
+Enable + time UI lives in the **Reminder** card (below Lifetime Stats). Time is user-chosen via hour / minute / AM-PM dropdowns (default 8:00 PM until they change it; not a fixed 8 PM reminder). The notification offers **I STAYED STRONG TODAY** and **I slipped**; those taps log today through the same Journey write path (`recordSuccess` / `recordFailure`), without the in-app confirm modal. Changing the time cancels the previous alarm, then sets the new one. Off cancels the alarm. Premium-gated (`requirePremium` / `Entitlement.hasPremiumAccess()`). If Premium expires, keep `{enabled, hour, minute}` and cancel the native alarm; UI shows **Reminder paused — Premium required.** Restoring Premium reschedules if still enabled.
 
 ---
 
@@ -186,5 +187,5 @@ Google Play (later)
 | Sprint | Work |
 |--------|------|
 | **1** | Entitlement API + wire existing premium UI *(done)* |
-| **2** | Capacitor wrapper (`npm run cap:sync`) + Google Play Billing + restore · local daily check-in reminders (`@capacitor/local-notifications`) · purchase unlocks UI only (score preserved) |
+| **2** | Capacitor wrapper (`npm run cap:sync`) · local daily reminders *(Android AlarmManager)* · Google Play Billing + restore · purchase unlocks UI only (score preserved) |
 | **3** | Firebase anonymous auth + purchase verify + closed testing |

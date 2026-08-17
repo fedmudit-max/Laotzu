@@ -89,6 +89,32 @@ function isMobileDevice() {
     return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 }
 
+function isNativeCapacitor() {
+    try {
+        return !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function'
+            && window.Capacitor.isNativePlatform());
+    } catch (e) {
+        return false;
+    }
+}
+
+function getCapacitorPlugin(name) {
+    var Cap = window.Capacitor;
+    if (!Cap) return null;
+    if (Cap.Plugins && Cap.Plugins[name]) return Cap.Plugins[name];
+    if (typeof Cap.registerPlugin === 'function') {
+        try { return Cap.registerPlugin(name); } catch (e) { return null; }
+    }
+    return null;
+}
+
+function isShareCancelled(err) {
+    if (!err) return false;
+    if (err.name === 'AbortError') return true;
+    var msg = String(err.message || err.errorMessage || err);
+    return /cancel/i.test(msg);
+}
+
 function downloadBackupFile(json, filename) {
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -107,6 +133,63 @@ function finishBackupExport(iso) {
     renderBackupStatus();
 }
 
+function shareNativeBackupFile(json, filename) {
+    if (!isNativeCapacitor()) return Promise.resolve(false);
+    var FS = getCapacitorPlugin('Filesystem');
+    var Share = getCapacitorPlugin('Share');
+    if (!FS || !Share || typeof FS.writeFile !== 'function' || typeof Share.share !== 'function') {
+        return Promise.resolve(false);
+    }
+
+    return FS.writeFile({
+        path: filename,
+        data: json,
+        directory: 'CACHE',
+        encoding: 'utf8',
+        recursive: true,
+    }).then(function () {
+        return FS.getUri({ path: filename, directory: 'CACHE' });
+    }).then(function (result) {
+        var uri = result && result.uri;
+        if (!uri) throw new Error('no-uri');
+        return Share.share({
+            title: 'King progress export',
+            text: filename,
+            files: [uri],
+            dialogTitle: 'Save King progress',
+        });
+    }).then(function () {
+        return 'shared';
+    }).catch(function (err) {
+        if (isShareCancelled(err)) return 'cancelled';
+        console.error('King native export failed:', err);
+        return false;
+    });
+}
+
+function shareWebBackupFile(json, filename, exportedAt) {
+    const file = new File([json], filename, { type: 'application/json' });
+
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file], title: 'King progress export' })
+            .then(function () {
+                finishBackupExport(exportedAt);
+                showToast(0, 'Export ready — save to Files or Drive.');
+            })
+            .catch(function (e) {
+                if (isShareCancelled(e)) return;
+                downloadBackupFile(json, filename);
+                finishBackupExport(exportedAt);
+                showToast(0, 'Look in Files for king-backup.');
+            });
+        return;
+    }
+
+    downloadBackupFile(json, filename);
+    finishBackupExport(exportedAt);
+    showToast(0, 'Look in Files for king-backup.');
+}
+
 function exportProgressBackup() {
     if (!requirePremium()) return;
     if (!isMobileDevice()) {
@@ -117,27 +200,16 @@ function exportProgressBackup() {
     const payload = buildBackupPayload();
     const json = JSON.stringify(payload, null, 2);
     const filename = `king-backup-${todayKey()}.json`;
-    const file = new File([json], filename, { type: 'application/json' });
     const exportedAt = payload.exportedAt;
 
-    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        navigator.share({ files: [file], title: 'King progress export' })
-            .then(function () {
-                finishBackupExport(exportedAt);
-                showToast(0, 'Export ready — save to Files or iCloud.');
-            })
-            .catch(function (e) {
-                if (e && e.name === 'AbortError') return;
-                downloadBackupFile(json, filename);
-                finishBackupExport(exportedAt);
-                showToast(0, 'Export saved to downloads.');
-            });
-        return;
-    }
-
-    downloadBackupFile(json, filename);
-    finishBackupExport(exportedAt);
-    showToast(0, 'Export saved to downloads.');
+    shareNativeBackupFile(json, filename).then(function (result) {
+        if (result === 'shared') {
+            finishBackupExport(exportedAt);
+            return;
+        }
+        if (result === 'cancelled') return;
+        shareWebBackupFile(json, filename, exportedAt);
+    });
 }
 
 function openImportPicker() {

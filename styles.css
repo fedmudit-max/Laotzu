@@ -2,7 +2,8 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 html {
-    color-scheme: light;
+    color-scheme: light only;
+    background: #f2f2f7;
     touch-action: manipulation;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
@@ -18,6 +19,11 @@ html {
     --border:      #d2d2d7;
     --card:        #ffffff;
     --bg:          #f2f2f7;
+    /* env() is 0 on many Android WebViews; Capacitor injects --safe-area-inset-*. */
+    --king-safe-top: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+    --king-safe-right: max(env(safe-area-inset-right, 0px), var(--safe-area-inset-right, 0px));
+    --king-safe-bottom: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
+    --king-safe-left: max(env(safe-area-inset-left, 0px), var(--safe-area-inset-left, 0px));
 }
 
 body {
@@ -32,14 +38,27 @@ body {
     touch-action: manipulation;
 }
 
+/* Keep scrolled cards from sitting under the clock / status icons. */
+body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--king-safe-top);
+    background: var(--bg);
+    z-index: 1500;
+    pointer-events: none;
+}
+
 .container {
     width: 100%;
     max-width: 480px;
     margin: 0 auto;
-    padding: 16px 16px calc(40px + env(safe-area-inset-bottom, 0px));
-    padding-top: max(16px, env(safe-area-inset-top, 0px));
-    padding-left: max(16px, env(safe-area-inset-left, 0px));
-    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding: 16px 16px calc(40px + var(--king-safe-bottom));
+    padding-top: max(16px, var(--king-safe-top));
+    padding-left: max(16px, var(--king-safe-left));
+    padding-right: max(16px, var(--king-safe-right));
 }
 
 /* ── CARDS ──────────────────────────────────────── */
@@ -732,7 +751,7 @@ body {
     text-align: center;
     font-size: 15px;
     font-weight: 600;
-    transition: color 0.25s ease;
+    color: var(--green);
 }
 
 .chances-label.relapse-0 { color: var(--green); }
@@ -835,22 +854,25 @@ button {
     border: 1px solid var(--border);
     font-weight: 600;
 }
-
-.actions-card .btn-backup:hover {
+.actions-card .btn-backup:active {
     border-color: var(--green);
     color: var(--green);
 }
-
 .actions-card .btn-reset {
     background: transparent;
     color: var(--text-muted);
     border: 1px solid var(--border);
     font-weight: 500;
 }
-
-.actions-card .btn-reset:hover {
-    border-color: #ff3b30;
-    color: #ff3b30;
+@media (hover: hover) and (pointer: fine) {
+    .actions-card .btn-backup:hover {
+        border-color: var(--green);
+        color: var(--green);
+    }
+    .actions-card .btn-reset:hover {
+        border-color: #ff3b30;
+        color: #ff3b30;
+    }
 }
 
 .backup-status {
@@ -897,6 +919,150 @@ button {
 
 .tab-content { display: none; }
 .tab-content.active { display: block; }
+
+.remind-panel {
+    padding: 4px 2px 8px;
+}
+
+.remind-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.remind-copy {
+    min-width: 0;
+}
+
+.remind-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+}
+
+.remind-status {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+.remind-switch {
+    position: relative;
+    flex-shrink: 0;
+    width: 51px;
+    height: 31px;
+}
+
+.remind-switch input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    margin: 0;
+    cursor: pointer;
+}
+
+.remind-switch-ui {
+    display: block;
+    width: 51px;
+    height: 31px;
+    border-radius: 31px;
+    background: #e5e5ea;
+    position: relative;
+    transition: background 0.2s ease;
+}
+
+.remind-switch-ui::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 27px;
+    height: 27px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    transition: transform 0.2s ease;
+}
+
+.remind-switch input:checked + .remind-switch-ui {
+    background: var(--green);
+}
+
+.remind-switch input:checked + .remind-switch-ui::after {
+    transform: translateX(20px);
+}
+
+.remind-time-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+
+.remind-time-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.remind-time-colon {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+}
+
+.remind-time-select {
+    flex: 1;
+    min-width: 0;
+    box-sizing: border-box;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    border-radius: 12px;
+    padding: 12px 10px;
+    font-size: 18px;
+    font-weight: 700;
+    font-family: inherit;
+    text-align: center;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.remind-time-ampm {
+    flex: 0.85;
+}
+
+.remind-time-row.is-disabled .remind-time-select,
+.remind-time-row.is-disabled .remind-time-colon {
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+.remind-test-btn {
+    display: block;
+    width: 100%;
+    margin-top: 14px;
+    padding: 10px;
+    border-radius: 12px;
+    border: 1px dashed var(--border);
+    background: transparent;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.remind-test-btn[hidden] {
+    display: none;
+}
 
 /* ── WEEKLY STREAK TRACK ─────────────────────────── */
 .weekly-streak-card {
@@ -2033,11 +2199,13 @@ button {
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.5);
-    backdrop-filter: blur(10px);
     z-index: 3500;
     justify-content: center;
     align-items: center;
-    padding: 20px;
+    padding: max(20px, var(--king-safe-top)) 20px calc(20px + var(--king-safe-bottom));
+}
+@media (hover: hover) and (pointer: fine) {
+    .modal { backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
 }
 
 .modal.active { display: flex; }
@@ -2094,19 +2262,24 @@ button {
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.5);
-    backdrop-filter: blur(6px);
     z-index: 3200;
     display: flex;
     align-items: center;
     justify-content: center;
     opacity: 0;
+    visibility: hidden;
     pointer-events: none;
-    transition: opacity 0.35s ease;
+    transition: opacity 0.35s ease, visibility 0s linear 0.35s;
+}
+@media (hover: hover) and (pointer: fine) {
+    .celebration-overlay { backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
 }
 
 .celebration-overlay.active {
     opacity: 1;
+    visibility: visible;
     pointer-events: all;
+    transition: opacity 0.35s ease, visibility 0s;
 }
 
 .celebration-card {
@@ -2179,7 +2352,7 @@ button {
 /* ── TOAST ──────────────────────────────────────── */
 #toast {
     position: fixed;
-    bottom: 32px;
+    bottom: calc(32px + var(--king-safe-bottom));
     left: 50%;
     transform: translateX(-50%) translateY(20px);
     background: var(--green);
@@ -2226,20 +2399,24 @@ button {
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.6);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
     z-index: 2000;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 20px;
+    padding: max(20px, var(--king-safe-top)) 20px calc(20px + var(--king-safe-bottom));
     opacity: 0;
+    visibility: hidden;
     pointer-events: none;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.3s ease, visibility 0s linear 0.3s;
+}
+@media (hover: hover) and (pointer: fine) {
+    .overlay { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 }
 .overlay.active {
     opacity: 1;
+    visibility: visible;
     pointer-events: all;
+    transition: opacity 0.3s ease, visibility 0s;
 }
 .overlay-card {
     background: var(--card);
@@ -2254,6 +2431,15 @@ button {
 }
 .overlay.active .overlay-card {
     transform: scale(1) translateY(0);
+}
+@media (hover: none) {
+    .overlay-card,
+    .overlay.active .overlay-card,
+    .celebration-card,
+    .celebration-overlay.active .celebration-card {
+        transform: none;
+        transition: none;
+    }
 }
 
 /* ── URGE TIMER ── */

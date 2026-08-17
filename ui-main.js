@@ -11,6 +11,7 @@ let monthOffset = 0;
 let monthPanelOpen = true;
 let chartPanelOpen = false;
 let lifetimePanelOpen = false;
+let remindPanelOpen = false;
 let backupResetPanelOpen = false;
 let toastTimer = null;
 let confettiParticles = [];
@@ -93,6 +94,7 @@ function renderAll(options) {
             renderJourneyMilestones,
             syncTabPanels,
             renderBackupStatus,
+            renderReminderTab,
         );
     }
     if (!options.deferHeavy && full) {

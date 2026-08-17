@@ -41,6 +41,9 @@ function saveToStorage(stateObj) {
     try {
         syncJourneyMilestoneCountsFromHistory(stateObj);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(stateObj));
+        if (typeof syncReminderLoggedDate === 'function') {
+            try { syncReminderLoggedDate(); } catch (e) { /* reminder layer optional */ }
+        }
         return { ok: true };
     } catch (e) {
         const isQuota = e && (e.name === 'QuotaExceededError' || e.code === 22);

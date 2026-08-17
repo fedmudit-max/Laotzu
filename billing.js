@@ -124,6 +124,7 @@ function applyPremiumTierLayout() {
         'monthPanelCard',
         'chartPanelCard',
         'premiumBackupGate',
+        'remindPanelCard',
     ];
     for (var i = 0; i < gatedIds.length; i++) {
         setPremiumGated(gatedIds[i], !unlocked);
@@ -135,6 +136,9 @@ function applyPremiumTierLayout() {
     setPremiumSectionVisible('exportBackupBtn', true);
     setPremiumSectionVisible('importBackupBtn', true);
     setPremiumSectionVisible('lastBackupLabel', true);
+    if (typeof applyReminderAlarms === 'function') {
+        applyReminderAlarms();
+    }
 }
 
 function setPremiumGated(id, locked) {

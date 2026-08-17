@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>King — NoFap Journey Tracker</title>
     <meta name="theme-color" content="#34c759">
+    <meta name="color-scheme" content="light only">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -74,7 +75,7 @@
         <!-- 10 powers (💪 emojis) -->
         <div class="chances-card">
             <div class="chances-grid" id="chancesGrid"></div>
-            <div class="chances-label" id="chancesLabel">💪 10 powers remaining</div>
+            <div class="chances-label relapse-0" id="chancesLabel">💪 10 powers remaining</div>
         </div>
 
         <!-- Action buttons -->
@@ -280,6 +281,41 @@
                 </div>
             </div>
             <p class="history-empty-hint" id="lifetimeEmptyHint" hidden>Check in daily — strong days and slips fill your lifetime stats.</p>
+        </div>
+    </div>
+
+    <!-- ═══ REMINDER (collapsible) ══════════════════════════ -->
+    <div class="card collapse-card" id="remindPanelCard">
+        <button type="button" class="collapse-header" id="remindPanelToggle" aria-expanded="false" aria-controls="remindPanelBody">
+            <span class="collapse-header-row">
+                <span class="collapse-title">Reminder</span>
+                <span class="collapse-chevron" id="remindPanelChevron" aria-hidden="true">›</span>
+            </span>
+        </button>
+        <div class="collapse-body" id="remindPanelBody">
+            <div class="remind-panel">
+                <div class="remind-row">
+                    <div class="remind-copy">
+                        <div class="remind-title">Daily reminder</div>
+                        <p class="remind-status" id="remindStatus">Off — you will not get a daily reminder.</p>
+                    </div>
+                    <label class="remind-switch">
+                        <input type="checkbox" id="remindToggle" aria-label="Turn daily reminder on">
+                        <span class="remind-switch-ui" aria-hidden="true"></span>
+                    </label>
+                </div>
+                <div class="remind-time-label" id="remindTimeLabel">Remind me at</div>
+                <div class="remind-time-row" id="remindTimeRow">
+                    <select class="remind-time-select" id="remindHour" aria-label="Hour"></select>
+                    <span class="remind-time-colon" aria-hidden="true">:</span>
+                    <select class="remind-time-select" id="remindMinute" aria-label="Minute"></select>
+                    <select class="remind-time-select remind-time-ampm" id="remindAmPm" aria-label="AM or PM">
+                        <option value="AM">AM</option>
+                        <option value="PM">PM</option>
+                    </select>
+                </div>
+                <button type="button" class="remind-test-btn" id="remindTestBtn" hidden>Send a test in 2 minutes</button>
+            </div>
         </div>
     </div>
 
@@ -734,6 +770,7 @@
     <script defer src="./billing.js"></script>
     <script defer src="./firebase.js"></script>
     <script defer src="./backup.js"></script>
+    <script defer src="./reminder.js"></script>
     <script defer src="./ui-main.js"></script>
     <script defer src="./ui-overlays.js"></script>
     <script defer src="./ui-actions.js"></script>
