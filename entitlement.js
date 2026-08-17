@@ -20,9 +20,11 @@
  *                                      Written at onboarding / Day 1 (ensureTrialStarted / startPremiumTrial).
  * @property {string} [premiumUntil]    ISO-8601; '' if unset. Paid access end.
  *                                      Written only via updateEntitlementSnapshot.
- * @property {string} [lastVerifiedAt]  ISO-8601 reserved (S3 server verify).
+ * @property {string} [lastVerifiedAt]  ISO-8601. Last successful Play query (client cache).
+ *                                      Server verify (Firebase) still replaces this later.
  * @property {''|'local-trial'|'play'|'restore'|'dev'} [source]
- *                                      Who last set paid entitlement (reserved S2/S3).
+ *                                      Who last set paid entitlement. `play` / `restore` required
+ *                                      for premiumUntil writes.
  *
  * Entitlement never writes the snapshot. UI never reads raw fields for access.
  * ---------------------------------------------------------------------------

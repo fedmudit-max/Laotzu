@@ -13,7 +13,7 @@ This document defines implementation boundaries. Changes require an implementati
 1. **One write path** updates entitlement state.
 2. **`entitlement.js` only answers entitlement questions** (zero side effects).
 3. **Journey data stays local.**
-4. **Paid entitlement** comes from verified purchases (later) and is **cached locally**.
+4. **Paid entitlement** comes from a Play purchase/restore query (client cache) and is **cached locally**. Firebase server verify is still later.
 5. **Architecture changes only when implementation reveals a real need.**
 6. **Local trial** is separate from remote paid entitlement; `hasPremiumAccess` is either/or.
 7. **Basic logging is free forever** after trial ends: strong / slip / journey score, unlimited calendar days.
@@ -25,7 +25,7 @@ This document defines implementation boundaries. Changes require an implementati
 
 | Concern | Owner |
 |---------|--------|
-| Google Play purchase / restore | **Billing** (`billing.js`) |
+| Google Play purchase / restore | **Billing** (`billing.js` + `KingBilling` native plugin) |
 | Localized Premium price (store offer) | **Billing** (`getPremiumOffer`) |
 | Trial calculation / access answers | **Entitlement** (`entitlement.js`) |
 | Journey scoring, days, slips | **Journey / Logic** (`logic.js`) |
@@ -33,7 +33,7 @@ This document defines implementation boundaries. Changes require an implementati
 | Import / export | **Backup** (`backup.js`) |
 | Daily check-in reminder | **Reminder** (`reminder.js` + native AlarmManager) |
 | Local persistence | **Storage** (in `logic.js`: load/save/safeGet) |
-| Auth, Cloud Functions, verified cache | **Firebase** (`firebase.js`) — Sprint 3 |
+| Auth, Cloud Functions, purchase token verify | **Firebase** (`firebase.js`) — not wired yet |
 | Rendering, paywall UI, gates that *show* UI | **UI** (`ui-*.js`, parts of `billing.js`) |
 | App keys / trial length | **Constants** (`constants.js`) |
 | Static copy (milestones, quotes) | **Data** (`data.js`) |
@@ -79,7 +79,7 @@ Enable + time UI lives in the **Reminder** card (below Lifetime Stats). Time is 
 Boot
   → Load local storage
   → Initialize Firebase        (no-op until Sprint 3)
-  → Restore purchases          (no-op until Sprint 2)
+  → Restore purchases          (`KingBilling.queryPurchases` on Android)
   → Refresh entitlement        (reads local state)
   → Load journey
   → Render UI
@@ -120,9 +120,9 @@ Shared shape of premium entitlement fields on journey `state`.
 | Field | Type | Owner of writes | Status |
 |-------|------|-----------------|--------|
 | `trialStartedAt` | ISO-8601 string or `''` | Onboarding + init (`logic.js`; start of Calendar Day 1) | **v1 live** |
-| `premiumUntil` | ISO-8601 string or `''` | `updateEntitlementSnapshot` (Billing; Firebase after verify later) | **v1 live** |
-| `lastVerifiedAt` | ISO-8601 string or `''` | Firebase / Billing after server verify | reserved (S3) |
-| `source` | `'local-trial' \| 'play' \| 'restore' \| 'dev' \| ''` | same write path as paid fields | reserved (S2/S3) |
+| `premiumUntil` | ISO-8601 string or `''` | `updateEntitlementSnapshot` only after Play `PURCHASED` query (source `play` or `restore`) | **live** |
+| `lastVerifiedAt` | ISO-8601 string or `''` | Billing after a successful Play query (client). Firebase server verify later | **client cache** |
+| `source` | `'local-trial' \| 'play' \| 'restore' \| 'dev' \| ''` | same write path as paid fields; `play`/`restore` required to set `premiumUntil` | **live** |
 
 Rules:
 - UI never reads these fields raw for access decisions — only `Entitlement.*`.
@@ -154,7 +154,7 @@ Unlocking King **never** reads a price. The Premium modal is a display shell:
 showPremiumModal({ trialDays, plans })
 ```
 
-Today `plans` are a mock (`PREMIUM_PLANS_MOCK`: monthly ₹199→₹149, annual ₹1999→₹1499). Later Play/App Store calls `setPremiumOfferFromStore({ trialDays, plans })` with localized strings; the modal API does not change.
+Today `plans` are a mock fallback (`PREMIUM_PLANS_MOCK`, INR-formatted only in that mock). On Android, `queryProducts` calls `setPremiumOfferFromStore` with Play’s `formattedPrice` strings as-is (`₹…`, `$…`, `€…`). Do not wrap store strings in a rupee formatter.
 
 ```text
 Entitlement.getAccess()
@@ -162,9 +162,9 @@ Entitlement.getAccess()
   active?  YES → unlock Premium features
            NO  → showPremiumModal({ trialDays, plans })
 
-Google Play (later)
+Google Play (KingBilling)
         ↓
-  localized monthly + annual prices
+  localized monthly + annual formattedPrice
         ↓
   same showPremiumModal(...)
 ```
@@ -175,9 +175,9 @@ Google Play (later)
 
 - [x] User gets a local trial (`PREMIUM_TRIAL_DAYS` in `constants.js`).
 - [x] Trial expiry locks premium features.
-- [ ] Google Play purchase unlocks premium.
-- [ ] Restore purchases works.
-- [x] Journey data remains local.
+- [ ] Google Play purchase unlocks premium (native flow lives; Play Console products + a Play-signed test build still required).
+- [x] Restore queries Play (`KingBilling.queryPurchases`) — empty until those products exist.
+- [x] Journey data remains local (purchase writes entitlement fields only).
 - [ ] App passes closed testing.
 
 ---
@@ -187,5 +187,5 @@ Google Play (later)
 | Sprint | Work |
 |--------|------|
 | **1** | Entitlement API + wire existing premium UI *(done)* |
-| **2** | Capacitor wrapper (`npm run cap:sync`) · local daily reminders *(Android AlarmManager)* · Google Play Billing + restore · purchase unlocks UI only (score preserved) |
-| **3** | Firebase anonymous auth + purchase verify + closed testing |
+| **2** | Capacitor wrapper · local daily reminders *(Android AlarmManager)* *(done)* |
+| **3** | Google Play products + `KingBilling` purchase/restore · then Firebase purchase-token verify + closed testing |

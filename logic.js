@@ -260,6 +260,8 @@ function getDefaultState() {
         lastFreezeDate: '',
         trialStartedAt: '',
         premiumUntil: '',
+        lastVerifiedAt: '',
+        source: '',
     };
 }
 

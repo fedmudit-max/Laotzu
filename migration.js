@@ -50,6 +50,13 @@ function runStateMigrations(merged, saved) {
     }
     delete merged.devDateOffset;
 
+    // Paid window only from verified Play purchase/restore — not URL or local “success”.
+    var paidSource = merged.source;
+    if (paidSource !== 'play' && paidSource !== 'restore') {
+        merged.premiumUntil = '';
+        if (paidSource !== 'local-trial') merged.source = '';
+    }
+
     if (!merged.appStartDate || !/^\d{4}-\d{2}-\d{2}$/.test(merged.appStartDate)) {
         var earliest = '';
         var log = merged.dailyLog || {};

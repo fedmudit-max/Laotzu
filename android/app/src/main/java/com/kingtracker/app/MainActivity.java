@@ -13,6 +13,7 @@ import androidx.core.splashscreen.SplashScreen;
 
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.WebViewListener;
+import com.kingtracker.app.billing.BillingPlugin;
 import com.kingtracker.app.reminder.ReminderIntents;
 import com.kingtracker.app.reminder.ReminderNotifier;
 import com.kingtracker.app.reminder.ReminderPlugin;
@@ -27,6 +28,7 @@ public class MainActivity extends BridgeActivity {
         SplashScreen splashScreen = SplashScreen.installSplashScreen(this);
         splashScreen.setKeepOnScreenCondition(() -> keepNativeSplash);
         registerPlugin(ReminderPlugin.class);
+        registerPlugin(BillingPlugin.class);
         bridgeBuilder.addWebViewListener(new WebViewListener() {
             @Override
             public void onPageCommitVisible(WebView view, String url) {

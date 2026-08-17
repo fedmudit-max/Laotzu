@@ -12,8 +12,17 @@ const BACKUP_FORMAT = 'king-backup';
 const BACKUP_VERSION = 1;
 /** Local free trial length. Access window is trialStartedAt + this many days. */
 const PREMIUM_TRIAL_DAYS = 30;
-const PREMIUM_CHECKOUT_URL = '';
-const PREMIUM_SUBSCRIPTION_DAYS = 365;
+/**
+ * Play Console subscription products. Create these IDs on com.kingtracker.app
+ * before closed testing. Restore and purchase only grant these product IDs.
+ */
+const PREMIUM_PLAY_PRODUCTS = [
+    { id: 'monthly', productId: 'king_premium_monthly', period: 'month' },
+    { id: 'annual', productId: 'king_premium_annual', period: 'year' },
+];
+const PREMIUM_PLAY_PRODUCT_IDS = PREMIUM_PLAY_PRODUCTS.map(function (p) { return p.productId; });
+/** How long a successful Play query keeps paid access cached while offline. */
+const PREMIUM_PLAY_CACHE_DAYS = 3;
 const PREMIUM_ANNUAL_VALUE_MESSAGE = 'Best value for the long journey';
 /** Dev mock until Play/App Store supplies localized plan prices. Display-only. */
 const PREMIUM_PLANS_MOCK = [
