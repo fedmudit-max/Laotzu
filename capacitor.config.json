@@ -2,7 +2,7 @@
   "appId": "com.kingtracker.app",
   "appName": "King",
   "webDir": "www",
-  "backgroundColor": "#f2f2f7",
+  "backgroundColor": "#34c759",
   "server": {
     "androidScheme": "https"
   },
