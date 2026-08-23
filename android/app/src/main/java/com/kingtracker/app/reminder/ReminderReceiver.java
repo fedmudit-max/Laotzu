@@ -14,6 +14,7 @@ public class ReminderReceiver extends BroadcastReceiver {
 
         if (test) {
             ReminderNotifier.show(context, true);
+            ReminderPrefs.markFiredNow(context);
             return;
         }
 
@@ -34,6 +35,7 @@ public class ReminderReceiver extends BroadcastReceiver {
         }
 
         ReminderNotifier.show(context, false);
+        ReminderPrefs.markFiredNow(context);
         ReminderPrefs.markNotifiedToday(context);
         ReminderScheduler.scheduleDaily(context);
     }

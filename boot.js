@@ -53,12 +53,46 @@ function registerServiceWorkerDeferred() {
 
 registerServiceWorkerDeferred();
 
-function dismissLoadScreen() {
+var KING_QUOTE_MS = 100;
+var KING_APP_BG = '#f2f2f7';
+
+function hideLoadScreenNow() {
     var ls = document.getElementById('loadScreen');
     if (!ls) return;
-    ls.style.pointerEvents = 'none';
+    document.documentElement.style.background = KING_APP_BG;
+    document.body.style.background = KING_APP_BG;
+    document.documentElement.classList.remove('king-loading');
+    ls.style.transition = 'none';
     ls.style.opacity = '0';
-    setTimeout(function () { ls.style.display = 'none'; }, 300);
+    ls.style.pointerEvents = 'none';
+    ls.style.display = 'none';
+}
+
+function whenSplashGone(done) {
+    if (!isCapacitorNative() || window.__kingSplashGone) {
+        done();
+        return;
+    }
+    var started = Date.now();
+    var timer = setInterval(function () {
+        if (window.__kingSplashGone || Date.now() - started > 800) {
+            clearInterval(timer);
+            done();
+        }
+    }, 16);
+}
+
+function dismissLoadScreen(onReady) {
+    var ls = document.getElementById('loadScreen');
+    if (!ls || ls.getAttribute('data-king-hide') === '1') return;
+    ls.setAttribute('data-king-hide', '1');
+
+    whenSplashGone(function () {
+        setTimeout(function () {
+            if (typeof onReady === 'function') onReady();
+            requestAnimationFrame(hideLoadScreenNow);
+        }, KING_QUOTE_MS);
+    });
 }
 
 function showFileProtocolBanner() {
@@ -193,10 +227,11 @@ function showFileProtocolBanner() {
         try { init(); } catch (err) { console.error('King init failed:', err); }
         try { initReminders(); } catch (err) { console.error('King reminder init failed:', err); }
         initPremiumStartup();
-        paintApp(true);
-        try { checkOnboarding(); } catch (err) { console.error('King onboarding failed:', err); }
-        dismissLoadScreen();
-        deferStartupHeavyWork();
+        dismissLoadScreen(function () {
+            try { paintApp(true); } catch (err) { console.error('King render failed:', err); }
+            try { checkOnboarding(); } catch (err) { console.error('King onboarding failed:', err); }
+            deferStartupHeavyWork();
+        });
     }
 
     showFileProtocolBanner();

@@ -11,8 +11,10 @@ import androidx.core.app.NotificationManagerCompat;
 import com.kingtracker.app.R;
 
 public final class ReminderNotifier {
-    static final String CHANNEL_ID = "king_daily_reminder_v2";
+    static final String CHANNEL_ID = "king_daily_reminder_v4";
     static final String LEGACY_CHANNEL_ID = "king_daily_reminder";
+    static final String LEGACY_CHANNEL_ID_V2 = "king_daily_reminder_v2";
+    static final String LEGACY_CHANNEL_ID_V3 = "king_daily_reminder_v3";
     static final int NOTIFICATION_ID = 7101;
 
     private ReminderNotifier() {}
@@ -40,7 +42,7 @@ public final class ReminderNotifier {
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setAutoCancel(true)
             .setOnlyAlertOnce(!test)
-            .setDefaults(NotificationCompat.DEFAULT_SOUND)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setColor(0xFF34C759)
             .setContentIntent(content)
             .addAction(0, context.getString(R.string.reminder_action_strong), strong)
@@ -59,6 +61,8 @@ public final class ReminderNotifier {
         NotificationManager manager = context.getSystemService(NotificationManager.class);
         if (manager == null) return;
         manager.deleteNotificationChannel(LEGACY_CHANNEL_ID);
+        manager.deleteNotificationChannel(LEGACY_CHANNEL_ID_V2);
+        manager.deleteNotificationChannel(LEGACY_CHANNEL_ID_V3);
         NotificationChannel channel = new NotificationChannel(
             CHANNEL_ID,
             context.getString(R.string.reminder_channel_name),
@@ -66,6 +70,8 @@ public final class ReminderNotifier {
         );
         channel.setDescription(context.getString(R.string.reminder_channel_desc));
         channel.setLockscreenVisibility(android.app.Notification.VISIBILITY_PUBLIC);
+        channel.enableVibration(true);
+        channel.setShowBadge(true);
         manager.createNotificationChannel(channel);
     }
 

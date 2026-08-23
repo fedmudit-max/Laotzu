@@ -27,6 +27,59 @@ function planPeriodSuffix(period, id) {
     return '/month';
 }
 
+function planAmountNumber(plan) {
+    if (!plan) return 0;
+    if (plan.amount != null && Number(plan.amount) > 0) return Number(plan.amount);
+    var raw = String(plan.price || '');
+    if (!raw) return 0;
+    var cleaned = raw.replace(/[^0-9.,]/g, '').replace(/,/g, '');
+    var n = parseFloat(cleaned);
+    return n > 0 ? n : 0;
+}
+
+/** Keep currency framing from a store price string; swap in a new number. */
+function formatAmountLike(referencePrice, amount) {
+    var ref = String(referencePrice || '');
+    var useDecimals = /\.\d{2}\b/.test(ref);
+    var value = useDecimals ? Number(amount).toFixed(2) : String(Math.round(Number(amount)));
+    var match = ref.match(/^([^\d-]*)([\d,]+(?:\.\d+)?)(.*)$/);
+    if (match) return match[1] + value + match[3];
+    if (ref.indexOf('₹') !== -1) return '₹' + value;
+    return value;
+}
+
+/**
+ * Annual compare: strikethrough = PREMIUM_ANNUAL_COMPARE_AMOUNT (2299),
+ * badge = % off vs the annual sale price.
+ */
+function enrichAnnualSavings(plans) {
+    var list = plans || [];
+    var annual = null;
+    for (var i = 0; i < list.length; i++) {
+        if (list[i].id === 'annual') annual = list[i];
+    }
+    if (!annual) return list;
+
+    var annualAmt = planAmountNumber(annual);
+    var compareAmt = typeof PREMIUM_ANNUAL_COMPARE_AMOUNT === 'number'
+        ? PREMIUM_ANNUAL_COMPARE_AMOUNT
+        : 0;
+    if (!(compareAmt > 0) || !(annualAmt > 0)) return list;
+
+    var pct = planDiscountPercent(compareAmt, annualAmt);
+    if (!(pct > 0)) {
+        delete annual.listPrice;
+        delete annual.listAmount;
+        delete annual.discountPct;
+        return list;
+    }
+
+    annual.listAmount = compareAmt;
+    annual.listPrice = formatAmountLike(annual.price, compareAmt);
+    annual.discountPct = pct;
+    return list;
+}
+
 function normalizePremiumPlan(p) {
     p = p || {};
     var id = p.id || p.period || 'monthly';
@@ -38,17 +91,20 @@ function normalizePremiumPlan(p) {
     if (p.price) {
         plan.price = String(p.price);
     } else if (amount > 0) {
-        plan.amount = amount;
         plan.price = '₹' + amount + planPeriodSuffix(period, id);
     }
+    if (amount > 0) plan.amount = amount;
 
-    if (p.listPrice) {
-        plan.listPrice = String(p.listPrice);
-        if (p.discountPct) plan.discountPct = p.discountPct;
-    } else if (listAmount > 0 && amount > 0 && listAmount > amount) {
-        plan.listAmount = listAmount;
-        plan.listPrice = '₹' + listAmount;
-        plan.discountPct = planDiscountPercent(listAmount, amount);
+    // Monthly may still use its own list/sale strike. Annual list comes from enrichAnnualSavings.
+    if (id !== 'annual') {
+        if (p.listPrice) {
+            plan.listPrice = String(p.listPrice);
+            if (p.discountPct) plan.discountPct = p.discountPct;
+        } else if (listAmount > 0 && amount > 0 && listAmount > amount) {
+            plan.listAmount = listAmount;
+            plan.listPrice = '₹' + listAmount;
+            plan.discountPct = planDiscountPercent(listAmount, amount);
+        }
     }
 
     if (id === 'annual') {
@@ -61,7 +117,7 @@ function normalizePremiumPlan(p) {
 
 function normalizePremiumPlans(plans) {
     var src = plans && plans.length ? plans : PREMIUM_PLANS_MOCK;
-    return src.map(normalizePremiumPlan);
+    return enrichAnnualSavings(src.map(normalizePremiumPlan));
 }
 
 /**
@@ -481,13 +537,16 @@ function plansFromPlayProducts(products) {
     for (var i = 0; i < list.length; i++) {
         var row = playPlanForProductId(list[i].productId);
         if (!row || !list[i].price || list[i].hasSelectedOffer === false) continue;
-        out.push({
+        var micros = Number(list[i].priceAmountMicros) || 0;
+        var plan = {
             id: row.id,
             period: row.period,
             // Play formattedPrice of the selected base plan/offer, not a rupee mock.
             price: list[i].price,
             message: row.id === 'annual' ? PREMIUM_ANNUAL_VALUE_MESSAGE : '',
-        });
+        };
+        if (micros > 0) plan.amount = micros / 1000000;
+        out.push(plan);
     }
     var order = { annual: 0, monthly: 1 };
     out.sort(function (a, b) {

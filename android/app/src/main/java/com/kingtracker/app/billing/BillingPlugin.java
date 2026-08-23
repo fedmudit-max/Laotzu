@@ -195,6 +195,9 @@ public class BillingPlugin extends Plugin {
         ProductDetails.SubscriptionOfferDetails offer = PlayOfferSelector.pick(details, spec);
         ProductDetails.PricingPhase phase = offer != null ? PlayOfferSelector.recurringPhase(offer) : null;
         o.put("price", phase != null && phase.getFormattedPrice() != null ? phase.getFormattedPrice() : "");
+        o.put("priceAmountMicros", phase != null ? phase.getPriceAmountMicros() : 0L);
+        o.put("priceCurrencyCode", phase != null && phase.getPriceCurrencyCode() != null
+            ? phase.getPriceCurrencyCode() : "");
         o.put("billingPeriod", phase != null && phase.getBillingPeriod() != null ? phase.getBillingPeriod() : "");
         o.put("basePlanId", offer != null && offer.getBasePlanId() != null ? offer.getBasePlanId() : "");
         o.put("offerId", offer != null && offer.getOfferId() != null ? offer.getOfferId() : "");

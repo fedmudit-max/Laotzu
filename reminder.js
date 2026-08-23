@@ -1,5 +1,5 @@
 /**
- * reminder.js — Daily check-in reminder (native inexact AlarmManager on Android).
+ * reminder.js — Daily check-in reminder (native AlarmManager on Android).
  * Owner: Reminder layer. Does not use web Notification / service-worker timers.
  */
 
@@ -68,24 +68,19 @@ function joinReminderClock(hour12, minute, ampm) {
 }
 
 function fillReminderTimeOptions() {
-    var hourEl = document.getElementById('remindHour');
-    var minuteEl = document.getElementById('remindMinute');
-    if (hourEl && hourEl.options.length === 0) {
-        for (var h = 1; h <= 12; h++) {
-            var ho = document.createElement('option');
-            ho.value = String(h);
-            ho.textContent = String(h);
-            hourEl.appendChild(ho);
-        }
-    }
-    if (minuteEl && minuteEl.options.length === 0) {
-        for (var m = 0; m < 60; m++) {
-            var mo = document.createElement('option');
-            mo.value = String(m);
-            mo.textContent = m < 10 ? '0' + m : String(m);
-            minuteEl.appendChild(mo);
-        }
-    }
+    /* Time fields are buttons + in-app picker; nothing to populate. */
+}
+
+function remindClockFieldValue(el) {
+    if (!el) return '';
+    if (el.dataset && el.dataset.value != null && el.dataset.value !== '') return el.dataset.value;
+    return String(el.textContent || '').trim();
+}
+
+function setRemindClockField(el, value, label) {
+    if (!el) return;
+    el.dataset.value = String(value);
+    el.textContent = label != null ? String(label) : String(value);
 }
 
 function readReminderClock() {
@@ -93,9 +88,9 @@ function readReminderClock() {
     var minuteEl = document.getElementById('remindMinute');
     var ampmEl = document.getElementById('remindAmPm');
     return joinReminderClock(
-        hourEl && hourEl.value,
-        minuteEl && minuteEl.value,
-        ampmEl && ampmEl.value
+        remindClockFieldValue(hourEl),
+        remindClockFieldValue(minuteEl),
+        remindClockFieldValue(ampmEl)
     );
 }
 
@@ -104,10 +99,88 @@ function setReminderClockDisabled(disabled) {
     var minuteEl = document.getElementById('remindMinute');
     var ampmEl = document.getElementById('remindAmPm');
     var row = document.getElementById('remindTimeRow');
-    if (hourEl) hourEl.disabled = !!disabled;
-    if (minuteEl) minuteEl.disabled = !!disabled;
-    if (ampmEl) ampmEl.disabled = !!disabled;
+    [hourEl, minuteEl, ampmEl].forEach(function (el) {
+        if (el) el.disabled = !!disabled;
+    });
     if (row) row.classList.toggle('is-disabled', !!disabled);
+}
+
+function closeRemindTimePicker() {
+    var picker = document.getElementById('remindTimePicker');
+    if (!picker) return;
+    picker.classList.remove('active');
+    picker.setAttribute('aria-hidden', 'true');
+}
+
+function openRemindTimePicker(field) {
+    var picker = document.getElementById('remindTimePicker');
+    var title = document.getElementById('remindTimePickerTitle');
+    var list = document.getElementById('remindTimePickerList');
+    if (!picker || !list) return;
+
+    var items = [];
+    var current = '';
+    var heading = 'Time';
+    if (field === 'hour') {
+        heading = 'Hour';
+        current = remindClockFieldValue(document.getElementById('remindHour'));
+        for (var h = 1; h <= 12; h++) {
+            items.push({ value: String(h), label: String(h) });
+        }
+    } else if (field === 'minute') {
+        heading = 'Minute';
+        current = remindClockFieldValue(document.getElementById('remindMinute'));
+        for (var m = 0; m < 60; m++) {
+            items.push({ value: String(m), label: m < 10 ? '0' + m : String(m) });
+        }
+    } else {
+        heading = 'AM / PM';
+        current = remindClockFieldValue(document.getElementById('remindAmPm'));
+        items = [
+            { value: 'AM', label: 'AM' },
+            { value: 'PM', label: 'PM' },
+        ];
+    }
+
+    if (title) title.textContent = heading;
+    list.innerHTML = '';
+    var selectedBtn = null;
+    items.forEach(function (item) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'remind-time-picker-option';
+        btn.setAttribute('role', 'option');
+        btn.dataset.value = item.value;
+        btn.textContent = item.label;
+        if (String(item.value) === String(current)) {
+            btn.classList.add('is-selected');
+            btn.setAttribute('aria-selected', 'true');
+            selectedBtn = btn;
+        } else {
+            btn.setAttribute('aria-selected', 'false');
+        }
+        btn.addEventListener('click', function () {
+            applyRemindTimePickerChoice(field, item.value, item.label);
+        });
+        list.appendChild(btn);
+    });
+
+    picker.classList.add('active');
+    picker.setAttribute('aria-hidden', 'false');
+    if (selectedBtn && typeof selectedBtn.scrollIntoView === 'function') {
+        selectedBtn.scrollIntoView({ block: 'center' });
+    }
+}
+
+function applyRemindTimePickerChoice(field, value, label) {
+    var hourEl = document.getElementById('remindHour');
+    var minuteEl = document.getElementById('remindMinute');
+    var ampmEl = document.getElementById('remindAmPm');
+    if (field === 'hour') setRemindClockField(hourEl, value, label);
+    else if (field === 'minute') setRemindClockField(minuteEl, value, label);
+    else setRemindClockField(ampmEl, value, label);
+    closeRemindTimePicker();
+    onRemindTimeChange();
 }
 
 function getKingReminderPlugin() {
@@ -151,18 +224,37 @@ function rememberReminderStatus(status) {
     if (status) reminderNativeStatus = status;
 }
 
+function openNotificationSettingsIfDenied() {
+    if (!reminderNativeStatus || reminderNativeStatus.notificationsAllowed !== false) return;
+    callReminderPlugin('openNotificationSettings').then(function (status) {
+        rememberReminderStatus(status);
+        renderReminderTab();
+    }).catch(function () {});
+}
+
 function reminderStatusCopy(settings) {
     if (!reminderNativeAvailable()) {
         return 'Reminders work in the King Android app — even if it is closed.';
     }
-    if (!settings.enabled) return 'Off — pick a time that fits, then turn it on.';
+    if (!settings.enabled) return '';
     if (safeGet('onboardingComplete') === 'true' && !Entitlement.hasPremiumAccess()) {
         return 'Reminder paused — Premium required.';
     }
     if (reminderNativeStatus && reminderNativeStatus.notificationsAllowed === false) {
-        return 'Allow notifications for King in system settings.';
+        return 'Allow notifications for King in system settings — otherwise the alarm fires with no banner.';
     }
-    return 'Around ' + formatReminderTime(settings.hour, settings.minute) + ' every day.';
+    return formatReminderTime(settings.hour, settings.minute) + ' every day.';
+}
+
+function formatLastReminderFired(status) {
+    if (!status) return 'Last reminder fired: —';
+    var ts = Number(status.lastFiredAt) || 0;
+    if (ts <= 0) return 'Last reminder fired: —';
+    var d = new Date(ts);
+    if (isNaN(d.getTime())) return 'Last reminder fired: —';
+    var datePart = d.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' });
+    var timePart = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    return 'Last reminder fired: ' + datePart + ', ' + timePart;
 }
 
 function renderReminderTab() {
@@ -173,14 +265,20 @@ function renderReminderTab() {
     var minuteEl = document.getElementById('remindMinute');
     var ampmEl = document.getElementById('remindAmPm');
     var status = document.getElementById('remindStatus');
+    var lastFired = document.getElementById('remindLastFired');
     var testBtn = document.getElementById('remindTestBtn');
     var clock = splitReminderClock(settings.hour, settings.minute);
     if (toggle) toggle.checked = !!settings.enabled;
-    if (hourEl) hourEl.value = String(clock.hour12);
-    if (minuteEl) minuteEl.value = String(clock.minute);
-    if (ampmEl) ampmEl.value = clock.ampm;
+    setRemindClockField(hourEl, clock.hour12, String(clock.hour12));
+    setRemindClockField(minuteEl, clock.minute, clock.minute < 10 ? '0' + clock.minute : String(clock.minute));
+    setRemindClockField(ampmEl, clock.ampm, clock.ampm);
     setReminderClockDisabled(false);
-    if (status) status.textContent = reminderStatusCopy(settings);
+    if (status) {
+        var copy = reminderStatusCopy(settings);
+        status.textContent = copy;
+        status.hidden = !copy;
+    }
+    if (lastFired) lastFired.textContent = formatLastReminderFired(reminderNativeStatus);
     if (testBtn) testBtn.hidden = !reminderNativeAvailable();
 }
 
@@ -196,7 +294,10 @@ function applyReminderAlarms() {
     }
 
     if (!shouldSchedule) {
-        return callReminderPlugin('cancel').then(function (status) {
+        // User Off → disable native enabled. Premium pause → keep enabled so
+        // the next-day / boot alarm can return when Premium is back.
+        var cancelArgs = settings.enabled ? {} : { disable: true };
+        return callReminderPlugin('cancel', cancelArgs).then(function (status) {
             rememberReminderStatus(status);
             renderReminderTab();
             return { scheduled: false };
@@ -208,9 +309,9 @@ function applyReminderAlarms() {
 
     return ensureNotificationPermission().then(function (ok) {
         if (!ok) {
-            settings.enabled = false;
-            saveReminderSettings(settings);
+            // Keep the user's On preference — only pause the alarm.
             renderReminderTab();
+            callReminderPlugin('openNotificationSettings').catch(function () {});
             return callReminderPlugin('cancel').then(function (status) {
                 rememberReminderStatus(status);
                 renderReminderTab();
@@ -269,7 +370,9 @@ function onRemindToggleChange() {
             return;
         }
         if (res && res.scheduled) {
-            showToast(0, 'Reminder set for around ' + formatReminderTime(settings.hour, settings.minute) + '.');
+            showToast(0, 'Reminder set for ' + formatReminderTime(settings.hour, settings.minute) + '.');
+        } else if (turningOn) {
+            openNotificationSettingsIfDenied();
         }
     }).catch(function () {
         settings.enabled = false;
@@ -296,7 +399,7 @@ function onRemindTimeChange() {
     renderReminderTab();
     applyReminderAlarms().then(function (res) {
         if (res && res.scheduled) {
-            showToast(0, 'Reminder moved to around ' + formatReminderTime(settings.hour, settings.minute) + '.');
+            showToast(0, 'Reminder moved to ' + formatReminderTime(settings.hour, settings.minute) + '.');
         } else {
             showToast(0, 'Time saved — ' + formatReminderTime(settings.hour, settings.minute) + '.');
         }
@@ -328,12 +431,28 @@ function bindReminderTab() {
     var minuteEl = document.getElementById('remindMinute');
     var ampmEl = document.getElementById('remindAmPm');
     var testBtn = document.getElementById('remindTestBtn');
+    var picker = document.getElementById('remindTimePicker');
+    var closeBtn = document.getElementById('remindTimePickerClose');
     if (toggle) {
         toggle.addEventListener('change', onRemindToggleChange);
     }
-    if (hourEl) hourEl.addEventListener('change', onRemindTimeChange);
-    if (minuteEl) minuteEl.addEventListener('change', onRemindTimeChange);
-    if (ampmEl) ampmEl.addEventListener('change', onRemindTimeChange);
+    if (hourEl) {
+        hourEl.addEventListener('click', function () { openRemindTimePicker('hour'); });
+    }
+    if (minuteEl) {
+        minuteEl.addEventListener('click', function () { openRemindTimePicker('minute'); });
+    }
+    if (ampmEl) {
+        ampmEl.addEventListener('click', function () { openRemindTimePicker('ampm'); });
+    }
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeRemindTimePicker);
+    }
+    if (picker) {
+        picker.addEventListener('click', function (e) {
+            if (e.target === picker) closeRemindTimePicker();
+        });
+    }
     if (testBtn) {
         testBtn.addEventListener('click', onRemindTest);
     }

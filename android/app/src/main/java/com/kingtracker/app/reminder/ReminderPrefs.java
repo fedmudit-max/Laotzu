@@ -12,6 +12,7 @@ public final class ReminderPrefs {
     static final String KEY_PENDING_LOG = "pendingLog";
     static final String KEY_LOGGED_DATE = "loggedDate";
     static final String KEY_NOTIFIED_DATE = "notifiedDate";
+    static final String KEY_LAST_FIRED_AT = "lastFiredAt";
 
     static final int DEFAULT_HOUR = 20;
     static final int DEFAULT_MINUTE = 0;
@@ -86,6 +87,23 @@ public final class ReminderPrefs {
 
     static void markNotifiedToday(Context context) {
         prefs(context).edit().putString(KEY_NOTIFIED_DATE, todayKey()).apply();
+    }
+
+    static void clearNotifiedDate(Context context) {
+        prefs(context).edit().putString(KEY_NOTIFIED_DATE, "").apply();
+    }
+
+    /** Immediate clear — schedule() must read the updated value on the next line. */
+    static void clearNotifiedDateSync(Context context) {
+        prefs(context).edit().putString(KEY_NOTIFIED_DATE, "").commit();
+    }
+
+    static long lastFiredAt(Context context) {
+        return prefs(context).getLong(KEY_LAST_FIRED_AT, 0L);
+    }
+
+    static void markFiredNow(Context context) {
+        prefs(context).edit().putLong(KEY_LAST_FIRED_AT, System.currentTimeMillis()).apply();
     }
 
     /** True when today should not get another daily reminder. */

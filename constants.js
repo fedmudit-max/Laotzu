@@ -49,10 +49,12 @@ const PREMIUM_PLAY_PRODUCT_IDS = PREMIUM_PLAY_PRODUCTS.map(function (p) { return
  */
 const PREMIUM_PLAY_CACHE_DAYS = 3;
 const PREMIUM_ANNUAL_VALUE_MESSAGE = 'Best value for the long journey';
+/** Display-only annual strikethrough / “was” price for % off vs annual sale. */
+const PREMIUM_ANNUAL_COMPARE_AMOUNT = 2299;
 /** Dev mock until Play/App Store supplies localized plan prices. Display-only. */
 const PREMIUM_PLANS_MOCK = [
     { id: 'monthly', listAmount: 199, amount: 149, period: 'month' },
-    { id: 'annual', listAmount: 1999, amount: 1499, period: 'year', message: PREMIUM_ANNUAL_VALUE_MESSAGE },
+    { id: 'annual', amount: 1499, period: 'year', message: PREMIUM_ANNUAL_VALUE_MESSAGE },
 ];
 /** Feature bullets on paywall + premium panel. */
 const PREMIUM_FEATURES = [

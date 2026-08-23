@@ -4,6 +4,7 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import java.util.Calendar;
 
 public final class ReminderScheduler {
@@ -14,20 +15,45 @@ public final class ReminderScheduler {
     static final int REQUEST_SHOW = 7103;
     static final int REQUEST_LOG_STRONG = 7104;
     static final int REQUEST_LOG_SLIP = 7105;
+    static final int REQUEST_ALARM_CLOCK_SHOW = 7106;
+    private static final long DUE_TODAY_DELAY_MS = 2000L;
 
     private ReminderScheduler() {}
 
     static long nextTriggerMillis(Context context, int hour, int minute) {
+        return nextTriggerMillis(context, hour, minute, false);
+    }
+
+    static long nextTriggerMillis(Context context, int hour, int minute, boolean forceTodayAtNewTime) {
         Calendar next = Calendar.getInstance();
         next.set(Calendar.HOUR_OF_DAY, ReminderPrefs.clampHour(hour));
         next.set(Calendar.MINUTE, ReminderPrefs.clampMinute(minute));
         next.set(Calendar.SECOND, 0);
         next.set(Calendar.MILLISECOND, 0);
-        if (next.getTimeInMillis() <= System.currentTimeMillis()) {
-            next.add(Calendar.DAY_OF_YEAR, 1);
+        long now = System.currentTimeMillis();
+
+        // User moved today's reminder to a later time after an earlier fire — honor today
+        // unless they already logged (no second nudge needed).
+        if (forceTodayAtNewTime && !ReminderPrefs.isLoggedToday(context)) {
+            if (next.getTimeInMillis() > now) {
+                return next.getTimeInMillis();
+            }
+            return now + DUE_TODAY_DELAY_MS;
         }
-        if (ReminderPrefs.skipDailyToday(context) && isSameWallDate(next, Calendar.getInstance())) {
-            next.add(Calendar.DAY_OF_YEAR, 1);
+
+        boolean skipToday = ReminderPrefs.skipDailyToday(context);
+
+        if (skipToday) {
+            if (next.getTimeInMillis() <= now || isSameWallDate(next, Calendar.getInstance())) {
+                next.add(Calendar.DAY_OF_YEAR, 1);
+            }
+            return next.getTimeInMillis();
+        }
+
+        // Still due today (not logged, not already reminded). Do not push to
+        // tomorrow — that cancelled tonight's pending alarm when King was opened.
+        if (next.getTimeInMillis() <= now) {
+            return now + DUE_TODAY_DELAY_MS;
         }
         return next.getTimeInMillis();
     }
@@ -38,6 +64,10 @@ public final class ReminderScheduler {
     }
 
     static void scheduleDaily(Context context) {
+        scheduleDaily(context, false);
+    }
+
+    static void scheduleDaily(Context context, boolean forceTodayAtNewTime) {
         ReminderNotifier.ensureChannel(context);
         if (!ReminderPrefs.isEnabled(context)) {
             cancelDaily(context);
@@ -46,7 +76,8 @@ public final class ReminderScheduler {
         long when = nextTriggerMillis(
             context,
             ReminderPrefs.hour(context),
-            ReminderPrefs.minute(context)
+            ReminderPrefs.minute(context),
+            forceTodayAtNewTime
         );
         setWakeup(context, when, dailyIntent(context));
     }
@@ -84,7 +115,39 @@ public final class ReminderScheduler {
     private static void setWakeup(Context context, long when, PendingIntent alarmIntent) {
         AlarmManager am = alarmManager(context);
         if (am == null) return;
+        // AlarmClock: fires on time through Doze, no SCHEDULE_EXACT_ALARM needed,
+        // and is the most reliable path on Samsung OEMs.
+        try {
+            PendingIntent show = PendingIntent.getActivity(
+                context.getApplicationContext(),
+                REQUEST_ALARM_CLOCK_SHOW,
+                ReminderIntents.openApp(context),
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+            );
+            am.setAlarmClock(new AlarmManager.AlarmClockInfo(when, show), alarmIntent);
+            return;
+        } catch (Exception ignored) {
+            // Fall through.
+        }
+        if (canScheduleExact(am)) {
+            try {
+                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, when, alarmIntent);
+                return;
+            } catch (SecurityException ignored) {
+                // Fall through to inexact if exact permission was revoked.
+            }
+        }
         am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, when, alarmIntent);
+    }
+
+    static boolean canScheduleExact(Context context) {
+        AlarmManager am = alarmManager(context);
+        return am != null && canScheduleExact(am);
+    }
+
+    private static boolean canScheduleExact(AlarmManager am) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return true;
+        return am.canScheduleExactAlarms();
     }
 
     private static PendingIntent dailyIntent(Context context) {

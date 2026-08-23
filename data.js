@@ -44,7 +44,7 @@ const TOAST_MESSAGES = [
 
 const STREAK_MILESTONES = {
     // Day 1 long copy only on first streak of a Journey (see triggerStreakMilestone).
-    1:   { emoji: '⚡', stage: 'FIRST STEP',   title: 'Day 1 Done.',              message: 'Your first target is to achieve a Journey of 75 days.' },
+    1:   { emoji: '⚡', stage: 'FIRST STEP',   title: 'Day 1 Done.',              message: 'Your first target is to achieve a Journey of 25 days.' },
     3:   { emoji: '🔥', stage: 'EARLY BATTLE', title: '3-Day Streak!',            message: 'Three days of staying strong. The battle is real — and you\'re winning it.' },
     7:   { emoji: '📅', stage: 'WEEK 1',        title: 'First Full Week!',         message: 'One complete week. The Journey is real now — stay honest with strong days and slips.' },
     10:  { emoji: '🌟', stage: 'TEN DAYS',      title: '10 Days Strong!',          message: 'Double digits! Your willpower muscle is visibly growing stronger.' },
@@ -63,9 +63,9 @@ const STREAK_MILESTONES = {
 
 // Journey sober-day milestone data (keyed by day count)
 const JOURNEY_MILESTONES = {
-    75:   { emoji: '🌱', stage: 'STRONG',   title: '75 Journey Days!',      message: 'Seventy-five successful days. Your identity is shifting. Next target — 100 strong days.' },
-    100:  { emoji: '🔥', stage: 'STRONG',   title: '100 Journey Days!',     message: 'A century of success. Absolute mental strength. Next target — 150 strong days.' },
-    150:  { emoji: '⚔️',  stage: 'STRONG',   title: '150 Journey Days!',     message: '150 days of winning. You\'re a completely different person now. Next target — 200 strong days.' },
+    25:   { emoji: '🌱', stage: 'STRONG',   title: '25 Journey Days!',      message: 'Twenty-five successful days. Your identity is shifting. Next target — 50 strong days.' },
+    50:   { emoji: '🔥', stage: 'STRONG',   title: '50 Journey Days!',     message: 'Fifty days of success. Absolute mental strength. Next target — 100 strong days.' },
+    100:  { emoji: '⚔️',  stage: 'STRONG',   title: '100 Journey Days!',     message: '100 days of winning. You\'re a completely different person now. Next target — 200 strong days.' },
     200:  { emoji: '🛡️',  stage: 'WARRIOR',  title: '200 Journey Days!',     message: 'Two hundred days of endurance. This is who you truly are. Next target — 300 strong days.' },
     300:  { emoji: '⚡', stage: 'WARRIOR',  title: '300 Journey Days!',     message: '300 days! You\'ve entered a realm most people never reach. Next target — 400 strong days.' },
     400:  { emoji: '💎', stage: 'WARRIOR',  title: '400 Journey Days!',     message: '400 days of pure diamond-grade discipline. Unbreakable. Next target — 500 strong days.' },

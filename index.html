@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="king-loading">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>King — NoFap Journey Tracker</title>
     <meta name="theme-color" content="#34c759">
-    <meta name="color-scheme" content="light only">
+    <meta name="color-scheme" content="only light">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -19,10 +19,11 @@
         html, body { background: #34c759; color: #1d1d1f; margin: 0; }
         #loadScreen {
             position: fixed; inset: 0;
-            background: linear-gradient(180deg, #30d158, #34c759);
+            background: #34c759;
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
             z-index: 9999;
+            transform: translateZ(0);
         }
     </style>
     <link rel="stylesheet" href="./styles.css">
@@ -32,13 +33,13 @@
 <!-- Loading screen -->
 <div id="loadScreen" style="
     position:fixed;inset:0;
-    background:linear-gradient(180deg, #30d158, #34c759);
+    background:#34c759;
     display:flex;flex-direction:column;
     align-items:center;justify-content:center;
     z-index:9999;
-    transition:opacity 0.3s ease;
     padding:40px;
     text-align:center;
+    transform:translateZ(0);
 ">
     <div style="font-size:32px;margin-bottom:12px;">💪</div>
     <div style="font-size:28px;font-weight:800;color:white;letter-spacing:-0.5px;margin-bottom:20px;">King</div>
@@ -294,27 +295,29 @@
         </button>
         <div class="collapse-body" id="remindPanelBody">
             <div class="remind-panel">
-                <div class="remind-row">
-                    <div class="remind-copy">
-                        <div class="remind-title">Daily reminder</div>
-                        <p class="remind-status" id="remindStatus">Off — you will not get a daily reminder.</p>
+                <div class="remind-group">
+                    <div class="remind-row">
+                        <div class="remind-copy">
+                            <div class="remind-title">Daily Reminder</div>
+                        </div>
+                        <label class="remind-switch">
+                            <input type="checkbox" id="remindToggle" aria-label="Turn daily reminder on">
+                            <span class="remind-switch-ui" aria-hidden="true"></span>
+                        </label>
                     </div>
-                    <label class="remind-switch">
-                        <input type="checkbox" id="remindToggle" aria-label="Turn daily reminder on">
-                        <span class="remind-switch-ui" aria-hidden="true"></span>
-                    </label>
                 </div>
-                <div class="remind-time-label" id="remindTimeLabel">Remind me at</div>
-                <div class="remind-time-row" id="remindTimeRow">
-                    <select class="remind-time-select" id="remindHour" aria-label="Hour"></select>
-                    <span class="remind-time-colon" aria-hidden="true">:</span>
-                    <select class="remind-time-select" id="remindMinute" aria-label="Minute"></select>
-                    <select class="remind-time-select remind-time-ampm" id="remindAmPm" aria-label="AM or PM">
-                        <option value="AM">AM</option>
-                        <option value="PM">PM</option>
-                    </select>
+                <p class="remind-footer" id="remindStatus"></p>
+                <p class="remind-footer" id="remindLastFired">Last reminder fired: —</p>
+
+                <div class="remind-group remind-group-time">
+                    <div class="remind-time-row" id="remindTimeRow">
+                        <button type="button" class="remind-time-btn" id="remindHour" aria-label="Hour" data-field="hour">8</button>
+                        <span class="remind-time-colon" aria-hidden="true">:</span>
+                        <button type="button" class="remind-time-btn" id="remindMinute" aria-label="Minute" data-field="minute">00</button>
+                        <button type="button" class="remind-time-btn remind-time-ampm" id="remindAmPm" aria-label="AM or PM" data-field="ampm">PM</button>
+                    </div>
                 </div>
-                <button type="button" class="remind-test-btn" id="remindTestBtn" hidden>Send a test in 2 minutes</button>
+                <button type="button" class="remind-test-btn" id="remindTestBtn" hidden>Send Test Reminder</button>
             </div>
         </div>
     </div>
@@ -412,7 +415,7 @@
                 <p class="learn-section-body">They were real. You did them.</p>
                 <p class="learn-section-body">Yet if the only number the app remembers is your current streak, there's nothing left to remind you what you're capable of.</p>
                 <p class="learn-section-body">The next time an urge hits hard, you can't look back and see the proof.</p>
-                <p class="learn-section-body">King remembers.</p>
+                <p class="learn-section-body"><strong>King remembers.</strong></p>
                 <p class="learn-section-body">Your milestones are recorded permanently.</p>
                 <p class="learn-section-body">A slip can reset your streak.</p>
                 <p class="learn-section-body">It cannot erase what you've achieved.</p>
@@ -437,8 +440,20 @@
             <section class="learn-section">
                 <h3 class="learn-section-title">A different way to measure progress</h3>
                 <p class="learn-section-body">Don't just count your streak.</p>
-                <p class="learn-section-body">Measure your Journey.</p>
-                <p class="learn-section-body">Every Journey starts with 10 Powers.</p>
+                <p class="learn-section-body"><strong>Measure your Journey.</strong></p>
+                <p class="learn-section-body">Every Journey starts with <strong>10 Streaks and 10 Powers</strong>.</p>
+                <p class="learn-section-body">Each Streak represents a period of strong days. Each time you slip, that Streak ends and one Power is used.</p>
+                <p class="learn-section-body">For example:</p>
+                <p class="learn-score-line"><strong>Streak 1:</strong> 4 days strong → slip → <strong>4/1</strong></p>
+                <p class="learn-section-body">You then start your next Streak.</p>
+                <p class="learn-score-line"><strong>Streak 2:</strong> 5 more days strong → slip → <strong>9/2</strong></p>
+                <p class="learn-section-body">Then:</p>
+                <p class="learn-score-line"><strong>Streak 3:</strong> 2 more days strong → slip → <strong>11/3</strong></p>
+                <p class="learn-section-body">Your Journey keeps adding your strong days together while tracking how many Powers you've used.</p>
+                <p class="learn-section-body">So if, across your 10 Streaks, you eventually reach <strong>25 strong days with all 10 Powers used</strong>, your Journey is:</p>
+                <p class="learn-score-line"><strong>25 days / 10 slips</strong></p>
+                <p class="learn-section-body">That's what your Journey measures:</p>
+                <p class="learn-section-body"><strong>How far can you go with 10 Powers?</strong></p>
                 <p class="learn-section-body">Think of your Powers as something valuable — something you don't want to waste.</p>
                 <p class="learn-section-body">Every time you slip, one Power is gone.</p>
                 <p class="learn-powers" aria-label="Powers countdown">
@@ -452,8 +467,7 @@
                 <p class="learn-section-body">Then you begin again — with 10 new Powers and a new benchmark to beat.</p>
                 <blockquote class="learn-quote learn-quote-emphasis">
                     A Power can be lost. Your progress cannot.<br>
-                    One slip may end a streak.<br>
-                    It doesn't erase your Journey.
+                    One slip may end a Streak. It doesn't erase your Journey.
                 </blockquote>
             </section>
 
@@ -461,7 +475,7 @@
                 <h3 class="learn-section-title">Your only competition is you</h3>
                 <p class="learn-section-body">Most apps measure you against a fixed standard — a perfect streak, an arbitrary goal, or someone else's number.</p>
                 <p class="learn-section-body">King measures you against yourself.</p>
-                <p class="learn-section-body">Your streak shows how you're doing right now.</p>
+                <p class="learn-section-body">Your Streak shows how you're doing right now.</p>
                 <p class="learn-section-body">Your Journey shows how far you've gone this time.</p>
                 <p class="learn-section-body">Your Personal Best is the highest point you've reached through your own effort.</p>
                 <p class="learn-section-body">That becomes your benchmark.</p>
@@ -525,7 +539,7 @@
                 <p class="learn-section-body">And now 30 days is your personal best.</p>
                 <p class="learn-section-body">Your next challenge is to go beyond it.</p>
                 <p class="learn-ladder" aria-label="Journey growth">
-                    <span class="learn-seq-num">50</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span class="learn-seq-num">75</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span class="learn-seq-num">100</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span class="learn-seq-num">150</span>
+                    <span class="learn-seq-num">25</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span class="learn-seq-num">50</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span class="learn-seq-num">100</span>
                 </p>
                 <p class="learn-section-body">The Journey can keep growing.</p>
                 <p class="learn-section-body">You don't have to be perfect to become stronger.</p>
@@ -700,6 +714,15 @@
         <div class="celebration-title"   id="celebTitle">Achievement Unlocked!</div>
         <div class="celebration-message" id="celebMessage">Keep going.</div>
         <button class="celebration-close" data-action="closeCelebration">Keep Going 💪</button>
+    </div>
+</div>
+
+<!-- ── Reminder time picker (in-app; avoids green Android select dialog) ── -->
+<div class="modal" id="remindTimePicker" aria-hidden="true">
+    <div class="modal-card remind-time-picker-card" role="dialog" aria-modal="true" aria-labelledby="remindTimePickerTitle" onclick="event.stopPropagation()">
+        <h3 id="remindTimePickerTitle">Hour</h3>
+        <div class="remind-time-picker-list" id="remindTimePickerList" role="listbox"></div>
+        <button type="button" class="remind-time-picker-close" id="remindTimePickerClose">Cancel</button>
     </div>
 </div>
 

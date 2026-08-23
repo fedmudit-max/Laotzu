@@ -2,12 +2,21 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 html {
-    color-scheme: light only;
+    color-scheme: only light;
     background: #f2f2f7;
     touch-action: manipulation;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
     -webkit-overflow-scrolling: touch;
+}
+
+html.king-loading,
+html.king-loading body {
+    background: #34c759;
+}
+
+html.king-loading .container {
+    visibility: hidden;
 }
 
 :root {
@@ -68,7 +77,6 @@ body::before {
     padding: 12px;
     margin-bottom: 10px;
     box-shadow: 0 2px 12px rgba(0,0,0,0.07);
-    animation: fadeUp 0.4s ease both;
 }
 
 .premium-gated {
@@ -921,7 +929,20 @@ button {
 .tab-content.active { display: block; }
 
 .remind-panel {
-    padding: 4px 2px 8px;
+    padding: 4px 12px 16px;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+.remind-group {
+    background: var(--bg);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.remind-group-time {
+    margin-top: 8px;
+    padding: 0 0 2px;
 }
 
 .remind-row {
@@ -929,26 +950,37 @@ button {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    margin-bottom: 16px;
+    min-height: 44px;
+    padding: 6px 16px;
+    margin: 0;
+    background: #ffffff;
 }
 
 .remind-copy {
     min-width: 0;
+    flex: 1;
 }
 
 .remind-title {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--text);
-    margin-bottom: 4px;
+    font-size: 17px;
+    font-weight: 400;
+    letter-spacing: -0.41px;
+    color: #000000;
+    margin: 0;
+    line-height: 1.29;
 }
 
-.remind-status {
-    margin: 0;
+.remind-footer {
+    margin: 6px 16px 0;
     font-size: 13px;
-    font-weight: 500;
-    color: var(--text-muted);
-    line-height: 1.4;
+    font-weight: 400;
+    letter-spacing: -0.08px;
+    color: #8e8e93;
+    line-height: 1.35;
+}
+
+.remind-footer + .remind-footer {
+    margin-top: 2px;
 }
 
 .remind-switch {
@@ -964,16 +996,17 @@ button {
     opacity: 0;
     margin: 0;
     cursor: pointer;
+    z-index: 1;
 }
 
 .remind-switch-ui {
     display: block;
     width: 51px;
     height: 31px;
-    border-radius: 31px;
-    background: #e5e5ea;
+    border-radius: 16px;
+    background: #e9e9eb;
     position: relative;
-    transition: background 0.2s ease;
+    transition: background-color 0.22s ease;
 }
 
 .remind-switch-ui::after {
@@ -984,13 +1017,15 @@ button {
     width: 27px;
     height: 27px;
     border-radius: 50%;
-    background: #fff;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
-    transition: transform 0.2s ease;
+    background: #ffffff;
+    box-shadow:
+        0 3px 8px rgba(0, 0, 0, 0.15),
+        0 1px 1px rgba(0, 0, 0, 0.16);
+    transition: transform 0.22s cubic-bezier(0.4, 0.0, 0.2, 1);
 }
 
 .remind-switch input:checked + .remind-switch-ui {
-    background: var(--green);
+    background: #34c759;
 }
 
 .remind-switch input:checked + .remind-switch-ui::after {
@@ -999,69 +1034,184 @@ button {
 
 .remind-time-label {
     display: block;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-muted);
-    margin-bottom: 6px;
+    padding: 10px 16px 0;
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: -0.08px;
+    color: #8e8e93;
+    text-transform: none;
+    margin: 0;
 }
 
 .remind-time-row {
     display: flex;
     align-items: center;
-    gap: 8px;
+    justify-content: center;
+    gap: 4px;
+    margin: 4px 12px 12px;
+    padding: 10px 8px;
+    border-radius: 10px;
+    background: #ffffff;
+    border: none;
 }
 
 .remind-time-colon {
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--text);
+    font-size: 28px;
+    font-weight: 510;
+    letter-spacing: 0.2px;
+    color: #3c3c43;
     line-height: 1;
+    padding: 0 2px;
+    font-variant-numeric: tabular-nums;
 }
 
-.remind-time-select {
-    flex: 1;
-    min-width: 0;
+.remind-time-btn {
+    flex: 0 0 auto;
+    min-width: 52px;
     box-sizing: border-box;
-    border: 1px solid var(--border);
-    background: var(--bg);
-    color: var(--text);
-    border-radius: 12px;
-    padding: 12px 10px;
-    font-size: 18px;
-    font-weight: 700;
+    border: none;
+    background: transparent;
+    color: #3c3c43;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 28px;
+    font-weight: 510;
+    letter-spacing: 0.35px;
     font-family: inherit;
+    font-variant-numeric: tabular-nums;
     text-align: center;
-    appearance: none;
-    -webkit-appearance: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color 0.15s ease;
+}
+
+.remind-time-btn:active {
+    background: rgba(120, 120, 128, 0.16);
 }
 
 .remind-time-ampm {
-    flex: 0.85;
+    flex: 0 0 auto;
+    min-width: 58px;
+    margin-left: 4px;
+    font-size: 22px;
+    font-weight: 510;
+    letter-spacing: -0.2px;
 }
 
-.remind-time-row.is-disabled .remind-time-select,
+.remind-time-row.is-disabled .remind-time-btn,
 .remind-time-row.is-disabled .remind-time-colon {
-    opacity: 0.45;
+    opacity: 0.35;
     pointer-events: none;
+}
+
+.remind-time-picker-card {
+    max-width: 320px;
+    padding: 0;
+    text-align: left;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.22);
+}
+
+.remind-time-picker-card h3 {
+    margin: 0;
+    padding: 16px 16px 12px;
+    text-align: center;
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.41px;
+    color: #000000;
+    border-bottom: 0.5px solid rgba(60, 60, 67, 0.29);
+}
+
+.remind-time-picker-list {
+    max-height: min(52vh, 360px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    border: none;
+    border-radius: 0;
+    background: #ffffff;
+    margin: 0;
+}
+
+.remind-time-picker-option {
+    display: block;
+    width: 100%;
+    min-height: 44px;
+    border: none;
+    border-bottom: 0.5px solid rgba(60, 60, 67, 0.12);
+    background: #ffffff;
+    color: #000000;
+    font-size: 17px;
+    font-weight: 400;
+    letter-spacing: -0.41px;
+    font-family: inherit;
+    font-variant-numeric: tabular-nums;
+    padding: 11px 16px;
+    text-align: center;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.remind-time-picker-option:last-child {
+    border-bottom: none;
+}
+
+.remind-time-picker-option.is-selected {
+    background: #ffffff;
+    color: #000000;
+    font-weight: 600;
+    box-shadow: inset 3px 0 0 #34c759;
+}
+
+.remind-time-picker-option:active {
+    background: rgba(120, 120, 128, 0.16);
+}
+
+.remind-time-picker-close {
+    width: 100%;
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    border-top: 0.5px solid rgba(60, 60, 67, 0.29);
+    background: #ffffff;
+    color: #007aff;
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.41px;
+    padding: 14px 16px;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.remind-time-picker-close:active {
+    background: rgba(120, 120, 128, 0.12);
 }
 
 .remind-test-btn {
     display: block;
     width: 100%;
-    margin-top: 14px;
-    padding: 10px;
-    border-radius: 12px;
-    border: 1px dashed var(--border);
-    background: transparent;
-    color: var(--text);
-    font-size: 13px;
-    font-weight: 600;
+    margin-top: 18px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: none;
+    background: var(--bg);
+    color: #007aff;
+    font-size: 17px;
+    font-weight: 400;
+    letter-spacing: -0.41px;
     font-family: inherit;
+    text-align: center;
     cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.remind-test-btn:active {
+    background: #e5e5ea;
 }
 
 .remind-test-btn[hidden] {
-    display: none;
+    display: none !important;
 }
 
 /* ── WEEKLY STREAK TRACK ─────────────────────────── */
@@ -1472,6 +1622,8 @@ button {
 /* Journey tab + Progress tab: grey on journey end (pending next journey) */
 #tab-journey.journey-ended-day .milestone-item.achieved .milestone-name,
 #tab-journey.journey-ended-day .milestone-item.achieved .milestone-status,
+#tab-journey.journey-ended-day .milestone-item.achieved-earned .milestone-name,
+#tab-journey.journey-ended-day .milestone-item.achieved-earned .milestone-status,
 #tab-journey.journey-ended-day .milestone-item.achieved-glow .milestone-name,
 #tab-journey.journey-ended-day .milestone-item.achieved-glow .milestone-status,
 #tab-journey.journey-ended-day .milestone-item.journey-ended-item .milestone-name,
@@ -1481,6 +1633,7 @@ button {
 }
 
 #tab-journey.journey-ended-day .milestone-item.achieved,
+#tab-journey.journey-ended-day .milestone-item.achieved-earned,
 #tab-journey.journey-ended-day .milestone-item.achieved-glow,
 #tab-journey.journey-ended-day .milestone-item.journey-ended-item {
     border-color: rgba(142, 142, 147, 0.45);
@@ -1586,6 +1739,13 @@ button {
 /* Past milestone: green text, no background change */
 .milestone-item.achieved .milestone-name,
 .milestone-item.achieved .milestone-status {
+    color: var(--green);
+    font-weight: 600;
+}
+
+/* Prior journeys peaked here — default card, green label + count only */
+.milestone-item.achieved-earned .milestone-name,
+.milestone-item.achieved-earned .milestone-status {
     color: var(--green);
     font-weight: 600;
 }
@@ -2263,23 +2423,22 @@ button {
     inset: 0;
     background: rgba(0,0,0,0.5);
     z-index: 3200;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    transition: opacity 0.35s ease, visibility 0s linear 0.35s;
 }
 @media (hover: hover) and (pointer: fine) {
     .celebration-overlay { backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
 }
 
 .celebration-overlay.active {
+    display: flex;
     opacity: 1;
     visibility: visible;
     pointer-events: all;
-    transition: opacity 0.35s ease, visibility 0s;
 }
 
 .celebration-card {
@@ -2400,23 +2559,22 @@ button {
     inset: 0;
     background: rgba(0,0,0,0.6);
     z-index: 2000;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     padding: max(20px, var(--king-safe-top)) 20px calc(20px + var(--king-safe-bottom));
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    transition: opacity 0.3s ease, visibility 0s linear 0.3s;
 }
 @media (hover: hover) and (pointer: fine) {
     .overlay { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 }
 .overlay.active {
+    display: flex;
     opacity: 1;
     visibility: visible;
     pointer-events: all;
-    transition: opacity 0.3s ease, visibility 0s;
 }
 .overlay-card {
     background: var(--card);

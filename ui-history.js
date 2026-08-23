@@ -636,17 +636,23 @@ function renderMonthGrid() {
 // ════════════════════════════════════════════════════════
 
 function renderLifetimeStats() {
-    const journeys = state.attempt;
-    const pastStrong = state.completedJourneys.reduce((sum, j) => sum + (j.score.success || 0), 0);
-    const totalStrong = pastStrong + state.score.success;
-    const pastRelapses = state.completedJourneys.reduce((sum, j) => sum + (j.score.failures || 0), 0);
-    const totalRelapses = pastRelapses + state.score.failures;
+    // Journeys: completed + current (if current attempt not already archived).
+    // Strong / Relapses: unique wall dates from dailyLog — never sum journey scores
+    // (that double-counted after a 10-slip finish while score was still live).
+    var journeys = typeof countLifetimeJourneys === 'function'
+        ? countLifetimeJourneys()
+        : Math.max(1, Number(state.attempt) || 1);
+    var totalStrong = typeof countLifetimeStrongDays === 'function'
+        ? countLifetimeStrongDays()
+        : 0;
+    var totalRelapses = typeof countLifetimeRelapses === 'function'
+        ? countLifetimeRelapses()
+        : 0;
 
     document.getElementById('lifetimeJourneys').textContent = journeys;
     document.getElementById('lifetimeStrong').textContent   = totalStrong;
     document.getElementById('lifetimeRelapses').textContent = totalRelapses;
 
-    // Hint while nothing is logged yet (journey 1, zeros at zero).
-    const empty = totalStrong === 0 && totalRelapses === 0 && journeys <= 1;
+    var empty = totalStrong === 0 && totalRelapses === 0 && journeys <= 1;
     setHistoryEmptyVisible('lifetimeEmptyHint', empty);
 }

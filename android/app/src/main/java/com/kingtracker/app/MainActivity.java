@@ -5,6 +5,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.view.View;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -21,38 +22,87 @@ import com.kingtracker.app.reminder.ReminderPrefs;
 
 public class MainActivity extends BridgeActivity {
     private static final int KING_SPLASH_GREEN = 0xFF34C759;
+    private static final int NATIVE_SPLASH_FAILSAFE_MS = 600;
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private volatile boolean keepNativeSplash = true;
+    private volatile boolean quotePainted = false;
+    private volatile boolean splashHidden = false;
+    private volatile boolean splashNotified = false;
+    private long splashShownAt;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        splashShownAt = SystemClock.elapsedRealtime();
         SplashScreen splashScreen = SplashScreen.installSplashScreen(this);
         splashScreen.setKeepOnScreenCondition(() -> keepNativeSplash);
+        splashScreen.setOnExitAnimationListener(view -> {
+            view.remove();
+            notifySplashGone();
+        });
         registerPlugin(ReminderPlugin.class);
         registerPlugin(BillingPlugin.class);
         bridgeBuilder.addWebViewListener(new WebViewListener() {
             @Override
+            public void onPageStarted(WebView webView) {
+                if (webView != null) {
+                    webView.setBackgroundColor(KING_SPLASH_GREEN);
+                }
+            }
+
+            @Override
             public void onPageCommitVisible(WebView view, String url) {
-                keepNativeSplash = false;
+                markQuotePainted();
             }
 
             @Override
             public void onPageLoaded(WebView webView) {
-                keepNativeSplash = false;
+                markQuotePainted();
             }
 
             @Override
             public void onReceivedError(WebView webView) {
-                keepNativeSplash = false;
+                markQuotePainted();
+                hideNativeSplash();
             }
         });
         if (savedInstanceState == null) {
             captureLogAction(getIntent());
         }
         super.onCreate(savedInstanceState);
-        paintLaunchChrome();
+        paintSurface();
         disableForceDark();
         stripLogExtra(getIntent());
-        new Handler(Looper.getMainLooper()).postDelayed(() -> keepNativeSplash = false, 2500);
+        mainHandler.postDelayed(this::hideNativeSplash, NATIVE_SPLASH_FAILSAFE_MS);
+    }
+
+    private void markQuotePainted() {
+        quotePainted = true;
+        maybeHideNativeSplash();
+    }
+
+    private void maybeHideNativeSplash() {
+        if (!quotePainted) return;
+        hideNativeSplash();
+    }
+
+    private void hideNativeSplash() {
+        if (splashHidden) return;
+        splashHidden = true;
+        keepNativeSplash = false;
+        disableForceDark();
+        notifySplashGone();
+    }
+
+    private void notifySplashGone() {
+        if (splashNotified) return;
+        splashNotified = true;
+        if (getBridge() == null) return;
+        WebView webView = getBridge().getWebView();
+        if (webView == null) return;
+        long logoMs = Math.max(0, SystemClock.elapsedRealtime() - splashShownAt);
+        String js = "window.__kingSplashMs=" + logoMs + ";window.__kingSplashGone=true;";
+        webView.post(() -> webView.evaluateJavascript(js, null));
     }
 
     @Override
@@ -76,8 +126,8 @@ public class MainActivity extends BridgeActivity {
         }
     }
 
-    private void paintLaunchChrome() {
-        getWindow().setBackgroundDrawableResource(R.color.king_splash);
+    private void paintSurface() {
+        getWindow().setBackgroundDrawableResource(R.drawable.launch_king);
         if (getBridge() == null) return;
         WebView webView = getBridge().getWebView();
         if (webView == null) return;
