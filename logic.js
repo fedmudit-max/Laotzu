@@ -537,6 +537,21 @@ function bestScoreFromCompletedJourneys(journeys) {
     return best;
 }
 
+/** Completed journey row matching an exact score (for compare popup labels). */
+function findCompletedJourneyForScore(journeys, score) {
+    if (!journeys || !journeys.length || !score) return null;
+    var targetSuccess = Number(score.success) || 0;
+    var targetFailures = Number(score.failures) || 0;
+    for (var i = 0; i < journeys.length; i++) {
+        var sc = journeys[i].score || {};
+        if ((Number(sc.success) || 0) === targetSuccess
+            && (Number(sc.failures) || 0) === targetFailures) {
+            return journeys[i];
+        }
+    }
+    return null;
+}
+
 /**
  * Header Best: permanent N/10 Best, or live current if it is strictly better
  * (more strong days, or same strong with fewer slips).
@@ -854,8 +869,7 @@ function isBrainPhaseBoundaryComplete(completed) {
 
 /**
  * Progress “you are here” day on the recovery continuum:
- *  - After slip (0 strong): day 1 of Withdrawal (3 days left), next calendar day only
- *    (slip day stays freeze/grey via UI — not this function’s job)
+ *  - Before first strong day logged: no active phase (Withdrawal unlocks after Day 1)
  *  - After completing a phase end day (e.g. day 3 logged): next wall day = first day of next phase
  *  - Otherwise: equals completed strong days after each log
  */
@@ -864,8 +878,7 @@ function getBrainProgressStreak() {
     if (typeof isStreakFreezeDay === 'function' && isStreakFreezeDay()) return completed;
     if (typeof isJourneyEndedDisplay === 'function' && isJourneyEndedDisplay()) return completed;
 
-    // Fresh run / after slip: place on Withdrawal day 1 until first strong is logged.
-    if (completed === 0) return 1;
+    if (completed === 0) return 0;
 
     // Phase end fully logged; new calendar day not logged yet → enter next phase day.
     if (state.todayStatus === 'none' && isBrainPhaseBoundaryComplete(completed)) {
@@ -876,7 +889,7 @@ function getBrainProgressStreak() {
 
 /**
  * Days left in a phase from completed-strong rule:
- *  slip next day (0 done / working day 1): 3 left
+ *  slip next day (0 done): no active phase until Day 1 strong is logged
  *  after day-1 log: 2 left … day-3 log: 0 → Phase completed
  *  next day in Flatline before day-4 log: 11 left; after day-4 log: 10 left
  */
@@ -1638,10 +1651,14 @@ function archiveCompletedJourney(endWallDate) {
     if (isAwaitingNextJourney()) return null;
 
     const prevBestScore = bestScoreFromCompletedJourneys(state.completedJourneys);
+    var prevBestJourney = prevBestScore
+        ? findCompletedJourneyForScore(state.completedJourneys, prevBestScore)
+        : null;
     const comparison = {
         attempt: state.attempt,
         score: { ...state.score },
         prevBestScore,
+        prevBestAttempt: prevBestJourney ? prevBestJourney.attempt : null,
     };
 
     state.completedJourneys.push({

@@ -365,6 +365,21 @@ body::before {
     margin-bottom: 0;
 }
 
+.learn-log-strong {
+    color: var(--green);
+    font-weight: 700;
+}
+
+.learn-log-slip {
+    color: #ff3b30;
+    font-weight: 700;
+}
+
+.learn-score-inline {
+    font-weight: 700;
+    color: var(--text);
+}
+
 .learn-list {
     margin: 0 0 10px;
     padding: 0 0 0 1.15em;
@@ -384,11 +399,6 @@ body::before {
 
 .learn-powers,
 .learn-ladder {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
-    gap: 0.2em 0.35em;
     margin: 10px 0 12px;
     padding: 12px 14px;
     border-radius: 12px;
@@ -399,6 +409,23 @@ body::before {
     color: var(--green);
     letter-spacing: -0.2px;
     font-variant-numeric: tabular-nums;
+}
+
+.learn-powers.learn-seq-row {
+    justify-content: center;
+}
+
+.learn-seq-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.2em 0.35em;
+    line-height: 1;
+}
+
+.learn-seq-row > span:not(.learn-seq-arrow) {
+    display: inline-flex;
+    align-items: center;
     line-height: 1;
 }
 
@@ -410,28 +437,67 @@ body::before {
     font-weight: 800;
 }
 
-/* Match header slip score: 0–1 slips green, 2–3 slips yellow-orange. */
+/* Match header slip score / chances label relapse tiers */
 .learn-powers .learn-pow-ok { color: var(--green); }
 .learn-powers .learn-pow-warn { color: #e6ac00; }
+.learn-powers .learn-pow-orange { color: #e07000; }
+.learn-powers .learn-pow-danger { color: #ff453a; }
+.learn-powers .learn-pow-critical { color: #7b2d26; }
+
+.learn-seq-gap {
+    display: inline-flex;
+    align-items: center;
+    line-height: 1;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    opacity: 0.85;
+}
 
 .learn-seq-arrow {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
+    min-width: 1em;
     line-height: 1;
-    height: 1em;
-    font-weight: 700;
-    opacity: 0.8;
-    /* Optical vertical centre on Android system fonts without shifting iOS much */
-    transform: translateY(-0.06em);
+    font-size: 1em;
+    font-weight: 600;
+    opacity: 0.72;
+    /* Roboto → glyph sits on baseline; lift to visual centre of adjacent text */
+    transform: translateY(-0.14em);
 }
 
 .learn-score-line {
     margin: 4px 0 10px;
+    letter-spacing: -0.2px;
+}
+
+.learn-score-highlight {
     font-size: 16px;
     font-weight: 700;
     color: var(--text);
-    letter-spacing: -0.2px;
+}
+
+.learn-score-example {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+.learn-record-example {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin: 0;
+    line-height: 1.35;
+}
+
+.learn-record-example:first-of-type {
+    margin-top: 4px;
+}
+
+.learn-record-example:last-of-type {
+    margin-bottom: 10px;
 }
 
 .learn-score-delta {
@@ -979,10 +1045,6 @@ button {
     line-height: 1.35;
 }
 
-.remind-footer + .remind-footer {
-    margin-top: 2px;
-}
-
 .remind-switch {
     position: relative;
     flex-shrink: 0;
@@ -1186,32 +1248,6 @@ button {
 
 .remind-time-picker-close:active {
     background: rgba(120, 120, 128, 0.12);
-}
-
-.remind-test-btn {
-    display: block;
-    width: 100%;
-    margin-top: 18px;
-    padding: 12px 16px;
-    border-radius: 10px;
-    border: none;
-    background: var(--bg);
-    color: #007aff;
-    font-size: 17px;
-    font-weight: 400;
-    letter-spacing: -0.41px;
-    font-family: inherit;
-    text-align: center;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-}
-
-.remind-test-btn:active {
-    background: #e5e5ea;
-}
-
-.remind-test-btn[hidden] {
-    display: none !important;
 }
 
 /* ── WEEKLY STREAK TRACK ─────────────────────────── */
@@ -2393,6 +2429,44 @@ button {
     color: var(--text);
 }
 
+.export-choice-card h3 {
+    margin-bottom: 10px;
+}
+
+.export-choice-note {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin: 0 0 16px;
+}
+
+.export-choice-btn {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0 0 8px;
+    font-size: 13px;
+    padding: 10px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+    font-weight: 600;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.export-choice-btn:active {
+    transform: scale(0.98);
+}
+
+.export-choice-cancel {
+    width: 100%;
+    margin-top: 4px;
+}
+
 .modal-buttons {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -2657,6 +2731,63 @@ button {
 
 /* ── JOURNEY COMPARISON ── */
 .compare-card { padding: 28px 20px 20px; }
+
+.journey-compare-popup {
+    margin: 0;
+    text-align: left;
+}
+
+.journey-compare-popup .journey-compare-card-green {
+    border-color: rgba(52, 199, 89, 0.45);
+    background: rgba(52, 199, 89, 0.08);
+}
+
+.journey-compare-popup .journey-compare-card-green .onb-journey-label {
+    color: var(--green);
+}
+
+.journey-compare-popup .journey-compare-card-green .onb-journey-score strong {
+    color: var(--green);
+}
+
+.journey-compare-popup .journey-compare-card-gold {
+    border-color: rgba(255, 159, 10, 0.5);
+    background: rgba(255, 159, 10, 0.1);
+}
+
+.journey-compare-popup .journey-compare-card-gold .onb-journey-label {
+    color: var(--gold);
+}
+
+.journey-compare-popup .journey-compare-card-gold .onb-journey-score strong {
+    color: var(--gold);
+}
+
+.journey-compare-popup .onb-journey-label {
+    display: block;
+    margin-bottom: 8px;
+    padding-bottom: 0;
+    border-bottom: none;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.journey-compare-popup .journey-compare-verdict {
+    margin-top: 14px;
+    margin-bottom: 0;
+    color: var(--green);
+}
+
+.journey-compare-popup .journey-compare-verdict-muted {
+    color: var(--text-muted);
+    font-weight: 700;
+}
+
+.compare-header[hidden] {
+    display: none !important;
+}
 .compare-header { margin-bottom: 20px; }
 .compare-badge {
     font-size: 10px;

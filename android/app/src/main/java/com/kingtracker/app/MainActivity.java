@@ -14,6 +14,7 @@ import androidx.core.splashscreen.SplashScreen;
 
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.WebViewListener;
+import com.kingtracker.app.backup.BackupExportPlugin;
 import com.kingtracker.app.billing.BillingPlugin;
 import com.kingtracker.app.reminder.ReminderIntents;
 import com.kingtracker.app.reminder.ReminderNotifier;
@@ -42,6 +43,7 @@ public class MainActivity extends BridgeActivity {
         });
         registerPlugin(ReminderPlugin.class);
         registerPlugin(BillingPlugin.class);
+        registerPlugin(BackupExportPlugin.class);
         bridgeBuilder.addWebViewListener(new WebViewListener() {
             @Override
             public void onPageStarted(WebView webView) {

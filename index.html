@@ -185,11 +185,11 @@
         </div>
     </div>
 
-    <!-- ═══ MONTHLY GRID (collapsible) ═════════════════════ -->
+    <!-- ═══ MONTHLY MIRROR (collapsible) ═══════════════════ -->
     <div class="card collapse-card" id="monthPanelCard">
         <button type="button" class="collapse-header" id="monthPanelToggle" aria-expanded="true" aria-controls="monthPanelBody">
             <span class="collapse-header-row">
-                <span class="collapse-title">Monthly Grid</span>
+                <span class="collapse-title">Monthly Mirror</span>
                 <span class="collapse-chevron open" id="monthPanelChevron" aria-hidden="true">›</span>
             </span>
         </button>
@@ -307,7 +307,6 @@
                     </div>
                 </div>
                 <p class="remind-footer" id="remindStatus"></p>
-                <p class="remind-footer" id="remindLastFired">Last reminder fired: —</p>
 
                 <div class="remind-group remind-group-time">
                     <div class="remind-time-row" id="remindTimeRow">
@@ -317,7 +316,6 @@
                         <button type="button" class="remind-time-btn remind-time-ampm" id="remindAmPm" aria-label="AM or PM" data-field="ampm">PM</button>
                     </div>
                 </div>
-                <button type="button" class="remind-test-btn" id="remindTestBtn" hidden>Send Test Reminder</button>
             </div>
         </div>
     </div>
@@ -388,201 +386,163 @@
         <div class="learn-journey-scroll">
 
             <section class="learn-section">
-                <h3 class="learn-section-title">Three problems</h3>
-                <p class="learn-section-label">1. When zero makes you forget how far you've come</p>
-                <p class="learn-section-body">Most recovery apps ask one question:</p>
-                <p class="learn-section-body"><strong>How many days can you stay strong?</strong></p>
-                <p class="learn-section-body">And that's useful. But there's a problem.</p>
-                <p class="learn-section-body">You build a streak. You feel proud. You start feeling like you've beaten the problem.</p>
-                <p class="learn-section-body">Then you slip.</p>
-                <p class="learn-section-body">The streak goes back to zero.</p>
-                <p class="learn-section-body">It happens again. And again.</p>
-                <p class="learn-section-body">Soon, you start wondering if the problem isn't the system — it's you.</p>
-                <p class="learn-section-body">You forget the days you stayed strong. The effort. The discipline. The progress.</p>
-                <p class="learn-section-body">Everything you've accomplished seems to disappear behind one number.</p>
-                <p class="learn-section-body">You feel like you're starting over.</p>
-                <p class="learn-section-body">Eventually, you give up.</p>
-                <p class="learn-section-body">Maybe you even uninstall the app.</p>
+                <h3 class="learn-section-title">Log Every Day</h3>
+                <p class="learn-section-body">When you tap <span class="learn-log-strong">I Stayed Strong Today</span>, you're not just logging a day.</p>
+                <p class="learn-section-body">You're registering proof.</p>
+                <p class="learn-section-body">Every thought you fought.<br>Every impulse you didn't react to.<br>Every moment you chose differently.</p>
+                <p class="learn-section-body">It counts. It's recorded. It's part of your history.</p>
+
+                <p class="learn-section-body">When you tap <span class="learn-log-slip">I Slipped</span>, you're being honest.</p>
+                <p class="learn-section-body">You acknowledge what happened. You take responsibility.</p>
+                <p class="learn-section-body">Logging a slip is an act of courage. It means you're serious enough about change to face the truth.</p>
+                <p class="learn-section-body">Don't hide the number. Log it.</p>
             </section>
 
             <section class="learn-section">
-                <p class="learn-section-label">2. Your best days should never become zero</p>
-                <p class="learn-section-body">Imagine reaching 80 days.</p>
-                <p class="learn-section-body">Eighty days of discipline, effort, and choosing yourself every morning.</p>
-                <p class="learn-section-body">Then one day, you slip.</p>
-                <p class="learn-section-body">Your streak becomes zero.</p>
-                <p class="learn-section-body">But those 80 days happened.</p>
-                <p class="learn-section-body">They were real. You did them.</p>
-                <p class="learn-section-body">Yet if the only number the app remembers is your current streak, there's nothing left to remind you what you're capable of.</p>
-                <p class="learn-section-body">The next time an urge hits hard, you can't look back and see the proof.</p>
-                <p class="learn-section-body"><strong>King remembers.</strong></p>
-                <p class="learn-section-body">Your milestones are recorded permanently.</p>
-                <p class="learn-section-body">A slip can reset your streak.</p>
-                <p class="learn-section-body">It cannot erase what you've achieved.</p>
-                <p class="learn-section-body">The next time doubt creeps in, King can show you:</p>
-                <blockquote class="learn-quote learn-quote-emphasis">
-                    You've done it before. You can do it again.
-                </blockquote>
-            </section>
-
-            <section class="learn-section">
-                <p class="learn-section-label">3. When the urge is stronger than logic</p>
-                <p class="learn-section-body">Knowing what you should do doesn't always mean you'll do it.</p>
-                <p class="learn-section-body">We're emotional creatures.</p>
-                <p class="learn-section-body">When a strong urge takes over, emotion can overpower reason. In that moment, logic can become surprisingly easy to ignore.</p>
-                <p class="learn-section-body">You may know the consequences.</p>
-                <p class="learn-section-body">You may know you wanted to stay strong.</p>
-                <p class="learn-section-body">But knowing isn't always enough.</p>
-                <p class="learn-section-body">You need more than willpower.</p>
-                <p class="learn-section-body">You need a system that gives you something concrete to protect, measure, and improve.</p>
-            </section>
-
-            <section class="learn-section">
-                <h3 class="learn-section-title">A different way to measure progress</h3>
-                <p class="learn-section-body">Don't just count your streak.</p>
-                <p class="learn-section-body"><strong>Measure your Journey.</strong></p>
-                <p class="learn-section-body">Every Journey starts with <strong>10 Streaks and 10 Powers</strong>.</p>
-                <p class="learn-section-body">Each Streak represents a period of strong days. Each time you slip, that Streak ends and one Power is used.</p>
-                <p class="learn-section-body">For example:</p>
-                <p class="learn-score-line"><strong>Streak 1:</strong> 4 days strong → slip → <strong>4/1</strong></p>
-                <p class="learn-section-body">You then start your next Streak.</p>
-                <p class="learn-score-line"><strong>Streak 2:</strong> 5 more days strong → slip → <strong>9/2</strong></p>
-                <p class="learn-section-body">Then:</p>
-                <p class="learn-score-line"><strong>Streak 3:</strong> 2 more days strong → slip → <strong>11/3</strong></p>
-                <p class="learn-section-body">Your Journey keeps adding your strong days together while tracking how many Powers you've used.</p>
-                <p class="learn-section-body">So if, across your 10 Streaks, you eventually reach <strong>25 strong days with all 10 Powers used</strong>, your Journey is:</p>
-                <p class="learn-score-line"><strong>25 days / 10 slips</strong></p>
-                <p class="learn-section-body">That's what your Journey measures:</p>
-                <p class="learn-section-body"><strong>How far can you go with 10 Powers?</strong></p>
-                <p class="learn-section-body">Think of your Powers as something valuable — something you don't want to waste.</p>
-                <p class="learn-section-body">Every time you slip, one Power is gone.</p>
-                <p class="learn-powers" aria-label="Powers countdown">
-                    <span class="learn-seq-num learn-pow-ok">10</span><span class="learn-seq-arrow learn-pow-ok" aria-hidden="true">→</span><span class="learn-seq-num learn-pow-ok">9</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span class="learn-seq-num learn-pow-warn">8</span><span class="learn-seq-arrow learn-pow-warn" aria-hidden="true">→</span><span class="learn-seq-num learn-pow-warn">7…</span>
+                <h3 class="learn-section-title">The Journey System</h3>
+                <p class="learn-section-body"><strong>Don't just count your streak. Measure the Journey.</strong></p>
+                <p class="learn-section-body">Every Journey starts with <strong>10 Powers</strong>.</p>
+                <p class="learn-section-body">Think of them as something valuable — something you don't want to waste.</p>
+                <p class="learn-section-body">Every time you slip, <strong>one Power is lost.</strong></p>
+                <p class="learn-powers learn-seq-row" aria-label="Powers countdown">
+                    <span class="learn-seq-num learn-pow-ok">10</span><span class="learn-seq-arrow learn-pow-ok" aria-hidden="true">→</span><span class="learn-seq-num learn-pow-ok">9</span><span class="learn-seq-arrow learn-pow-ok" aria-hidden="true">→</span><span class="learn-seq-num learn-pow-warn">8</span><span class="learn-seq-arrow learn-pow-warn" aria-hidden="true">→</span><span class="learn-seq-num learn-pow-warn">7</span><span class="learn-seq-gap learn-pow-warn" aria-hidden="true">.......</span><span class="learn-seq-arrow learn-pow-danger" aria-hidden="true">→</span><span class="learn-seq-num learn-pow-danger">3</span><span class="learn-seq-arrow learn-pow-danger" aria-hidden="true">→</span><span class="learn-seq-num learn-pow-danger">2</span><span class="learn-seq-arrow learn-pow-critical" aria-hidden="true">→</span><span class="learn-seq-num learn-pow-critical">1</span>
                 </p>
-                <p class="learn-section-body">When you see 9 Powers left, you should feel:</p>
-                <p class="learn-section-body"><strong>“I lost one. I don't want to lose another.”</strong></p>
-                <p class="learn-section-body">That's loss aversion — we're naturally motivated to protect something we already have.</p>
-                <p class="learn-section-body">Your goal is to protect your Powers and see how far you can go before they're gone.</p>
-                <p class="learn-section-body">When all 10 Powers are used, that Journey ends.</p>
-                <p class="learn-section-body">Then you begin again — with 10 new Powers and a new benchmark to beat.</p>
+                <p class="learn-section-body">More powers you have, stronger you are. Less powers you have, weaker you are.</p>
+                <p class="learn-section-body">Every time you relapse, you lose one Power — and you feel this:</p>
                 <blockquote class="learn-quote learn-quote-emphasis">
-                    A Power can be lost. Your progress cannot.<br>
-                    One slip may end a Streak. It doesn't erase your Journey.
+                    I have lost one. I don't want to lose another.
+                </blockquote>
+                <p class="learn-section-body">Your goal isn't simply to protect a streak.</p>
+                <p class="learn-section-body">Your goal is to achieve as many strong days as possible before the Journey ends.</p>
+                <blockquote class="learn-quote learn-quote-emphasis">
+                    When you're climbing a mountain and you slip, you don't start again from the bottom.
+                </blockquote>
+                <p class="learn-section-body">You might spend your whole life trying to reach the mountain top in one go, or through one perfect streak.</p>
+                <p class="learn-section-body">You learn, improve, find your footing, and keep moving forward.</p>
+                <p class="learn-section-body"><strong>An example of a Journey:</strong></p>
+                <p class="learn-score-line learn-seq-row learn-score-example"><span>Streak 1:</span><span>4 days</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span>slip</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span>4 strong / 1 slip</span></p>
+                <p class="learn-score-line learn-seq-row learn-score-example"><span>Streak 2:</span><span>5 days</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span>slip</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span>9 strong / 2 slips</span></p>
+                <p class="learn-score-line learn-seq-row learn-score-example"><span>Streak 3:</span><span>2 days</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span>slip</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span>11 strong / 3 slips</span></p>
+                <p class="learn-score-line learn-seq-row learn-score-example"><span>Streak 4:</span><span>0 days</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span>slip</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span>11 strong / 4 slips</span></p>
+                <p class="learn-section-body">Your strong days accumulate.</p>
+                <p class="learn-section-body">Your Powers count down.</p>
+                <p class="learn-section-body">Eventually, the Journey ends.</p>
+                <p class="learn-score-line learn-score-example">25 strong days / 10 slips.</p>
+                <p class="learn-section-body">And now you have a number. A number you can understand. A number you can beat.</p>
+            </section>
+
+            <section class="learn-section">
+                <h3 class="learn-section-title">The Journey Score</h3>
+                <p class="learn-section-body">Journey Score is simple: <strong>Strong Days / Slips</strong></p>
+                <p class="learn-section-body">It tells you how much strength you've built relative to the number of slips during the Journey.</p>
+                <p class="learn-section-body">Before King, you may have slipped countless times with nothing to show for it. No record of your strong days. No measure of how often you were failing.</p>
+                <p class="learn-section-body">No system to understand whether you were improving.</p>
+                <p class="learn-section-body">Here, you have a <strong>success-against-failure number</strong> and a clear goal:</p>
+                <p class="learn-section-body"><strong>Make the next Journey better.</strong></p>
+                <p class="learn-score-line learn-seq-row learn-score-highlight"><span>25 / 10</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span>30 / 10</span></p>
+                <p class="learn-score-delta">That's 5 more strong days. A 20% improvement.</p>
+                <p class="learn-section-body">Now, 30 becomes your new score to beat in the next Journey.</p>
+                <p class="learn-section-body">A low score like <span class="learn-score-inline">12 / 10</span> shows where your Journey stands today. It gives a benchmark to improve. It shows that you're slipping more often than you'd like.</p>
+                <p class="learn-section-body">A score in the hundreds, like <span class="learn-score-inline">145 / 5</span> even with occasional slips, shows how far you've come.</p>
+                <p class="learn-section-body">Imagine a Journey Score of <span class="learn-score-inline">180 / 10</span>. The number speaks for itself. It shows stamina. It shows control. It shows accumulated progress.</p>
+                <p class="learn-section-body">Such a person is in a far better situation than someone who keeps resetting his streak to 0 and trying again and again.</p>
+                <blockquote class="learn-quote learn-quote-emphasis">
+                    Focus on the Journey, Streak will follow.
                 </blockquote>
             </section>
 
             <section class="learn-section">
-                <h3 class="learn-section-title">Your only competition is you</h3>
-                <p class="learn-section-body">Most apps measure you against a fixed standard — a perfect streak, an arbitrary goal, or someone else's number.</p>
-                <p class="learn-section-body">King measures you against yourself.</p>
-                <p class="learn-section-body">Your Streak shows how you're doing right now.</p>
-                <p class="learn-section-body">Your Journey shows how far you've gone this time.</p>
-                <p class="learn-section-body">Your Personal Best is the highest point you've reached through your own effort.</p>
-                <p class="learn-section-body">That becomes your benchmark.</p>
-                <p class="learn-section-body">Not a leaderboard.</p>
-                <p class="learn-section-body">Not someone else's number.</p>
-                <p class="learn-section-body">Yours.</p>
-                <p class="learn-section-body">Every time you open King, you're not competing against the app.</p>
-                <p class="learn-section-body">You're competing against who you were last Journey.</p>
-                <blockquote class="learn-quote learn-quote-emphasis">
-                    That's the only competition worth having.
-                </blockquote>
-            </section>
-
-            <section class="learn-section">
-                <h3 class="learn-section-title">You don't start at the bottom again</h3>
-                <p class="learn-section-body">Imagine you're climbing an 8,000-metre peak.</p>
-                <p class="learn-section-body">You don't reach the summit in one perfect ascent.</p>
-                <p class="learn-section-body">You climb. You slip. You catch yourself.</p>
-                <p class="learn-section-body">You don't go all the way back to base camp and start over.</p>
-                <p class="learn-section-body">You find your footing and keep climbing.</p>
-                <p class="learn-section-body">Because the altitude you've already gained is real.</p>
-                <p class="learn-section-body">A slip doesn't erase it.</p>
-                <p class="learn-section-body">Now imagine an app that sent you back to base camp every time you slipped.</p>
-                <p class="learn-section-body">Every. Single. Time.</p>
-                <p class="learn-section-body">Eventually, you'd stop climbing.</p>
-                <p class="learn-section-body">Not because the mountain was impossible.</p>
-                <p class="learn-section-body">Because the system was too punishing.</p>
-                <p class="learn-section-body">King works differently.</p>
-                <p class="learn-section-body">When you slip, you lose a Power — not your progress.</p>
-                <p class="learn-section-body">Your strong days remain part of your record. Your Journey still shows how far you've come.</p>
-                <p class="learn-section-body">You find your footing.</p>
-                <p class="learn-section-body">And you keep climbing.</p>
-                <p class="learn-section-body">Because the goal was never to climb without slipping.</p>
-                <blockquote class="learn-quote learn-quote-emphasis">
-                    The goal is to reach the summit.
-                </blockquote>
-            </section>
-
-            <section class="learn-section">
-                <h3 class="learn-section-title">How far can you go with 10 Powers?</h3>
-                <p class="learn-section-body">Your Journey Score measures how many strong days you achieve across 10 slips.</p>
-                <p class="learn-section-body">Expecting yourself to maintain a year-long streak is like expecting to run a 42&nbsp;km marathon without training.</p>
-                <p class="learn-section-body">You don't start at 42&nbsp;km.</p>
-                <p class="learn-section-body">You start at 1&nbsp;km.</p>
-                <p class="learn-section-body">Maybe you reach 1&nbsp;km and fall back.</p>
-                <p class="learn-section-body">Next time, 1.5&nbsp;km.</p>
-                <p class="learn-section-body">Then 2.</p>
-                <p class="learn-section-body">Then 3.</p>
-                <p class="learn-section-body">Then 5.</p>
-                <p class="learn-section-body">You might fall back to 3&nbsp;km — but you've already proved you can reach 5.</p>
-                <p class="learn-section-body">That's progress.</p>
-                <p class="learn-section-body">King's Journey works the same way.</p>
-                <p class="learn-section-body">Across 10 slips, we measure how far you can go.</p>
-                <p class="learn-section-body">Maybe your first Journey is:</p>
-                <p class="learn-score-line"><strong>20 days / 10 slips</strong></p>
-                <p class="learn-section-body">Next time:</p>
-                <p class="learn-score-line"><strong>30 days / 10 slips</strong></p>
-                <p class="learn-score-delta">That's a 50% improvement.</p>
-                <p class="learn-section-body">You slipped.</p>
-                <p class="learn-section-body">But you still improved.</p>
-                <p class="learn-section-body">And now 30 days is your personal best.</p>
-                <p class="learn-section-body">Your next challenge is to go beyond it.</p>
-                <p class="learn-ladder" aria-label="Journey growth">
-                    <span class="learn-seq-num">25</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span class="learn-seq-num">50</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span class="learn-seq-num">100</span>
-                </p>
-                <p class="learn-section-body">The Journey can keep growing.</p>
-                <p class="learn-section-body">You don't have to be perfect to become stronger.</p>
-                <p class="learn-section-body">A slip doesn't erase your Journey.</p>
-                <p class="learn-section-body">It becomes part of it.</p>
-                <p class="learn-section-body">You can fail forward.</p>
-                <blockquote class="learn-quote learn-quote-emphasis">
-                    Focus on your Journey. The streak will follow.
-                </blockquote>
-            </section>
-
-            <section class="learn-section">
-                <h3 class="learn-section-title">The rules are simple</h3>
-                <p class="learn-section-body">Keep it simple.</p>
+                <h3 class="learn-section-title">King Remembers</h3>
+                <p class="learn-section-body">Not just where you are today, but where you've been.</p>
                 <ul class="learn-list">
-                    <li>Record every strong day.</li>
-                    <li>Record every slip.</li>
-                    <li>If you slip three times in a day, log all three.</li>
+                    <li>Your streaks — but most importantly, your <strong>Best Streak</strong></li>
+                    <li>Your milestone achievements</li>
+                    <li>Your number of <strong>50-day streaks</strong></li>
+                    <li>Your number of <strong>100-day streaks</strong></li>
+                    <li>Your Journeys — but most importantly, your <strong>Best Journey</strong></li>
                 </ul>
-                <p class="learn-section-body">Be honest with your numbers.</p>
-                <p class="learn-section-body">They show you where you really are.</p>
-                <p class="learn-section-body">Missed days are counted as strong so your Journey keeps moving — but honest logging gives you the clearest picture of where you stand.</p>
-                <p class="learn-section-body">Every Journey gives you a new number to beat.</p>
-                <p class="learn-section-body">When you complete a Journey, you begin again.</p>
-                <p class="learn-section-body">With the same humility.</p>
-                <p class="learn-section-body">With a beginner's mind.</p>
-                <p class="learn-section-body">Because the goal isn't to prove that you can go 100 days once.</p>
-                <p class="learn-section-body">The goal is to become someone who keeps choosing better.</p>
+                <p class="learn-section-body">Every time you reach a milestone — 50 days, 100 days, a personal best — King records it as part of your history.</p>
+                <p class="learn-section-body">Imagine your record showing:</p>
+                <p class="learn-score-line learn-record-example">50-day streaks: 3</p>
+                <p class="learn-score-line learn-record-example">100-day streaks: 2</p>
+                <p class="learn-score-line learn-record-example">Personal Best: 120 days</p>
+                <p class="learn-score-line learn-record-example">Best Journey: 180 / 10</p>
+                <p class="learn-section-body">Your current streak could be zero. But your history would say you've reached a 50-day streak three times and a 100-day streak twice. You've gone all the way to 120 in one streak. And you've built a Journey of 180 strong days.</p>
+            </section>
+
+            <section class="learn-section">
+                <h3 class="learn-section-title">The Monthly Mirror</h3>
+                <p class="learn-section-body"><strong>It reflects your behaviour.</strong></p>
+                <p class="learn-section-body">Log honestly — the strong days and the slips.</p>
+                <p class="learn-section-body">When you see more green, you see the days you chose strength. You see the proof that you're going strong.</p>
+                <p class="learn-section-body">There is a powerful feeling in discovering that you are capable of being stronger than you thought.</p>
+                <p class="learn-section-body">When you see more red, the numbers tell another truth. They show you where you're slipping more than you'd like.</p>
+                <p class="learn-section-body">Imagine 23 strong days with 7 slips.</p>
+                <p class="learn-section-body">Look at that honestly.</p>
+                <p class="learn-section-body">Maybe you've improved from where you were before. You'll feel it. Maybe you've slipped more than before. That will hurt. Either way, you win — because you now know the truth.</p>
+                <p class="learn-section-body">If you've improved, you have proof that you're getting stronger. If you've fallen, you have a clear signal that something needs to change.</p>
+                <p class="learn-section-body">The Monthly Mirror doesn't punish you. It shows you where you are.</p>
+                <blockquote class="learn-quote learn-quote-emphasis">
+                    What you see honestly, you can change.
+                </blockquote>
+            </section>
+
+            <section class="learn-section">
+                <h3 class="learn-section-title">One Week at a Time</h3>
+                <p class="learn-section-body">The weekly timeline keeps your focus where it belongs.</p>
+                <p class="learn-section-body">Not a year-long streak. Not a perfect record.</p>
+                <p class="learn-section-body">Just two things:</p>
+                <p class="learn-section-body"><strong>Be strong today. Be strong this week.</strong></p>
+                <p class="learn-section-body">The long-term goal of "not failing next time" is too vague to hold onto in a difficult moment.</p>
+                <p class="learn-section-body">That's why King narrows the window.</p>
+                <blockquote class="learn-quote learn-quote-emphasis">
+                    Day 1. Day 2. Day 3. Day 4 .... Day 6. Day 7.
+                </blockquote>
+                <p class="learn-section-body">A progress dot moves toward the end of the current day every 8 hours, giving you a visible sign of progress.</p>
+                <p class="learn-section-body">When the week ends, you start again from Day 1 — with the same humility, the same beginner's mind.</p>
+                <p class="learn-section-body">Small windows. Clear targets. Real progress.</p>
+            </section>
+
+            <section class="learn-section">
+                <h3 class="learn-section-title">Can You Change Yourself?</h3>
+                <p class="learn-section-body">In the beginning, you may struggle to reach even 50 days. Maybe even 25.</p>
+                <p class="learn-section-body">Don't lose faith.</p>
+                <p class="learn-section-body">One more strong day than your last Journey is a sign of progress.</p>
+                <p class="learn-section-body">That's all it needs to be.</p>
+                <p class="learn-section-body">The number in the hundreds will come.</p>
+                <p class="learn-section-body">Don't rely only on motivation.</p>
+                <p class="learn-section-body"><strong>Build evidence.</strong></p>
+                <p class="learn-section-body">Every strong day.<br>Every green square.<br>Every better Journey.<br>Every new personal best.</p>
+                <p class="learn-section-body">Together, they tell you:</p>
+                <blockquote class="learn-quote learn-quote-emphasis">
+                    I can change. I have control.
+                </blockquote>
+                <p class="learn-section-body">One day. One week. One Journey at a time.</p>
+            </section>
+
+            <section class="learn-section">
+                <h3 class="learn-section-title">What You Need to Do</h3>
+                <p class="learn-section-body">Keep it simple.</p>
+                <p class="learn-section-body"><strong>Record every strong day. Record every slip.</strong></p>
+                <p class="learn-section-body">If you slip once, log it.</p>
+                <p class="learn-section-body">If you slip three times in a day, log all three.</p>
+                <p class="learn-section-body">Be honest with numbers.</p>
+                <p class="learn-section-body">They show where you really are.</p>
+                <p class="learn-section-body">Every Journey teaches you something.</p>
+                <p class="learn-section-body">Every Journey gives you a number to beat.</p>
+                <p class="learn-section-body">And when you complete a Journey, begin again.</p>
+                <p class="learn-section-body">With the same humility. With a beginner's mind.</p>
                 <p class="learn-section-body">That's why King doesn't simply count your streak.</p>
-                <p class="learn-section-body">It helps you understand your Journey.</p>
-                <p class="learn-section-body">Measure it.</p>
-                <p class="learn-section-body">Learn from it.</p>
-                <p class="learn-section-body">Improve it.</p>
+                <p class="learn-section-body"><strong>King helps you understand your Journey.</strong></p>
                 <blockquote class="learn-quote learn-quote-final">
                     <strong>What gets measured, gets managed.</strong>
                 </blockquote>
             </section>
 
             <section class="learn-section">
-                <h3 class="learn-section-title">Your Journey. Your data.</h3>
+                <h3 class="learn-section-title">Your Data</h3>
                 <p class="learn-section-body">Your data stays on your device.</p>
-                <p class="learn-section-body">Export it whenever you want. Import it whenever you need.</p>
-                <p class="learn-section-body">No account required.</p>
+                <p class="learn-section-body">Export it whenever you want.<br>Import it whenever you need.</p>
                 <p class="learn-section-body">Your Journey belongs to you.</p>
             </section>
 
@@ -726,6 +686,17 @@
     </div>
 </div>
 
+<!-- ── Export save location (Android) ── -->
+<div class="modal" id="exportChoiceModal" aria-hidden="true">
+    <div class="modal-card export-choice-card" role="dialog" aria-modal="true" aria-labelledby="exportChoiceTitle" onclick="event.stopPropagation()">
+        <h3 id="exportChoiceTitle">Export progress</h3>
+        <p class="export-choice-note">Save your backup on this device.</p>
+        <button type="button" class="btn-backup export-choice-btn" data-action="export-save-downloads">Save to Downloads</button>
+        <button type="button" class="btn-backup export-choice-btn" data-action="export-choose-folder">Choose folder</button>
+        <button type="button" class="modal-btn cancel export-choice-cancel" data-action="export-choice-cancel">Cancel</button>
+    </div>
+</div>
+
 <!-- ── Confirmation modal ── -->
 <div class="modal" id="confirmModal">
     <div class="modal-card">
@@ -775,12 +746,11 @@
 <!-- ── Journey comparison card ── -->
 <div class="overlay" id="journeyCompareOverlay">
     <div class="overlay-card compare-card">
-        <div class="compare-header">
+        <div class="compare-header" id="compareHeader" hidden>
             <div class="compare-badge">JOURNEY COMPLETE</div>
             <div class="compare-title" id="compareTitleText">Journey Complete</div>
         </div>
         <div class="compare-grid" id="compareGrid"></div>
-        <div class="compare-message" id="compareMessage"></div>
         <button class="btn-compare-close" data-action="closeCompare">Start Journey <span id="compareNextNum">3</span> 💪</button>
     </div>
 </div>

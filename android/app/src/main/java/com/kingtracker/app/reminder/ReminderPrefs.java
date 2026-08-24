@@ -14,7 +14,7 @@ public final class ReminderPrefs {
     static final String KEY_NOTIFIED_DATE = "notifiedDate";
     static final String KEY_LAST_FIRED_AT = "lastFiredAt";
 
-    static final int DEFAULT_HOUR = 20;
+    static final int DEFAULT_HOUR = 21;
     static final int DEFAULT_MINUTE = 0;
 
     private ReminderPrefs() {}

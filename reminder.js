@@ -4,7 +4,7 @@
  */
 
 const REMINDER_STORAGE_KEY = 'kingReminder';
-const REMINDER_DEFAULT_HOUR = 20;
+const REMINDER_DEFAULT_HOUR = 21;
 const REMINDER_DEFAULT_MINUTE = 0;
 
 function reminderDefaultSettings() {
@@ -243,18 +243,15 @@ function reminderStatusCopy(settings) {
     if (reminderNativeStatus && reminderNativeStatus.notificationsAllowed === false) {
         return 'Allow notifications for King in system settings — otherwise the alarm fires with no banner.';
     }
-    return formatReminderTime(settings.hour, settings.minute) + ' every day.';
+    var timeLine = formatReminderTime(settings.hour, settings.minute) + ' every day.';
+    if (reminderNativeStatus && reminderNativeStatus.scheduleMode === 'inexact') {
+        return timeLine + ' Exact time not guaranteed — the reminder may arrive a few minutes late.';
+    }
+    return timeLine;
 }
 
-function formatLastReminderFired(status) {
-    if (!status) return 'Last reminder fired: —';
-    var ts = Number(status.lastFiredAt) || 0;
-    if (ts <= 0) return 'Last reminder fired: —';
-    var d = new Date(ts);
-    if (isNaN(d.getTime())) return 'Last reminder fired: —';
-    var datePart = d.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' });
-    var timePart = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-    return 'Last reminder fired: ' + datePart + ', ' + timePart;
+function reminderUsesInexactSchedule(status) {
+    return status && status.scheduleMode === 'inexact';
 }
 
 function renderReminderTab() {
@@ -265,8 +262,6 @@ function renderReminderTab() {
     var minuteEl = document.getElementById('remindMinute');
     var ampmEl = document.getElementById('remindAmPm');
     var status = document.getElementById('remindStatus');
-    var lastFired = document.getElementById('remindLastFired');
-    var testBtn = document.getElementById('remindTestBtn');
     var clock = splitReminderClock(settings.hour, settings.minute);
     if (toggle) toggle.checked = !!settings.enabled;
     setRemindClockField(hourEl, clock.hour12, String(clock.hour12));
@@ -278,11 +273,34 @@ function renderReminderTab() {
         status.textContent = copy;
         status.hidden = !copy;
     }
-    if (lastFired) lastFired.textContent = formatLastReminderFired(reminderNativeStatus);
-    if (testBtn) testBtn.hidden = !reminderNativeAvailable();
 }
 
-function applyReminderAlarms() {
+function scheduleReminderOnNative(settings) {
+    return callReminderPlugin('schedule', { hour: settings.hour, minute: settings.minute }).then(function (status) {
+        rememberReminderStatus(status);
+        return status;
+    });
+}
+
+function maybePromptExactAlarmAfterSchedule(status, options) {
+    if (!options || !options.promptExactAlarm) return Promise.resolve(status);
+    if (!reminderUsesInexactSchedule(status) || status.exactAlarmsAllowed) {
+        return Promise.resolve(status);
+    }
+    return callReminderPlugin('openExactAlarmSettings').then(function (afterSettings) {
+        rememberReminderStatus(afterSettings);
+        if (afterSettings && afterSettings.exactAlarmsAllowed) {
+            var settings = loadReminderSettings();
+            return scheduleReminderOnNative(settings);
+        }
+        return afterSettings || status;
+    }).catch(function () {
+        return status;
+    });
+}
+
+function applyReminderAlarms(options) {
+    options = options || {};
     var settings = loadReminderSettings();
     var plugin = getKingReminderPlugin();
     var premiumOk = Entitlement.hasPremiumAccess();
@@ -320,10 +338,12 @@ function applyReminderAlarms() {
                 return { scheduled: false };
             });
         }
-        return callReminderPlugin('schedule', { hour: settings.hour, minute: settings.minute }).then(function (status) {
-            rememberReminderStatus(status);
-            renderReminderTab();
-            return { scheduled: true };
+        return scheduleReminderOnNative(settings).then(function (status) {
+            return maybePromptExactAlarmAfterSchedule(status, options).then(function (finalStatus) {
+                rememberReminderStatus(finalStatus);
+                renderReminderTab();
+                return { scheduled: true };
+            });
         });
     });
 }
@@ -364,13 +384,17 @@ function onRemindToggleChange() {
     saveReminderSettings(settings);
     renderReminderTab();
 
-    applyReminderAlarms().then(function (res) {
+    applyReminderAlarms({ promptExactAlarm: turningOn }).then(function (res) {
         if (!turningOn) {
             showToast(0, 'Daily reminder is off.');
             return;
         }
         if (res && res.scheduled) {
-            showToast(0, 'Reminder set for ' + formatReminderTime(settings.hour, settings.minute) + '.');
+            if (reminderUsesInexactSchedule(reminderNativeStatus)) {
+                showToast(0, 'Reminder set — exact time not guaranteed.');
+            } else {
+                showToast(0, 'Reminder set for ' + formatReminderTime(settings.hour, settings.minute) + '.');
+            }
         } else if (turningOn) {
             openNotificationSettingsIfDenied();
         }
@@ -408,29 +432,12 @@ function onRemindTimeChange() {
     });
 }
 
-function onRemindTest() {
-    if (!requirePremium()) return;
-    if (!reminderNativeAvailable()) {
-        showToast(0, 'Daily reminder is available in the King Android app.');
-        return;
-    }
-    ensureNotificationPermission().then(function (ok) {
-        if (!ok) return;
-        return callReminderPlugin('scheduleTest', { delaySeconds: 120 }).then(function () {
-            showToast(0, 'Test reminder in 2 minutes — lock, leave, or close the app to check.');
-        });
-    }).catch(function () {
-        showToast(0, 'Could not send a test reminder.');
-    });
-}
-
 function bindReminderTab() {
     fillReminderTimeOptions();
     var toggle = document.getElementById('remindToggle');
     var hourEl = document.getElementById('remindHour');
     var minuteEl = document.getElementById('remindMinute');
     var ampmEl = document.getElementById('remindAmPm');
-    var testBtn = document.getElementById('remindTestBtn');
     var picker = document.getElementById('remindTimePicker');
     var closeBtn = document.getElementById('remindTimePickerClose');
     if (toggle) {
@@ -452,9 +459,6 @@ function bindReminderTab() {
         picker.addEventListener('click', function (e) {
             if (e.target === picker) closeRemindTimePicker();
         });
-    }
-    if (testBtn) {
-        testBtn.addEventListener('click', onRemindTest);
     }
 }
 

@@ -8,6 +8,12 @@ import android.os.Build;
 import java.util.Calendar;
 
 public final class ReminderScheduler {
+  enum ScheduleMode {
+    ALARM_CLOCK,
+    EXACT,
+    INEXACT
+  }
+
     static final String ACTION_DAILY = "com.kingtracker.app.REMIND_DAILY";
     static final String ACTION_TEST = "com.kingtracker.app.REMIND_TEST";
     static final int REQUEST_DAILY = 7101;
@@ -17,8 +23,20 @@ public final class ReminderScheduler {
     static final int REQUEST_LOG_SLIP = 7105;
     static final int REQUEST_ALARM_CLOCK_SHOW = 7106;
     private static final long DUE_TODAY_DELAY_MS = 2000L;
+    private static volatile ScheduleMode lastScheduleMode = ScheduleMode.INEXACT;
 
     private ReminderScheduler() {}
+
+    static String lastScheduleModeName() {
+        switch (lastScheduleMode) {
+            case ALARM_CLOCK:
+                return "alarmClock";
+            case EXACT:
+                return "exact";
+            default:
+                return "inexact";
+        }
+    }
 
     static long nextTriggerMillis(Context context, int hour, int minute) {
         return nextTriggerMillis(context, hour, minute, false);
@@ -114,7 +132,10 @@ public final class ReminderScheduler {
 
     private static void setWakeup(Context context, long when, PendingIntent alarmIntent) {
         AlarmManager am = alarmManager(context);
-        if (am == null) return;
+        if (am == null) {
+            lastScheduleMode = ScheduleMode.INEXACT;
+            return;
+        }
         // AlarmClock: fires on time through Doze, no SCHEDULE_EXACT_ALARM needed,
         // and is the most reliable path on Samsung OEMs.
         try {
@@ -125,6 +146,7 @@ public final class ReminderScheduler {
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
             );
             am.setAlarmClock(new AlarmManager.AlarmClockInfo(when, show), alarmIntent);
+            lastScheduleMode = ScheduleMode.ALARM_CLOCK;
             return;
         } catch (Exception ignored) {
             // Fall through.
@@ -132,12 +154,14 @@ public final class ReminderScheduler {
         if (canScheduleExact(am)) {
             try {
                 am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, when, alarmIntent);
+                lastScheduleMode = ScheduleMode.EXACT;
                 return;
             } catch (SecurityException ignored) {
                 // Fall through to inexact if exact permission was revoked.
             }
         }
         am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, when, alarmIntent);
+        lastScheduleMode = ScheduleMode.INEXACT;
     }
 
     static boolean canScheduleExact(Context context) {

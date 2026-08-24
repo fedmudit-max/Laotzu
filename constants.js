@@ -61,7 +61,7 @@ const PREMIUM_FEATURES = [
     'Weekly timeline — one week at a time',
     'Streak, Journey & Progress milestones',
     'Daily knowledge cards',
-    'Monthly grid',
+    'Monthly Mirror',
     'Progress Graph',
     'Export & import progress',
     'Daily reminder to log your day',

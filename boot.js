@@ -154,6 +154,9 @@ function showFileProtocolBanner() {
             'close-learn-journey': closeLearnJourney,
             'export-backup': exportProgressBackup,
             'import-backup': openImportPicker,
+            'export-save-downloads': function () { runAndroidNativeExport('downloads'); },
+            'export-choose-folder': function () { runAndroidNativeExport('folder'); },
+            'export-choice-cancel': closeExportChoiceModal,
         };
         if (actions[action]) actions[action]();
     }
@@ -177,6 +180,13 @@ function showFileProtocolBanner() {
     if (learnOverlay) {
         learnOverlay.addEventListener('click', function (e) {
             if (e.target.id === 'learnJourneyOverlay') closeLearnJourney();
+        });
+    }
+
+    var exportChoiceModal = document.getElementById('exportChoiceModal');
+    if (exportChoiceModal) {
+        exportChoiceModal.addEventListener('click', function (e) {
+            if (e.target.id === 'exportChoiceModal') closeExportChoiceModal();
         });
     }
 

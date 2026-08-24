@@ -128,6 +128,81 @@ function downloadBackupFile(json, filename) {
     window.setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
+function getKingBackupExportPlugin() {
+    return getCapacitorPlugin('KingBackupExport');
+}
+
+function isAndroidNative() {
+    try {
+        var Cap = window.Capacitor;
+        return isNativeCapacitor() && Cap.getPlatform && Cap.getPlatform() === 'android';
+    } catch (e) {
+        return false;
+    }
+}
+
+let pendingExportPayload = null;
+
+function openExportChoiceModal(payload) {
+    pendingExportPayload = payload;
+    var modal = document.getElementById('exportChoiceModal');
+    if (modal) modal.classList.add('active');
+}
+
+function closeExportChoiceModal() {
+    pendingExportPayload = null;
+    var modal = document.getElementById('exportChoiceModal');
+    if (modal) modal.classList.remove('active');
+}
+
+function runAndroidNativeExport(mode) {
+    var payload = pendingExportPayload;
+    if (!payload) return;
+    closeExportChoiceModal();
+
+    var Export = getKingBackupExportPlugin();
+    if (!Export) {
+        shareNativeBackupFile(payload.json, payload.filename).then(function (result) {
+            handleNativeShareExportResult(payload.exportedAt, payload.json, payload.filename, result);
+        });
+        return;
+    }
+
+    var opts = {
+        content: payload.json,
+        filename: payload.filename,
+        mimeType: 'application/json',
+    };
+    var call = mode === 'downloads'
+        ? Export.saveToDownloads(opts)
+        : Export.saveAs(opts);
+
+    Promise.resolve(call).then(function (result) {
+        finishBackupExport(payload.exportedAt);
+        var savedName = (result && result.filename) || payload.filename;
+        if (mode === 'downloads') {
+            showToast(0, 'Saved to Downloads: ' + savedName);
+        } else {
+            showToast(0, 'Backup saved: ' + savedName);
+        }
+    }).catch(function (err) {
+        if (isShareCancelled(err)) return;
+        console.error('King native export failed:', err);
+        shareNativeBackupFile(payload.json, payload.filename).then(function (result) {
+            handleNativeShareExportResult(payload.exportedAt, payload.json, payload.filename, result);
+        });
+    });
+}
+
+function handleNativeShareExportResult(exportedAt, json, filename, result) {
+    if (result === 'shared') {
+        finishBackupExport(exportedAt);
+        return;
+    }
+    if (result === 'cancelled') return;
+    shareWebBackupFile(json, filename, exportedAt);
+}
+
 function finishBackupExport(iso) {
     recordLastBackupAt(iso);
     renderBackupStatus();
@@ -202,13 +277,13 @@ function exportProgressBackup() {
     const filename = `king-backup-${todayKey()}.json`;
     const exportedAt = payload.exportedAt;
 
+    if (isAndroidNative() && getKingBackupExportPlugin()) {
+        openExportChoiceModal({ json, filename, exportedAt });
+        return;
+    }
+
     shareNativeBackupFile(json, filename).then(function (result) {
-        if (result === 'shared') {
-            finishBackupExport(exportedAt);
-            return;
-        }
-        if (result === 'cancelled') return;
-        shareWebBackupFile(json, filename, exportedAt);
+        handleNativeShareExportResult(exportedAt, json, filename, result);
     });
 }
 

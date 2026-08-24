@@ -287,7 +287,7 @@ function renderPremiumPanelContent() {
             : left + ' free days left on your trial.';
         setPremiumBackupNote(noteEl, true);
     } else {
-        statusEl.textContent = 'Free trial ended. Daily logging stays free forever. Subscribe to unlock timeline, milestones, Monthly grid, Progress Graph, and export/import. Your score is not affected.';
+        statusEl.textContent = 'Free trial ended. Daily logging stays free forever. Subscribe to unlock timeline, milestones, Monthly Mirror, Progress Graph, and export/import. Your score is not affected.';
         setPremiumBackupNote(noteEl, true);
     }
 
