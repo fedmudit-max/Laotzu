@@ -4,6 +4,7 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 import android.os.Build;
 import java.util.Calendar;
 
@@ -22,8 +23,11 @@ public final class ReminderScheduler {
     static final int REQUEST_LOG_STRONG = 7104;
     static final int REQUEST_LOG_SLIP = 7105;
     static final int REQUEST_ALARM_CLOCK_SHOW = 7106;
+    private static final String TAG = "KingReminder";
     private static final long DUE_TODAY_DELAY_MS = 2000L;
     private static volatile ScheduleMode lastScheduleMode = ScheduleMode.INEXACT;
+    private static volatile long lastScheduleAtMs = 0L;
+    private static volatile long lastScheduledWhen = 0L;
 
     private ReminderScheduler() {}
 
@@ -50,35 +54,30 @@ public final class ReminderScheduler {
         next.set(Calendar.MILLISECOND, 0);
         long now = System.currentTimeMillis();
 
-        // User moved today's reminder to a later time after an earlier fire — honor today
-        // unless they already logged (no second nudge needed).
-        if (forceTodayAtNewTime && !ReminderPrefs.isLoggedToday(context)) {
+        if (forceTodayAtNewTime) {
             if (next.getTimeInMillis() > now) {
                 return next.getTimeInMillis();
             }
             return now + DUE_TODAY_DELAY_MS;
         }
 
-        boolean skipToday = ReminderPrefs.skipDailyToday(context);
-
-        if (skipToday) {
-            if (next.getTimeInMillis() <= now || isSameWallDate(next, Calendar.getInstance())) {
-                next.add(Calendar.DAY_OF_YEAR, 1);
-            }
+        if (ReminderPrefs.wasNotifiedToday(context)) {
+            next.add(Calendar.DAY_OF_YEAR, 1);
             return next.getTimeInMillis();
         }
 
-        // Still due today (not logged, not already reminded). Do not push to
-        // tomorrow — that cancelled tonight's pending alarm when King was opened.
+        if (ReminderPrefs.isLoggedToday(context)) {
+            if (next.getTimeInMillis() > now) {
+                return next.getTimeInMillis();
+            }
+            next.add(Calendar.DAY_OF_YEAR, 1);
+            return next.getTimeInMillis();
+        }
+
         if (next.getTimeInMillis() <= now) {
             return now + DUE_TODAY_DELAY_MS;
         }
         return next.getTimeInMillis();
-    }
-
-    private static boolean isSameWallDate(Calendar a, Calendar b) {
-        return a.get(Calendar.YEAR) == b.get(Calendar.YEAR)
-            && a.get(Calendar.DAY_OF_YEAR) == b.get(Calendar.DAY_OF_YEAR);
     }
 
     static void scheduleDaily(Context context) {
@@ -86,6 +85,10 @@ public final class ReminderScheduler {
     }
 
     static void scheduleDaily(Context context, boolean forceTodayAtNewTime) {
+        scheduleDaily(context, forceTodayAtNewTime, false);
+    }
+
+    static void scheduleDaily(Context context, boolean forceTodayAtNewTime, boolean forceSet) {
         ReminderNotifier.ensureChannel(context);
         if (!ReminderPrefs.isEnabled(context)) {
             cancelDaily(context);
@@ -97,7 +100,19 @@ public final class ReminderScheduler {
             ReminderPrefs.minute(context),
             forceTodayAtNewTime
         );
+        long now = System.currentTimeMillis();
+        if (!forceSet
+            && when == lastScheduledWhen
+            && now - lastScheduleAtMs < 30_000L
+            && lastScheduleMode != ScheduleMode.INEXACT) {
+            Log.i(TAG, "skip duplicate schedule at " + when);
+            return;
+        }
+        lastScheduleAtMs = now;
+        lastScheduledWhen = when;
         setWakeup(context, when, dailyIntent(context));
+        ReminderPrefs.setScheduleMode(context, lastScheduleModeName());
+        Log.i(TAG, lastScheduleModeName() + " daily at " + when);
     }
 
     public static void scheduleTest(Context context, int delaySeconds) {
@@ -108,6 +123,7 @@ public final class ReminderScheduler {
     }
 
     static void cancelDaily(Context context) {
+        lastScheduledWhen = 0L;
         AlarmManager am = alarmManager(context);
         if (am != null) {
             am.cancel(dailyIntent(context));
@@ -136,8 +152,8 @@ public final class ReminderScheduler {
             lastScheduleMode = ScheduleMode.INEXACT;
             return;
         }
-        // AlarmClock: fires on time through Doze, no SCHEDULE_EXACT_ALARM needed,
-        // and is the most reliable path on Samsung OEMs.
+        // setAlarmClock: on-time through Doze; Play-appropriate for user-scheduled daily reminders.
+        // No SCHEDULE_EXACT_ALARM — inexact fallback only if AlarmClock fails.
         try {
             PendingIntent show = PendingIntent.getActivity(
                 context.getApplicationContext(),
@@ -148,16 +164,16 @@ public final class ReminderScheduler {
             am.setAlarmClock(new AlarmManager.AlarmClockInfo(when, show), alarmIntent);
             lastScheduleMode = ScheduleMode.ALARM_CLOCK;
             return;
-        } catch (Exception ignored) {
-            // Fall through.
+        } catch (Exception e) {
+            Log.w(TAG, "setAlarmClock failed: " + e.getMessage());
         }
         if (canScheduleExact(am)) {
             try {
                 am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, when, alarmIntent);
                 lastScheduleMode = ScheduleMode.EXACT;
                 return;
-            } catch (SecurityException ignored) {
-                // Fall through to inexact if exact permission was revoked.
+            } catch (SecurityException e) {
+                Log.w(TAG, "setExact failed: " + e.getMessage());
             }
         }
         am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, when, alarmIntent);
@@ -181,6 +197,7 @@ public final class ReminderScheduler {
     private static PendingIntent pendingBroadcast(Context context, int requestCode, String action) {
         Intent intent = new Intent(context, ReminderReceiver.class);
         intent.setAction(action);
+        intent.setPackage(context.getPackageName());
         return PendingIntent.getBroadcast(
             context.getApplicationContext(),
             requestCode,

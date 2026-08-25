@@ -23,13 +23,8 @@ public class ReminderReceiver extends BroadcastReceiver {
             return;
         }
 
-        if (ReminderPrefs.skipDailyToday(context)) {
-            android.util.Log.i("KingReminder", ReminderPrefs.isLoggedToday(context)
-                ? "skip daily — already logged today"
-                : "skip daily — already reminded today");
-            if (ReminderPrefs.isLoggedToday(context)) {
-                ReminderNotifier.cancel(context);
-            }
+        if (ReminderPrefs.wasNotifiedToday(context)) {
+            android.util.Log.i("KingReminder", "skip daily — already reminded today");
             ReminderScheduler.scheduleDaily(context);
             return;
         }

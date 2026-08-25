@@ -67,7 +67,7 @@
   <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <!-- Declared for setExactAndAllowWhileIdle fallback; prompted only when user enables a reminder and inexact scheduling is needed. -->
+    <!-- User-scheduled daily reminder; declare in Play Console. Required for setAlarmClock on Android 12+. -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.VIBRATE" />
 </manifest>

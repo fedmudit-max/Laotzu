@@ -13,6 +13,7 @@ public final class ReminderPrefs {
     static final String KEY_LOGGED_DATE = "loggedDate";
     static final String KEY_NOTIFIED_DATE = "notifiedDate";
     static final String KEY_LAST_FIRED_AT = "lastFiredAt";
+    static final String KEY_SCHEDULE_MODE = "scheduleMode";
 
     static final int DEFAULT_HOUR = 21;
     static final int DEFAULT_MINUTE = 0;
@@ -106,9 +107,18 @@ public final class ReminderPrefs {
         prefs(context).edit().putLong(KEY_LAST_FIRED_AT, System.currentTimeMillis()).apply();
     }
 
-    /** True when today should not get another daily reminder. */
+    static void setScheduleMode(Context context, String modeName) {
+        if (modeName == null || modeName.isEmpty()) return;
+        prefs(context).edit().putString(KEY_SCHEDULE_MODE, modeName).apply();
+    }
+
+    static String scheduleModeName(Context context) {
+        return prefs(context).getString(KEY_SCHEDULE_MODE, "inexact");
+    }
+
+    /** True when today's reminder already fired (logging does not block a later wall time). */
     static boolean skipDailyToday(Context context) {
-        return isLoggedToday(context) || wasNotifiedToday(context);
+        return wasNotifiedToday(context);
     }
 
     static String normalizeDateKey(String dateKey) {

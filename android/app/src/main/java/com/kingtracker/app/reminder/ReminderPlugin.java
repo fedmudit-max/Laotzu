@@ -41,19 +41,12 @@ public class ReminderPlugin extends Plugin {
         }
         int nextHour = ReminderPrefs.clampHour(hour);
         int nextMinute = ReminderPrefs.clampMinute(minute);
-        int prevHour = ReminderPrefs.hour(getContext());
-        int prevMinute = ReminderPrefs.minute(getContext());
-        boolean wasNotifiedToday = ReminderPrefs.wasNotifiedToday(getContext());
-        ReminderPrefs.save(getContext(), true, hour, minute);
-        // If today's reminder already fired, and user moves the time to later today,
-        // allow a second fire at the new later time (unless already logged today).
-        boolean rescheduleToday = wasNotifiedToday
-            && (nextHour != prevHour || nextMinute != prevMinute)
-            && isLaterToday(nextHour, nextMinute);
-        if (rescheduleToday) {
+        boolean laterToday = isLaterToday(nextHour, nextMinute);
+        ReminderPrefs.save(getContext(), true, nextHour, nextMinute);
+        if (laterToday) {
             ReminderPrefs.clearNotifiedDateSync(getContext());
         }
-        ReminderScheduler.scheduleDaily(getContext(), rescheduleToday);
+        ReminderScheduler.scheduleDaily(getContext(), laterToday, true);
         call.resolve(statusObject());
     }
 
@@ -126,7 +119,11 @@ public class ReminderPlugin extends Plugin {
             ReminderNotifier.cancel(getContext());
         }
         if (changed) {
-            ReminderScheduler.rescheduleIfEnabled(getContext());
+            boolean laterToday = isLaterToday(
+                ReminderPrefs.hour(getContext()),
+                ReminderPrefs.minute(getContext())
+            );
+            ReminderScheduler.scheduleDaily(getContext(), laterToday);
         }
         JSObject result = statusObject();
         result.put("loggedDate", ReminderPrefs.loggedDate(getContext()));
@@ -146,8 +143,13 @@ public class ReminderPlugin extends Plugin {
     }
 
     @Override
+    public void load() {
+        refreshScheduleIfEnabled();
+    }
+
+    @Override
     protected void handleOnResume() {
-        ReminderScheduler.rescheduleIfEnabled(getContext());
+        // Do not reschedule every resume — that cancelled alarms at fire time on Samsung.
     }
 
     @Override
@@ -182,26 +184,35 @@ public class ReminderPlugin extends Plugin {
     private JSObject statusObject() {
         boolean notificationsEnabled = NotificationManagerCompat.from(getContext()).areNotificationsEnabled();
         boolean enabled = ReminderPrefs.isEnabled(getContext());
+        int hour = ReminderPrefs.hour(getContext());
+        int minute = ReminderPrefs.minute(getContext());
+        boolean forceToday = isLaterToday(hour, minute);
         JSObject result = new JSObject();
         result.put("enabled", enabled);
-        result.put("hour", ReminderPrefs.hour(getContext()));
-        result.put("minute", ReminderPrefs.minute(getContext()));
+        result.put("hour", hour);
+        result.put("minute", minute);
         result.put("scheduled", enabled);
         result.put("nextAt", enabled
-            ? ReminderScheduler.nextTriggerMillis(
-                getContext(),
-                ReminderPrefs.hour(getContext()),
-                ReminderPrefs.minute(getContext())
-            )
+            ? ReminderScheduler.nextTriggerMillis(getContext(), hour, minute, forceToday)
             : 0);
         result.put("loggedToday", ReminderPrefs.isLoggedToday(getContext()));
         result.put("notificationsAllowed", notificationsEnabled);
         result.put("exactAlarmsAllowed", ReminderScheduler.canScheduleExact(getContext()));
-        String scheduleMode = ReminderScheduler.lastScheduleModeName();
+        String scheduleMode = ReminderPrefs.scheduleModeName(getContext());
         result.put("scheduleMode", scheduleMode);
         result.put("usesAlarmClock", "alarmClock".equals(scheduleMode));
         result.put("lastFiredAt", ReminderPrefs.lastFiredAt(getContext()));
         return result;
+    }
+
+    private void refreshScheduleIfEnabled() {
+        if (!ReminderPrefs.isEnabled(getContext())) {
+            ReminderScheduler.rescheduleIfEnabled(getContext());
+            return;
+        }
+        int hour = ReminderPrefs.hour(getContext());
+        int minute = ReminderPrefs.minute(getContext());
+        ReminderScheduler.scheduleDaily(getContext(), isLaterToday(hour, minute), true);
     }
 
     private boolean isLaterToday(int hour, int minute) {
