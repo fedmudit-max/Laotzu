@@ -1,7 +1,11 @@
 package com.kingtracker.app.reminder;
 
 import android.Manifest;
+import android.app.AlarmManager;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
@@ -26,6 +30,8 @@ import java.util.Calendar;
 )
 public class ReminderPlugin extends Plugin {
 
+    private BroadcastReceiver exactAlarmPermissionReceiver;
+
     @PluginMethod
     public void getStatus(PluginCall call) {
         call.resolve(statusObject());
@@ -46,7 +52,7 @@ public class ReminderPlugin extends Plugin {
         if (laterToday) {
             ReminderPrefs.clearNotifiedDateSync(getContext());
         }
-        ReminderScheduler.scheduleDaily(getContext(), laterToday, true);
+        ReminderScheduler.scheduleDaily(getContext(), true);
         call.resolve(statusObject());
     }
 
@@ -119,11 +125,7 @@ public class ReminderPlugin extends Plugin {
             ReminderNotifier.cancel(getContext());
         }
         if (changed) {
-            boolean laterToday = isLaterToday(
-                ReminderPrefs.hour(getContext()),
-                ReminderPrefs.minute(getContext())
-            );
-            ReminderScheduler.scheduleDaily(getContext(), laterToday);
+            ReminderScheduler.scheduleDaily(getContext());
         }
         JSObject result = statusObject();
         result.put("loggedDate", ReminderPrefs.loggedDate(getContext()));
@@ -145,6 +147,13 @@ public class ReminderPlugin extends Plugin {
     @Override
     public void load() {
         refreshScheduleIfEnabled();
+        registerExactAlarmPermissionReceiver();
+    }
+
+    @Override
+    protected void handleOnDestroy() {
+        unregisterExactAlarmPermissionReceiver();
+        super.handleOnDestroy();
     }
 
     @Override
@@ -186,14 +195,13 @@ public class ReminderPlugin extends Plugin {
         boolean enabled = ReminderPrefs.isEnabled(getContext());
         int hour = ReminderPrefs.hour(getContext());
         int minute = ReminderPrefs.minute(getContext());
-        boolean forceToday = isLaterToday(hour, minute);
         JSObject result = new JSObject();
         result.put("enabled", enabled);
         result.put("hour", hour);
         result.put("minute", minute);
         result.put("scheduled", enabled);
         result.put("nextAt", enabled
-            ? ReminderScheduler.nextTriggerMillis(getContext(), hour, minute, forceToday)
+            ? ReminderScheduler.nextTriggerMillis(getContext(), hour, minute)
             : 0);
         result.put("loggedToday", ReminderPrefs.isLoggedToday(getContext()));
         result.put("notificationsAllowed", notificationsEnabled);
@@ -212,7 +220,34 @@ public class ReminderPlugin extends Plugin {
         }
         int hour = ReminderPrefs.hour(getContext());
         int minute = ReminderPrefs.minute(getContext());
-        ReminderScheduler.scheduleDaily(getContext(), isLaterToday(hour, minute), true);
+        ReminderScheduler.scheduleDaily(getContext(), true);
+    }
+
+    private void registerExactAlarmPermissionReceiver() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return;
+        if (exactAlarmPermissionReceiver != null) return;
+        exactAlarmPermissionReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                refreshScheduleIfEnabled();
+                notifyListeners("exactAlarmPermissionChanged", statusObject());
+            }
+        };
+        IntentFilter filter = new IntentFilter(ReminderScheduler.ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_CHANGED);
+        Context ctx = getContext();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ctx.registerReceiver(exactAlarmPermissionReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            ctx.registerReceiver(exactAlarmPermissionReceiver, filter);
+        }
+    }
+
+    private void unregisterExactAlarmPermissionReceiver() {
+        if (exactAlarmPermissionReceiver == null) return;
+        try {
+            getContext().unregisterReceiver(exactAlarmPermissionReceiver);
+        } catch (Exception ignored) { /* already unregistered */ }
+        exactAlarmPermissionReceiver = null;
     }
 
     private boolean isLaterToday(int hour, int minute) {

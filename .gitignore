@@ -1,15 +1,26 @@
+# Dependencies
 node_modules/
-.DS_Store
+
+# Generated web bundle (canonical source is repo root; scripts/copy-web.js)
 www/
 
+# OS junk
+.DS_Store
+__MACOSX/
+
+# Gradle (any module)
+.gradle/
 android/.gradle/
 android/app/build/
 android/build/
+
+# Android local / IDE
 android/captures/
 android/local.properties
 android/*.iml
 android/.idea/
 
+# iOS build / generated
 ios/App/Pods/
 ios/App/build/
 ios/DerivedData/

@@ -24,10 +24,12 @@ public final class ReminderScheduler {
     static final int REQUEST_LOG_SLIP = 7105;
     static final int REQUEST_ALARM_CLOCK_SHOW = 7106;
     private static final String TAG = "KingReminder";
-    private static final long DUE_TODAY_DELAY_MS = 2000L;
     private static volatile ScheduleMode lastScheduleMode = ScheduleMode.INEXACT;
     private static volatile long lastScheduleAtMs = 0L;
     private static volatile long lastScheduledWhen = 0L;
+
+    static final String ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_CHANGED =
+        "android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_CHANGED";
 
     private ReminderScheduler() {}
 
@@ -43,39 +45,20 @@ public final class ReminderScheduler {
     }
 
     static long nextTriggerMillis(Context context, int hour, int minute) {
-        return nextTriggerMillis(context, hour, minute, false);
-    }
-
-    static long nextTriggerMillis(Context context, int hour, int minute, boolean forceTodayAtNewTime) {
         Calendar next = Calendar.getInstance();
         next.set(Calendar.HOUR_OF_DAY, ReminderPrefs.clampHour(hour));
         next.set(Calendar.MINUTE, ReminderPrefs.clampMinute(minute));
         next.set(Calendar.SECOND, 0);
         next.set(Calendar.MILLISECOND, 0);
-        long now = System.currentTimeMillis();
-
-        if (forceTodayAtNewTime) {
-            if (next.getTimeInMillis() > now) {
-                return next.getTimeInMillis();
-            }
-            return now + DUE_TODAY_DELAY_MS;
-        }
 
         if (ReminderPrefs.wasNotifiedToday(context)) {
             next.add(Calendar.DAY_OF_YEAR, 1);
             return next.getTimeInMillis();
         }
 
-        if (ReminderPrefs.isLoggedToday(context)) {
-            if (next.getTimeInMillis() > now) {
-                return next.getTimeInMillis();
-            }
-            next.add(Calendar.DAY_OF_YEAR, 1);
-            return next.getTimeInMillis();
-        }
-
+        long now = System.currentTimeMillis();
         if (next.getTimeInMillis() <= now) {
-            return now + DUE_TODAY_DELAY_MS;
+            next.add(Calendar.DAY_OF_YEAR, 1);
         }
         return next.getTimeInMillis();
     }
@@ -84,11 +67,7 @@ public final class ReminderScheduler {
         scheduleDaily(context, false);
     }
 
-    static void scheduleDaily(Context context, boolean forceTodayAtNewTime) {
-        scheduleDaily(context, forceTodayAtNewTime, false);
-    }
-
-    static void scheduleDaily(Context context, boolean forceTodayAtNewTime, boolean forceSet) {
+    static void scheduleDaily(Context context, boolean forceSet) {
         ReminderNotifier.ensureChannel(context);
         if (!ReminderPrefs.isEnabled(context)) {
             cancelDaily(context);
@@ -97,8 +76,7 @@ public final class ReminderScheduler {
         long when = nextTriggerMillis(
             context,
             ReminderPrefs.hour(context),
-            ReminderPrefs.minute(context),
-            forceTodayAtNewTime
+            ReminderPrefs.minute(context)
         );
         long now = System.currentTimeMillis();
         if (!forceSet
@@ -131,13 +109,6 @@ public final class ReminderScheduler {
         ReminderNotifier.cancel(context);
     }
 
-    static void cancelTest(Context context) {
-        AlarmManager am = alarmManager(context);
-        if (am != null) {
-            am.cancel(pendingBroadcast(context, REQUEST_TEST, ACTION_TEST));
-        }
-    }
-
     static void rescheduleIfEnabled(Context context) {
         if (ReminderPrefs.isEnabled(context)) {
             scheduleDaily(context);
@@ -153,7 +124,7 @@ public final class ReminderScheduler {
             return;
         }
         // setAlarmClock: on-time through Doze; Play-appropriate for user-scheduled daily reminders.
-        // No SCHEDULE_EXACT_ALARM — inexact fallback only if AlarmClock fails.
+        // SCHEDULE_EXACT_ALARM (user-granted) required on Android 12+; inexact fallback if denied.
         try {
             PendingIntent show = PendingIntent.getActivity(
                 context.getApplicationContext(),

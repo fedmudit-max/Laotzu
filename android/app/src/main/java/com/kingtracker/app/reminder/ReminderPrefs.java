@@ -90,10 +90,6 @@ public final class ReminderPrefs {
         prefs(context).edit().putString(KEY_NOTIFIED_DATE, todayKey()).apply();
     }
 
-    static void clearNotifiedDate(Context context) {
-        prefs(context).edit().putString(KEY_NOTIFIED_DATE, "").apply();
-    }
-
     /** Immediate clear — schedule() must read the updated value on the next line. */
     static void clearNotifiedDateSync(Context context) {
         prefs(context).edit().putString(KEY_NOTIFIED_DATE, "").commit();
@@ -114,11 +110,6 @@ public final class ReminderPrefs {
 
     static String scheduleModeName(Context context) {
         return prefs(context).getString(KEY_SCHEDULE_MODE, "inexact");
-    }
-
-    /** True when today's reminder already fired (logging does not block a later wall time). */
-    static boolean skipDailyToday(Context context) {
-        return wasNotifiedToday(context);
     }
 
     static String normalizeDateKey(String dateKey) {

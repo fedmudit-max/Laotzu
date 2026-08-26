@@ -47,6 +47,7 @@
                 <action android:name="android.intent.action.TIME_CHANGED" />
                 <action android:name="android.intent.action.DATE_CHANGED" />
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_CHANGED" />
             </intent-filter>
         </receiver>
 

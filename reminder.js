@@ -7,6 +7,10 @@ const REMINDER_STORAGE_KEY = 'kingReminder';
 const REMINDER_AWAITING_EXACT_KEY = 'kingReminderAwaitingExactAlarm';
 const REMINDER_DEFAULT_HOUR = 21;
 const REMINDER_DEFAULT_MINUTE = 0;
+const REMINDER_EXACT_ALARM_EXPLAIN =
+    'To send your reminder close to your selected time, Android requires permission to schedule alarms and reminders.';
+const REMINDER_EXACT_ALARM_DENIED =
+    'Precise reminders cannot be guaranteed without this permission. Reminder stays off until you allow it.';
 
 function reminderDefaultSettings() {
     return { enabled: false, hour: REMINDER_DEFAULT_HOUR, minute: REMINDER_DEFAULT_MINUTE };
@@ -246,10 +250,10 @@ function reminderStatusCopy(settings) {
     }
     var timeLine = formatReminderTime(settings.hour, settings.minute) + ' every day.';
     if (reminderNativeStatus && reminderNativeStatus.exactAlarmsAllowed === false) {
-        return timeLine + ' Allow scheduled reminders for King in system settings.';
+        return timeLine + ' ' + REMINDER_EXACT_ALARM_EXPLAIN;
     }
     if (reminderNativeStatus && reminderNativeStatus.scheduleMode === 'inexact') {
-        return timeLine + ' Allow scheduled reminders for reliable timing.';
+        return timeLine + ' Precise reminder timing cannot be guaranteed — allow scheduled reminders for King.';
     }
     return timeLine;
 }
@@ -319,7 +323,7 @@ function reconcileReminderEnableState() {
         }
         if (!awaitingExact) {
             if (settings.enabled && status.exactAlarmsAllowed === false) {
-                turnReminderOff('Allow scheduled reminders for King — reminder stays off until then.');
+                turnReminderOff(REMINDER_EXACT_ALARM_DENIED);
             }
             return;
         }
@@ -335,8 +339,31 @@ function reconcileReminderEnableState() {
                 showToast(0, 'Reminder set for ' + formatReminderTime(settings.hour, settings.minute) + '.');
             });
         }
-        turnReminderOff('Allow scheduled reminders for King — reminder stays off until then.');
+        turnReminderOff(REMINDER_EXACT_ALARM_DENIED);
     }).catch(function () {});
+}
+
+function openExactAlarmPermissionFlow(initialStatus) {
+    showToast(0, REMINDER_EXACT_ALARM_EXPLAIN);
+    safeSet(REMINDER_AWAITING_EXACT_KEY, '1');
+    return callReminderPlugin('cancel', {}).then(function () {
+        return callReminderPlugin('openExactAlarmSettings');
+    }).then(function (afterSettings) {
+        rememberReminderStatus(afterSettings);
+        if (afterSettings && afterSettings.exactAlarmsAllowed) {
+            safeRemove(REMINDER_AWAITING_EXACT_KEY);
+            var settings = loadReminderSettings();
+            return scheduleReminderOnNative(settings).then(function (retryStatus) {
+                return {
+                    status: retryStatus,
+                    scheduled: !reminderNeedsReliableSchedule(retryStatus),
+                };
+            });
+        }
+        return { status: afterSettings || initialStatus, scheduled: false, awaitingExact: true };
+    }).catch(function () {
+        return { status: initialStatus, scheduled: false, awaitingExact: true };
+    });
 }
 
 function listenForReminderAppResume() {
@@ -360,25 +387,7 @@ function finishReminderSchedule(status, options) {
     if (!options || !options.promptExactAlarm) {
         return Promise.resolve({ status: status, scheduled: false, exactAlarmNeeded: true });
     }
-    safeSet(REMINDER_AWAITING_EXACT_KEY, '1');
-    return callReminderPlugin('cancel', {}).then(function () {
-        return callReminderPlugin('openExactAlarmSettings');
-    }).then(function (afterSettings) {
-        rememberReminderStatus(afterSettings);
-        if (afterSettings && afterSettings.exactAlarmsAllowed) {
-            safeRemove(REMINDER_AWAITING_EXACT_KEY);
-            var settings = loadReminderSettings();
-            return scheduleReminderOnNative(settings).then(function (retryStatus) {
-                return {
-                    status: retryStatus,
-                    scheduled: !reminderNeedsReliableSchedule(retryStatus),
-                };
-            });
-        }
-        return { status: afterSettings || status, scheduled: false, awaitingExact: true };
-    }).catch(function () {
-        return { status: status, scheduled: false, awaitingExact: true };
-    });
+    return openExactAlarmPermissionFlow(status);
 }
 
 function applyReminderAlarms(options) {
@@ -423,16 +432,30 @@ function applyReminderAlarms(options) {
                 return { scheduled: false, notificationsDenied: true };
             });
         }
-        return scheduleReminderOnNative(settings).then(function (status) {
-            return finishReminderSchedule(status, options).then(function (result) {
-                if (result.status) rememberReminderStatus(result.status);
-                renderReminderTab();
-                return {
-                    scheduled: !!result.scheduled,
-                    notificationsDenied: false,
-                    awaitingExact: !!result.awaitingExact,
-                    exactAlarmNeeded: !!result.exactAlarmNeeded,
-                };
+        return callReminderPlugin('getStatus').then(function (status) {
+            rememberReminderStatus(status);
+            if (options.promptExactAlarm && status.exactAlarmsAllowed === false) {
+                return openExactAlarmPermissionFlow(status).then(function (result) {
+                    renderReminderTab();
+                    return {
+                        scheduled: !!result.scheduled,
+                        notificationsDenied: false,
+                        awaitingExact: !!result.awaitingExact,
+                        exactAlarmNeeded: !!result.exactAlarmNeeded,
+                    };
+                });
+            }
+            return scheduleReminderOnNative(settings).then(function (status) {
+                return finishReminderSchedule(status, options).then(function (result) {
+                    if (result.status) rememberReminderStatus(result.status);
+                    renderReminderTab();
+                    return {
+                        scheduled: !!result.scheduled,
+                        notificationsDenied: false,
+                        awaitingExact: !!result.awaitingExact,
+                        exactAlarmNeeded: !!result.exactAlarmNeeded,
+                    };
+                });
             });
         });
     });
@@ -484,9 +507,9 @@ function onRemindToggleChange() {
                 if (res && res.notificationsDenied) {
                     showToast(0, 'Allow notifications for King — reminder stays off until then.');
                 } else if (res && res.awaitingExact) {
-                    showToast(0, 'Allow scheduled reminders for King — then return here.');
+                    showToast(0, REMINDER_EXACT_ALARM_DENIED);
                 } else if (res && res.exactAlarmNeeded) {
-                    showToast(0, 'Allow scheduled reminders for King to set the reminder.');
+                    showToast(0, REMINDER_EXACT_ALARM_EXPLAIN);
                 } else {
                     openNotificationSettingsIfDenied();
                 }
@@ -575,6 +598,7 @@ function initReminders() {
     renderReminderTab();
     syncReminderLoggedDate();
     listenForReminderAppResume();
+    listenForExactAlarmPermissionChanges();
     reconcileReminderEnableState();
     applyReminderAlarms();
     listenForReminderLogActions();
@@ -587,6 +611,17 @@ function listenForReminderLogActions() {
     try {
         plugin.addListener('pendingLog', function () {
             consumeReminderLogAction();
+        });
+    } catch (e) {}
+}
+
+function listenForExactAlarmPermissionChanges() {
+    var plugin = getKingReminderPlugin();
+    if (!plugin || typeof plugin.addListener !== 'function') return;
+    try {
+        plugin.addListener('exactAlarmPermissionChanged', function (status) {
+            rememberReminderStatus(status);
+            reconcileReminderEnableState();
         });
     } catch (e) {}
 }
