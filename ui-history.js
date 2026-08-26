@@ -22,6 +22,12 @@ function toggleLifetimePanel() {
     syncHistoryPanels();
 }
 
+function toggleRemindPanel() {
+    if (!requirePremium()) return;
+    remindPanelOpen = !remindPanelOpen;
+    syncHistoryPanels();
+}
+
 function toggleBackupResetPanel() {
     backupResetPanelOpen = !backupResetPanelOpen;
     syncHistoryPanels();
@@ -31,6 +37,7 @@ function syncHistoryPanels() {
     var monthOpen = monthPanelOpen;
     var chartOpen = chartPanelOpen;
     var lifetimeOpen = lifetimePanelOpen;
+    var remindOpen = remindPanelOpen;
     var backupOpen = backupResetPanelOpen;
     if (monthOpen || chartOpen || lifetimeOpen) ensureDeferredHeavyRendered();
     var el;
@@ -44,6 +51,8 @@ function syncHistoryPanels() {
     if (el) el.classList.toggle('is-open', chartOpen);
     el = document.getElementById('lifetimePanelBody');
     if (el) el.classList.toggle('is-open', lifetimeOpen);
+    el = document.getElementById('remindPanelBody');
+    if (el) el.classList.toggle('is-open', remindOpen);
     el = document.getElementById('backupResetBody');
     if (el) el.classList.toggle('is-open', backupOpen);
     el = document.getElementById('monthPanelChevron');
@@ -52,6 +61,8 @@ function syncHistoryPanels() {
     if (el) el.classList.toggle('open', chartOpen);
     el = document.getElementById('lifetimePanelChevron');
     if (el) el.classList.toggle('open', lifetimeOpen);
+    el = document.getElementById('remindPanelChevron');
+    if (el) el.classList.toggle('open', remindOpen);
     el = document.getElementById('backupResetChevron');
     if (el) el.classList.toggle('open', backupOpen);
     el = document.getElementById('monthPanelToggle');
@@ -60,6 +71,8 @@ function syncHistoryPanels() {
     if (el) el.setAttribute('aria-expanded', chartOpen ? 'true' : 'false');
     el = document.getElementById('lifetimePanelToggle');
     if (el) el.setAttribute('aria-expanded', lifetimeOpen ? 'true' : 'false');
+    el = document.getElementById('remindPanelToggle');
+    if (el) el.setAttribute('aria-expanded', remindOpen ? 'true' : 'false');
     el = document.getElementById('backupResetToggle');
     if (el) el.setAttribute('aria-expanded', backupOpen ? 'true' : 'false');
 
@@ -86,6 +99,13 @@ function syncHistoryPanels() {
         lifetimeBtn.addEventListener('click', function (e) {
             e.preventDefault();
             toggleLifetimePanel();
+        });
+    }
+    var remindBtn = document.getElementById('remindPanelToggle');
+    if (remindBtn) {
+        remindBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            toggleRemindPanel();
         });
     }
     var backupBtn = document.getElementById('backupResetToggle');
@@ -251,7 +271,7 @@ function clamp(val, min, max) { return Math.min(max, Math.max(min, val)); }
 
 const CHART_H       = 180;
 const CHART_PAD_T   = 24;
-const CHART_PAD_B   = 18;
+const CHART_PAD_B   = 28;
 const CHART_Y_GUT   = 36;
 const CHART_PLOT_W  = 400;
 const CHART_VW      = CHART_Y_GUT + CHART_PLOT_W;
@@ -616,17 +636,23 @@ function renderMonthGrid() {
 // ════════════════════════════════════════════════════════
 
 function renderLifetimeStats() {
-    const journeys = state.attempt;
-    const pastStrong = state.completedJourneys.reduce((sum, j) => sum + (j.score.success || 0), 0);
-    const totalStrong = pastStrong + state.score.success;
-    const pastRelapses = state.completedJourneys.reduce((sum, j) => sum + (j.score.failures || 0), 0);
-    const totalRelapses = pastRelapses + state.score.failures;
+    // Journeys: completed + current (if current attempt not already archived).
+    // Strong / Relapses: unique wall dates from dailyLog — never sum journey scores
+    // (that double-counted after a 10-slip finish while score was still live).
+    var journeys = typeof countLifetimeJourneys === 'function'
+        ? countLifetimeJourneys()
+        : Math.max(1, Number(state.attempt) || 1);
+    var totalStrong = typeof countLifetimeStrongDays === 'function'
+        ? countLifetimeStrongDays()
+        : 0;
+    var totalRelapses = typeof countLifetimeRelapses === 'function'
+        ? countLifetimeRelapses()
+        : 0;
 
     document.getElementById('lifetimeJourneys').textContent = journeys;
     document.getElementById('lifetimeStrong').textContent   = totalStrong;
     document.getElementById('lifetimeRelapses').textContent = totalRelapses;
 
-    // Hint while nothing is logged yet (journey 1, zeros at zero).
-    const empty = totalStrong === 0 && totalRelapses === 0 && journeys <= 1;
+    var empty = totalStrong === 0 && totalRelapses === 0 && journeys <= 1;
     setHistoryEmptyVisible('lifetimeEmptyHint', empty);
 }

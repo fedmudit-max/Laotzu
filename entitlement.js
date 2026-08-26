@@ -18,11 +18,15 @@
  * @property {string} [trialStartedAt]  ISO-8601; '' if unset. Local trial start.
  *                                      Window = trialStartedAt + PREMIUM_TRIAL_DAYS.
  *                                      Written at onboarding / Day 1 (ensureTrialStarted / startPremiumTrial).
- * @property {string} [premiumUntil]    ISO-8601; '' if unset. Paid access end.
- *                                      Written only via updateEntitlementSnapshot.
- * @property {string} [lastVerifiedAt]  ISO-8601 reserved (S3 server verify).
+ * @property {string} [premiumUntil]    ISO-8601; '' if unset.
+ *                                      Sprint 3A: local access-cache expiry after last Play
+ *                                      client confirmation (PREMIUM_PLAY_CACHE_DAYS).
+ *                                      Not Google’s subscription end date.
+ * @property {string} [lastVerifiedAt]  ISO-8601. Sprint 3A: last Play *client* confirmation.
+ *                                      Production: last Firebase / Play Developer API verify.
  * @property {''|'local-trial'|'play'|'restore'|'dev'} [source]
- *                                      Who last set paid entitlement (reserved S2/S3).
+ *                                      Who last set paid entitlement. `play` / `restore` required
+ *                                      for premiumUntil writes.
  *
  * Entitlement never writes the snapshot. UI never reads raw fields for access.
  * ---------------------------------------------------------------------------
@@ -153,6 +157,10 @@ var Entitlement = (function () {
         return isBasicTier(s);
     }
 
+    /**
+     * Date of the local paid cache window (`premiumUntil`), not Play billing period.
+     * Do not show this to users as “subscription expires” / “renews”.
+     */
     function subscriptionExpiresLabel(s) {
         s = snapshot(s);
         if (!s.premiumUntil) return '';

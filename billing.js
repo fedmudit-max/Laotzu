@@ -1,11 +1,11 @@
 /**
- * billing.js — Premium UI, checkout hooks, store offer, and (later) Google Play Billing.
+ * billing.js — Premium UI, store offer, checkout/restore, entitlement writes.
  *
  * Ownership:
  *   - UI: paywall sheet, panel copy, section visibility
  *   - Gate helpers that ask Entitlement.getAccess() then show UI
  *   - Store offer (localized price) — never mixed into Entitlement
- *   - Future: purchase / restore / entitlement write path
+ *   - Play query / purchase / restore → updateEntitlementSnapshot only
  *
  * Does not decide premium access — asks Entitlement.getAccess().
  */
@@ -27,6 +27,59 @@ function planPeriodSuffix(period, id) {
     return '/month';
 }
 
+function planAmountNumber(plan) {
+    if (!plan) return 0;
+    if (plan.amount != null && Number(plan.amount) > 0) return Number(plan.amount);
+    var raw = String(plan.price || '');
+    if (!raw) return 0;
+    var cleaned = raw.replace(/[^0-9.,]/g, '').replace(/,/g, '');
+    var n = parseFloat(cleaned);
+    return n > 0 ? n : 0;
+}
+
+/** Keep currency framing from a store price string; swap in a new number. */
+function formatAmountLike(referencePrice, amount) {
+    var ref = String(referencePrice || '');
+    var useDecimals = /\.\d{2}\b/.test(ref);
+    var value = useDecimals ? Number(amount).toFixed(2) : String(Math.round(Number(amount)));
+    var match = ref.match(/^([^\d-]*)([\d,]+(?:\.\d+)?)(.*)$/);
+    if (match) return match[1] + value + match[3];
+    if (ref.indexOf('₹') !== -1) return '₹' + value;
+    return value;
+}
+
+/**
+ * Annual compare: strikethrough = PREMIUM_ANNUAL_COMPARE_AMOUNT (2299),
+ * badge = % off vs the annual sale price.
+ */
+function enrichAnnualSavings(plans) {
+    var list = plans || [];
+    var annual = null;
+    for (var i = 0; i < list.length; i++) {
+        if (list[i].id === 'annual') annual = list[i];
+    }
+    if (!annual) return list;
+
+    var annualAmt = planAmountNumber(annual);
+    var compareAmt = typeof PREMIUM_ANNUAL_COMPARE_AMOUNT === 'number'
+        ? PREMIUM_ANNUAL_COMPARE_AMOUNT
+        : 0;
+    if (!(compareAmt > 0) || !(annualAmt > 0)) return list;
+
+    var pct = planDiscountPercent(compareAmt, annualAmt);
+    if (!(pct > 0)) {
+        delete annual.listPrice;
+        delete annual.listAmount;
+        delete annual.discountPct;
+        return list;
+    }
+
+    annual.listAmount = compareAmt;
+    annual.listPrice = formatAmountLike(annual.price, compareAmt);
+    annual.discountPct = pct;
+    return list;
+}
+
 function normalizePremiumPlan(p) {
     p = p || {};
     var id = p.id || p.period || 'monthly';
@@ -35,17 +88,23 @@ function normalizePremiumPlan(p) {
     var period = p.period || (id === 'annual' ? 'year' : 'month');
     var plan = { id: id, period: period };
 
-    if (amount > 0) {
-        plan.amount = amount;
+    if (p.price) {
+        plan.price = String(p.price);
+    } else if (amount > 0) {
         plan.price = '₹' + amount + planPeriodSuffix(period, id);
-    } else {
-        plan.price = p.price ? String(p.price) : '';
     }
+    if (amount > 0) plan.amount = amount;
 
-    if (listAmount > 0 && amount > 0 && listAmount > amount) {
-        plan.listAmount = listAmount;
-        plan.listPrice = '₹' + listAmount;
-        plan.discountPct = planDiscountPercent(listAmount, amount);
+    // Monthly may still use its own list/sale strike. Annual list comes from enrichAnnualSavings.
+    if (id !== 'annual') {
+        if (p.listPrice) {
+            plan.listPrice = String(p.listPrice);
+            if (p.discountPct) plan.discountPct = p.discountPct;
+        } else if (listAmount > 0 && amount > 0 && listAmount > amount) {
+            plan.listAmount = listAmount;
+            plan.listPrice = '₹' + listAmount;
+            plan.discountPct = planDiscountPercent(listAmount, amount);
+        }
     }
 
     if (id === 'annual') {
@@ -58,7 +117,7 @@ function normalizePremiumPlan(p) {
 
 function normalizePremiumPlans(plans) {
     var src = plans && plans.length ? plans : PREMIUM_PLANS_MOCK;
-    return src.map(normalizePremiumPlan);
+    return enrichAnnualSavings(src.map(normalizePremiumPlan));
 }
 
 /**
@@ -124,6 +183,7 @@ function applyPremiumTierLayout() {
         'monthPanelCard',
         'chartPanelCard',
         'premiumBackupGate',
+        'remindPanelCard',
     ];
     for (var i = 0; i < gatedIds.length; i++) {
         setPremiumGated(gatedIds[i], !unlocked);
@@ -135,6 +195,9 @@ function applyPremiumTierLayout() {
     setPremiumSectionVisible('exportBackupBtn', true);
     setPremiumSectionVisible('importBackupBtn', true);
     setPremiumSectionVisible('lastBackupLabel', true);
+    if (typeof applyReminderAlarms === 'function') {
+        applyReminderAlarms();
+    }
 }
 
 function setPremiumGated(id, locked) {
@@ -215,7 +278,7 @@ function renderPremiumPanelContent() {
     if (!statusEl || !listEl) return;
 
     if (Entitlement.isSubscriptionActive()) {
-        statusEl.textContent = 'Premium active until ' + Entitlement.subscriptionExpiresLabel() + '. Thank you for supporting King.';
+        statusEl.textContent = 'Premium is active. Billing and renewal are managed in Google Play.';
         setPremiumBackupNote(noteEl, false);
     } else if (Entitlement.isTrialActive()) {
         var left = Entitlement.daysRemaining();
@@ -224,7 +287,7 @@ function renderPremiumPanelContent() {
             : left + ' free days left on your trial.';
         setPremiumBackupNote(noteEl, true);
     } else {
-        statusEl.textContent = 'Free trial ended. Daily logging stays free forever. Subscribe to unlock timeline, milestones, Monthly grid, Progress Graph, and export/import. Your score is not affected.';
+        statusEl.textContent = 'Free trial ended. Daily logging stays free forever. Subscribe to unlock timeline, milestones, Monthly Mirror, Progress Graph, and export/import. Your score is not affected.';
         setPremiumBackupNote(noteEl, true);
     }
 
@@ -238,7 +301,7 @@ function renderPremiumStatus() {
 
     if (Entitlement.isSubscriptionActive()) {
         if (titleEl) titleEl.textContent = '👑 Premium';
-        if (teaserEl) teaserEl.textContent = 'Active · renews ' + Entitlement.subscriptionExpiresLabel();
+        if (teaserEl) teaserEl.textContent = 'Active · Google Play';
         if (cardEl) {
             cardEl.classList.add('premium-active-state');
             cardEl.classList.remove('premium-trial-state', 'premium-expired-state');
@@ -283,7 +346,7 @@ function renderPremiumSheet(opts) {
 
     if (Entitlement.isSubscriptionActive()) {
         titleEl.textContent = 'You\'re Premium';
-        subEl.textContent = 'Full access until ' + Entitlement.subscriptionExpiresLabel() + '. Thank you for supporting King.';
+        subEl.textContent = 'Full access is on. Google Play manages your subscription; this app only caches access for offline use.';
         if (trialEl) trialEl.hidden = true;
         if (laterBtn) laterBtn.textContent = 'Close';
         if (buyBtn) buyBtn.hidden = true;
@@ -392,6 +455,7 @@ function openPremiumSheet() {
         trialDays: offer.trialDays,
         plans: offer.plans,
     });
+    loadPlayOffers();
 }
 
 function closePremiumSheet() {
@@ -416,46 +480,162 @@ function requirePremium() {
  * Journey score is never touched here:
  *   score, streaks, dailyLog, calendarDay, attempt, etc. stay as-is when buying Premium.
  *
+ * Paid `premiumUntil` is written only after a Play Billing client query
+ * returns PURCHASED for a King product (purchase or restore). That is
+ * Play-client-confirmed, not Firebase / Play Developer API server verification.
+ * Never from a URL, query param, or client-side “success” flag.
+ *
  * @param {Partial<EntitlementSnapshot>} fields
- *   v1 accepts: premiumUntil
- *   reserved (ignored until implemented): lastVerifiedAt, source
+ *   requires source 'play' or 'restore' (Play client path)
+ *   v1 accepts: premiumUntil, lastVerifiedAt, source
+ *   lastVerifiedAt here = last successful Play client query, until server verify exists
  *   never write trialStartedAt here — local trial seed owns that field
  *   never write journey/logging fields — journey layer owns those
  */
 function updateEntitlementSnapshot(fields) {
     if (!fields || typeof fields !== 'object') return;
+    if (fields.source !== 'play' && fields.source !== 'restore') return;
     if (fields.premiumUntil !== undefined) state.premiumUntil = fields.premiumUntil;
-    // S2/S3: lastVerifiedAt, source — still only entitlement keys, not score
+    if (fields.lastVerifiedAt !== undefined) state.lastVerifiedAt = fields.lastVerifiedAt;
+    state.source = fields.source;
     saveToStorage(state);
 }
 
-/** Unlock paid features by writing premiumUntil only (score / log unchanged). */
-function activatePremiumSubscription(days) {
-    days = days || PREMIUM_SUBSCRIPTION_DAYS;
-    updateEntitlementSnapshot({
-        premiumUntil: new Date(Date.now() + days * MS_PER_DAY).toISOString(),
+function playIsoBillingPeriod(period) {
+    return period === 'year' ? 'P1Y' : 'P1M';
+}
+
+function playOfferSpec(row) {
+    row = row || {};
+    return {
+        productId: row.productId || '',
+        basePlanId: row.basePlanId || '',
+        offerId: row.offerId || '',
+        billingPeriod: playIsoBillingPeriod(row.period),
+    };
+}
+
+function playOfferSpecForPlan(planId) {
+    var list = typeof PREMIUM_PLAY_PRODUCTS !== 'undefined' ? PREMIUM_PLAY_PRODUCTS : [];
+    for (var i = 0; i < list.length; i++) {
+        if (list[i].id === planId) return playOfferSpec(list[i]);
+    }
+    return null;
+}
+
+function playPlanForProductId(productId) {
+    var list = typeof PREMIUM_PLAY_PRODUCTS !== 'undefined' ? PREMIUM_PLAY_PRODUCTS : [];
+    for (var i = 0; i < list.length; i++) {
+        if (list[i].productId === productId) return list[i];
+    }
+    return null;
+}
+
+function plansFromPlayProducts(products) {
+    var out = [];
+    var list = products || [];
+    for (var i = 0; i < list.length; i++) {
+        var row = playPlanForProductId(list[i].productId);
+        if (!row || !list[i].price || list[i].hasSelectedOffer === false) continue;
+        var micros = Number(list[i].priceAmountMicros) || 0;
+        var plan = {
+            id: row.id,
+            period: row.period,
+            // Play formattedPrice of the selected base plan/offer, not a rupee mock.
+            price: list[i].price,
+            message: row.id === 'annual' ? PREMIUM_ANNUAL_VALUE_MESSAGE : '',
+        };
+        if (micros > 0) plan.amount = micros / 1000000;
+        out.push(plan);
+    }
+    var order = { annual: 0, monthly: 1 };
+    out.sort(function (a, b) {
+        return (order[a.id] != null ? order[a.id] : 9) - (order[b.id] != null ? order[b.id] : 9);
+    });
+    return out;
+}
+
+function loadPlayOffers() {
+    if (!getKingBillingPlugin()) return;
+    callKingBilling('queryProducts', {
+        products: PREMIUM_PLAY_PRODUCTS.map(playOfferSpec),
+    }).then(function (result) {
+        if (!result || !result.ok) return;
+        var plans = plansFromPlayProducts(result.products);
+        if (!plans.length) return;
+        setPremiumOfferFromStore({
+            trialDays: PREMIUM_TRIAL_DAYS,
+            plans: plans,
+            source: 'play',
+        });
+        var overlay = document.getElementById('premiumOverlay');
+        if (overlay && overlay.classList.contains('active')) {
+            showPremiumModal({ plans: plans });
+        }
+        if (premiumPanelOpen) renderPremiumPanelContent();
+    }).catch(function () {});
+}
+
+var playCheckoutInFlight = false;
+
+function startPremiumCheckout() {
+    var plugin = getKingBillingPlugin();
+    if (!plugin) {
+        showToast(0, 'Subscribe uses Google Play on the Android app.');
+        return;
+    }
+    var spec = playOfferSpecForPlan(selectedPremiumPlanId);
+    if (!spec || !spec.productId) {
+        showToast(0, 'Pick a Premium plan first.');
+        return;
+    }
+    if (playCheckoutInFlight) return;
+    playCheckoutInFlight = true;
+    setCheckoutBusy(true);
+    callKingBilling('purchase', spec)
+        .then(function (result) {
+            if (result && result.canceled) return;
+            if (result && result.ok && findActivePlaySubscription(result.purchases)) {
+                applyPlayPurchaseQuery(result, 'play');
+                onPremiumActivated();
+                return;
+            }
+            if (result && result.responseCode === 7 /* ITEM_ALREADY_OWNED */) {
+                return restoreAfterAlreadyOwned();
+            }
+            if (result && result.message === 'no-matching-offer') {
+                showToast(0, 'No matching Play base plan for this product. Set basePlanId in PREMIUM_PLAY_PRODUCTS after creating it in Play Console.');
+                return;
+            }
+            if (!result || !result.ok) {
+                showToast(0, 'Couldn’t start Google Play checkout. Use a Play testing build and a network connection.');
+            }
+        })
+        .catch(function () {
+            showToast(0, 'Couldn’t start Google Play checkout. Use a Play testing build and a network connection.');
+        })
+        .then(function () {
+            playCheckoutInFlight = false;
+            setCheckoutBusy(false);
+        });
+}
+
+function restoreAfterAlreadyOwned() {
+    return callKingBilling('queryPurchases', {}).then(function (result) {
+        var next = applyPlayPurchaseQuery(result, 'play');
+        if (next.active) {
+            onPremiumActivated();
+            return;
+        }
+        showToast(0, 'Google Play says this account already has a purchase, but it isn’t an active King Premium subscription.');
     });
 }
 
-function handlePremiumReturnFromUrl() {
-    try {
-        var params = new URLSearchParams(window.location.search);
-        if (params.get('premium') !== 'success') return false;
-        activatePremiumSubscription(PREMIUM_SUBSCRIPTION_DAYS);
-        var clean = window.location.pathname + (window.location.hash || '');
-        window.history.replaceState(null, '', clean);
-        return true;
-    } catch {
-        return false;
-    }
-}
-
-function startPremiumCheckout() {
-    if (!PREMIUM_CHECKOUT_URL) {
-        showToast(0, 'Checkout comes with Google Play Billing (Sprint 2). Use Restore after a test unlock if needed.');
-        return;
-    }
-    window.open(PREMIUM_CHECKOUT_URL, '_blank', 'noopener,noreferrer');
+function setCheckoutBusy(busy) {
+    var btn = document.querySelector('[data-action="premium-checkout"]');
+    if (!btn) return;
+    btn.disabled = !!busy;
+    btn.textContent = busy ? 'Opening Google Play…' : 'Subscribe to Premium';
 }
 
 function handlePremiumAction(action) {
@@ -475,14 +655,154 @@ function handlePremiumAction(action) {
     return true;
 }
 
+function getKingBillingPlugin() {
+    var Cap = window.Capacitor;
+    if (!Cap || typeof Cap.isNativePlatform !== 'function' || !Cap.isNativePlatform()) return null;
+    if (typeof Cap.getPlatform === 'function' && Cap.getPlatform() !== 'android') return null;
+    if (Cap.Plugins && Cap.Plugins.KingBilling) return Cap.Plugins.KingBilling;
+    if (typeof Cap.registerPlugin === 'function') {
+        try { return Cap.registerPlugin('KingBilling'); } catch (e) { return null; }
+    }
+    return null;
+}
+
+function callKingBilling(method, args) {
+    var plugin = getKingBillingPlugin();
+    if (!plugin || typeof plugin[method] !== 'function') {
+        return Promise.reject(new Error('unavailable'));
+    }
+    return plugin[method](args || {});
+}
+
+function isAllowedPlayProduct(id) {
+    if (!id) return false;
+    var allowed = typeof PREMIUM_PLAY_PRODUCT_IDS !== 'undefined' ? PREMIUM_PLAY_PRODUCT_IDS : [];
+    for (var i = 0; i < allowed.length; i++) {
+        if (allowed[i] === id) return true;
+    }
+    return false;
+}
+
+function purchaseProductIds(purchase) {
+    if (!purchase) return [];
+    if (purchase.productIds && purchase.productIds.length) return purchase.productIds;
+    return purchase.productId ? [purchase.productId] : [];
+}
+
+function isActivePlaySubscription(purchase) {
+    if (!purchase || purchase.purchaseState !== 'purchased' || purchase.suspended) return false;
+    var ids = purchaseProductIds(purchase);
+    for (var i = 0; i < ids.length; i++) {
+        if (isAllowedPlayProduct(ids[i])) return true;
+    }
+    return false;
+}
+
+function findActivePlaySubscription(purchases) {
+    var list = purchases || [];
+    for (var i = 0; i < list.length; i++) {
+        if (isActivePlaySubscription(list[i])) return list[i];
+    }
+    return null;
+}
+
+function playAccessCacheUntilIso() {
+    var days = typeof PREMIUM_PLAY_CACHE_DAYS === 'number' ? PREMIUM_PLAY_CACHE_DAYS : 3;
+    return new Date(Date.now() + days * MS_PER_DAY).toISOString();
+}
+
+/**
+ * Apply Play *client* query/restore results. PURCHASED refreshes a local offline
+ * cache (not extra subscription days). No Play result / errors leave the cache
+ * alone. Play says not owned → clear a previous play/restore cache.
+ */
+function applyPlayPurchaseQuery(result, source) {
+    if (!result || !result.ok) return { applied: false, active: false, unavailable: true };
+    var purchase = findActivePlaySubscription(result.purchases);
+    var nowIso = new Date().toISOString();
+    if (purchase) {
+        updateEntitlementSnapshot({
+            premiumUntil: playAccessCacheUntilIso(),
+            lastVerifiedAt: nowIso,
+            source: source === 'restore' ? 'restore' : 'play',
+        });
+        return { applied: true, active: true, unavailable: false };
+    }
+    if (state.source === 'play' || state.source === 'restore') {
+        updateEntitlementSnapshot({
+            premiumUntil: '',
+            lastVerifiedAt: nowIso,
+            source: state.source,
+        });
+    }
+    return { applied: true, active: false, unavailable: false };
+}
+
+var playRestoreInFlight = false;
+var playPurchasesListenerBound = false;
+
 function restorePremiumAccess() {
-    if (Entitlement.isSubscriptionActive()) {
-        unlockPremiumFeatures();
-        showToast(0, 'Premium is already active.');
-        closePremiumSheet();
+    var plugin = getKingBillingPlugin();
+    if (!plugin) {
+        showToast(0, 'Restore uses Google Play on the Android app.');
         return;
     }
-    showToast(0, 'No active subscription found. Restore will use Google Play in a future release.');
+    if (playRestoreInFlight) return;
+    playRestoreInFlight = true;
+    setRestoreBusy(true);
+    callKingBilling('queryPurchases', {})
+        .then(function (result) {
+            if (!result || !result.ok) {
+                showToast(0, 'Couldn’t reach Google Play. Try again with Play installed and a network connection.');
+                return;
+            }
+            var hadPaid = Entitlement.isSubscriptionActive();
+            var next = applyPlayPurchaseQuery(result, 'restore');
+            if (next.active) {
+                unlockPremiumFeatures();
+                closePremiumSheet();
+                showToast(0, hadPaid ? 'Premium is active.' : 'Premium restored 👑');
+                return;
+            }
+            unlockPremiumFeatures();
+            showToast(0, 'No active Premium subscription on this Google account.');
+        })
+        .catch(function () {
+            showToast(0, 'Couldn’t reach Google Play. Try again with Play installed and a network connection.');
+        })
+        .then(function () {
+            playRestoreInFlight = false;
+            setRestoreBusy(false);
+        });
+}
+
+function refreshPlayPurchasesSilent() {
+    if (!getKingBillingPlugin()) return;
+    callKingBilling('queryPurchases', {}).then(function (result) {
+        if (!result || !result.ok) return;
+        applyPlayPurchaseQuery(result, 'play');
+        unlockPremiumFeatures();
+    }).catch(function () {});
+}
+
+function bindPlayPurchasesListener() {
+    var plugin = getKingBillingPlugin();
+    if (!plugin || playPurchasesListenerBound || typeof plugin.addListener !== 'function') return;
+    playPurchasesListenerBound = true;
+    plugin.addListener('purchasesUpdated', function (result) {
+        if (!result || !result.ok) return;
+        // Resume query can return [] while the Play sheet is up — do not treat that as "not owned".
+        if (playCheckoutInFlight && !findActivePlaySubscription(result.purchases)) return;
+        applyPlayPurchaseQuery(result, state.source === 'restore' ? 'restore' : 'play');
+        unlockPremiumFeatures();
+    });
+}
+
+function setRestoreBusy(busy) {
+    var btn = document.querySelector('[data-action="premium-restore"]');
+    if (!btn) return;
+    btn.disabled = !!busy;
+    btn.textContent = busy ? 'Checking Google Play…' : 'Restore purchase';
 }
 
 function unlockPremiumFeatures() {
@@ -500,8 +820,6 @@ function onPremiumActivated() {
 }
 
 function initPremiumStartup() {
-    if (handlePremiumReturnFromUrl()) onPremiumActivated();
-
     var panelToggle = document.getElementById('premiumPanelToggle');
     if (panelToggle) {
         panelToggle.addEventListener('click', function (e) {
@@ -509,4 +827,7 @@ function initPremiumStartup() {
             togglePremiumPanel();
         });
     }
+    bindPlayPurchasesListener();
+    loadPlayOffers();
+    refreshPlayPurchasesSilent();
 }

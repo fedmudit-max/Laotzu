@@ -11,6 +11,7 @@ let monthOffset = 0;
 let monthPanelOpen = true;
 let chartPanelOpen = false;
 let lifetimePanelOpen = false;
+let remindPanelOpen = false;
 let backupResetPanelOpen = false;
 let toastTimer = null;
 let confettiParticles = [];
@@ -93,6 +94,7 @@ function renderAll(options) {
             renderJourneyMilestones,
             syncTabPanels,
             renderBackupStatus,
+            renderReminderTab,
         );
     }
     if (!options.deferHeavy && full) {
@@ -606,9 +608,11 @@ function buildMilestoneSectionHtml(milestones, options) {
         if (alwaysShow || isJourneyMilestoneRevealed(m.unlockAt)) {
             var glow = shouldJourneyMilestoneGlow(m.day);
             var reached = journeyScoreSuccess() >= m.day;
+            var previouslyAchieved = isJourneyMilestonePreviouslyAchieved(m.day);
             var cls = 'milestone-item';
             if (glow && !journeyEnded) cls += ' achieved-glow';
             else if (reached || glow) cls += ' achieved journey-ended-item';
+            else if (previouslyAchieved) cls += ' achieved-earned';
             var status = formatJourneyMilestoneStatus(m.day);
             html +=
                 '<div class="' + cls + '">' +
@@ -653,7 +657,7 @@ function renderJourneyMilestones() {
 
     renderMilestoneSection(
         document.getElementById('strongSection'),
-        expandSectionMilestones([75, 100, 150]),
+        expandSectionMilestones([25, 50, 100], { alwaysVisible: true }),
         { alwaysShow: true },
     );
 

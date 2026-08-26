@@ -296,87 +296,110 @@ function closeUrge() {
 //  Compares strong days against the previous all-time best score.
 // ════════════════════════════════════════════════════════
 
+function buildJourneyCompareRow(label, value) {
+    return (
+        '<div class="onb-journey-row">' +
+            '<span>' + label + '</span>' +
+            '<strong>' + value + '</strong>' +
+        '</div>'
+    );
+}
+
+function buildJourneyCompareCard(label, score, theme) {
+    var success = Number(score.success) || 0;
+    var failures = Number(score.failures) || 0;
+    var themeCls = theme === 'gold' ? ' journey-compare-card-gold' : ' journey-compare-card-green';
+    return (
+        '<div class="onb-journey-card' + themeCls + '">' +
+            '<div class="onb-journey-row onb-journey-label">' + label + '</div>' +
+            buildJourneyCompareRow('Strong Days', success) +
+            buildJourneyCompareRow('Relapses', failures) +
+            buildJourneyCompareRow('Score', formatJourneyScore(score)) +
+        '</div>'
+    );
+}
+
 /**
- * Shows the journey comparison card.
+ * Journey end comparison popup (beats prior best, or finished below it).
  * @param {object} current - { attempt, score: { success, failures } }
- * @param {{ success: number, failures: number }|null} prevBestScore - best from prior journeys
- * @param {{ nextJourneyOpenToday?: boolean }} [opts]
+ * @param {{ success: number, failures: number }} prevBestScore - prior all-time best
+ * @param {{ nextJourneyOpenToday?: boolean, prevBestAttempt?: number, beatBest?: boolean }} [opts]
+ */
+/**
+ * Journey end comparison popup (beats prior best, or finished below it).
  */
 function showJourneyComparison(current, prevBestScore, opts) {
     opts = opts || {};
-    document.getElementById('compareTitleText').textContent =
-        `Journey ${current.attempt} Complete`;
+    if (!prevBestScore) return;
+
+    var beatBest = opts.beatBest != null
+        ? opts.beatBest
+        : isBetterJourneyScore(
+            current.score.success,
+            current.score.failures,
+            prevBestScore,
+        );
+
+    var prevAttempt = opts.prevBestAttempt || '—';
 
     document.getElementById('compareNextNum').textContent = current.attempt + 1;
 
     const compareBtn = document.querySelector('.btn-compare-close');
     if (compareBtn) {
         compareBtn.innerHTML = opts.nextJourneyOpenToday
-            ? `Start Journey ${current.attempt + 1}`
-            : `Journey ${current.attempt + 1} starts tomorrow`;
+            ? 'Start Journey ' + (current.attempt + 1) + ' 💪'
+            : 'Journey ' + (current.attempt + 1) + ' starts tomorrow';
     }
 
-    const currentLabel = formatJourneyScore(current.score);
-    const prevLabel = prevBestScore ? formatJourneyScore(prevBestScore) : null;
-    const hasComparison = prevBestScore !== null;
-    const isNewBest = hasComparison && isBetterJourneyScore(
-        current.score.success,
-        current.score.failures,
-        prevBestScore,
-    );
-    const improvePct = isNewBest && typeof getJourneyStrongDayImprovementPct === 'function'
-        ? getJourneyStrongDayImprovementPct(
-            current.score.success,
-            prevBestScore.success,
-        )
+    const prevStrong = Number(prevBestScore.success) || 0;
+    const curStrong = Number(current.score.success) || 0;
+    const dayGain = curStrong - prevStrong;
+
+    const improvePct = typeof getJourneyStrongDayImprovementPct === 'function'
+        ? getJourneyStrongDayImprovementPct(curStrong, prevStrong)
         : null;
 
-    let cssClass = '';
-    if (hasComparison) {
-        const same = current.score.success === prevBestScore.success
-            && current.score.failures === prevBestScore.failures;
-        cssClass = same ? 'same' : isNewBest ? '' : 'worse';
+    var cardsHtml = '';
+    var verdict = '';
+    var verdictCls = 'onb-journey-verdict journey-compare-verdict';
+
+    if (beatBest) {
+        var prevLabel = 'Previous Best · Journey ' + prevAttempt;
+        var newLabel = 'New Personal Best · Journey ' + current.attempt;
+        cardsHtml =
+            buildJourneyCompareCard(prevLabel, prevBestScore, 'green') +
+            '<div class="onb-journey-arrow" aria-hidden="true">↓</div>' +
+            buildJourneyCompareCard(newLabel, current.score, 'gold');
+
+        if (dayGain > 0) {
+            verdict = 'Your journey improved by ' + dayGain + ' day' + (dayGain !== 1 ? 's' : '');
+            if (improvePct != null && improvePct > 0) {
+                verdict += ' (' + improvePct + '%)';
+            }
+        } else if (curStrong === prevStrong
+            && (Number(current.score.failures) || 0) < (Number(prevBestScore.failures) || 0)) {
+            verdict = 'Same strong days — fewer slips';
+        } else {
+            verdict = 'New personal best';
+        }
+    } else {
+        var currentLabel = 'Current Journey · Journey ' + current.attempt;
+        var bestLabel = 'Best Journey · Journey ' + prevAttempt;
+        cardsHtml =
+            buildJourneyCompareCard(currentLabel, current.score, 'green') +
+            '<div class="onb-journey-arrow" aria-hidden="true">↓</div>' +
+            buildJourneyCompareCard(bestLabel, prevBestScore, 'gold');
     }
 
-    var improveHtml = '';
-    if (improvePct != null && improvePct > 0) {
-        improveHtml =
-            '<div class="compare-improvement" aria-label="Journey improvement">' +
-                '<span class="compare-improvement-value">' + improvePct + '% improvement</span>' +
-            '</div>';
-    }
+    var verdictHtml = verdict
+        ? '<p class="' + verdictCls + '">' + verdict + '</p>'
+        : '';
 
     document.getElementById('compareGrid').innerHTML =
-        '<div class="compare-stat' + (hasComparison ? ' compare-stat-wide' : '') + '">' +
-            '<div class="compare-stat-label">' +
-                (hasComparison ? (isNewBest ? 'New Best vs Previous Best' : 'Score vs Best Score') : 'Best Score') +
-            '</div>' +
-            '<div class="compare-stat-values">' +
-                (hasComparison
-                    ? '<span class="compare-val-old">' + prevLabel + '</span>' +
-                      '<span class="compare-arrow">→</span>'
-                    : '') +
-                '<span class="compare-val-new ' + cssClass + '">' + currentLabel + '</span>' +
-            '</div>' +
-            improveHtml +
+        '<div class="onboarding-journey-compare journey-compare-popup" aria-label="Journey comparison">' +
+            cardsHtml +
+            verdictHtml +
         '</div>';
-
-    let message = '';
-    if (!hasComparison) {
-        message = `Your first journey ends here — ${currentLabel}. This is your starting best score. Every journey after this builds on it.`;
-    } else if (isNewBest) {
-        // % / previous best already shown in compare grid — keep message short.
-        message = `New personal best — ${currentLabel}. Your next journey is to go beyond ${current.score.success} days.`;
-    } else if (current.score.success === prevBestScore.success
-        && current.score.failures === prevBestScore.failures) {
-        message = `You matched your best score — ${prevLabel}. Now push past it next time.`;
-    } else {
-        message = `Your best score stays at ${prevLabel}. This journey: ${currentLabel}. Journey ${current.attempt + 1} starts fresh.`;
-    }
-    if (opts.nextJourneyOpenToday) {
-        message += ` Journey ${current.attempt + 1} is open today (Day 1).`;
-    }
-    document.getElementById('compareMessage').textContent = message;
 
     document.getElementById('journeyCompareOverlay').classList.add('active');
 }

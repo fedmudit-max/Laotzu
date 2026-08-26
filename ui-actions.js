@@ -22,6 +22,38 @@ function handleSuccess() {
     showModal('success');
 }
 
+/** Log from the reminder notification — no confirm modal (the tap is the confirm). */
+function applyNotificationLog(kind) {
+    if (safeGet('onboardingComplete') !== 'true') return;
+    if (kind !== 'strong' && kind !== 'slip') return;
+    if (isAwaitingNextJourney()) {
+        showToast(0, 'Start your next journey first.');
+        return;
+    }
+    if (typeof isYesterdayLogPending === 'function' && isYesterdayLogPending()) {
+        showYesterdayReminder();
+        showToast(0, 'Log yesterday first.');
+        return;
+    }
+    if (kind === 'strong') {
+        if (state.todayStatus === 'failed') {
+            showToast(0, 'You already slipped today. Stay strong tomorrow!');
+            return;
+        }
+        if (state.todayStatus === 'success') {
+            showToast(0, 'Already logged strong today.');
+            return;
+        }
+        recordSuccess();
+        return;
+    }
+    if (state.todayStatus === 'success') {
+        showToast(0, 'Already logged strong today.');
+        return;
+    }
+    recordFailure();
+}
+
 function showModal(action) {
     if ((action === 'success' || action === 'fail')
         && typeof isYesterdayLogPending === 'function' && isYesterdayLogPending()) {
@@ -140,6 +172,13 @@ function completeEndJourney(endWallDate) {
     const comparison = archiveCompletedJourney(endWallDate);
     if (!comparison) return;
 
+    var beatPreviousBest = comparison.prevBestScore
+        && isBetterJourneyScore(
+            comparison.score.success,
+            comparison.score.failures,
+            comparison.prevBestScore,
+        );
+
     // 10th slip logged for a prior day (e.g. yesterday): Journey already ended then —
     // today is Day 1 of the next Journey, not a forced rest day.
     var nextAlreadyOpen = false;
@@ -150,13 +189,20 @@ function completeEndJourney(endWallDate) {
 
     chartPage = -1;
     saveAndRender();
-    setTimeout(function () {
-        showJourneyComparison(
-            { attempt: comparison.attempt, score: comparison.score },
-            comparison.prevBestScore,
-            { nextJourneyOpenToday: nextAlreadyOpen },
-        );
-    }, 600);
+
+    if (comparison.prevBestScore) {
+        setTimeout(function () {
+            showJourneyComparison(
+                { attempt: comparison.attempt, score: comparison.score },
+                comparison.prevBestScore,
+                {
+                    nextJourneyOpenToday: nextAlreadyOpen,
+                    prevBestAttempt: comparison.prevBestAttempt,
+                    beatBest: beatPreviousBest,
+                },
+            );
+        }, 600);
+    }
 }
 
 function recordFailure() {

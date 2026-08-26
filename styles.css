@@ -2,11 +2,21 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 html {
-    color-scheme: light;
+    color-scheme: only light;
+    background: #f2f2f7;
     touch-action: manipulation;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
     -webkit-overflow-scrolling: touch;
+}
+
+html.king-loading,
+html.king-loading body {
+    background: #34c759;
+}
+
+html.king-loading .container {
+    visibility: hidden;
 }
 
 :root {
@@ -18,6 +28,11 @@ html {
     --border:      #d2d2d7;
     --card:        #ffffff;
     --bg:          #f2f2f7;
+    /* env() is 0 on many Android WebViews; Capacitor injects --safe-area-inset-*. */
+    --king-safe-top: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+    --king-safe-right: max(env(safe-area-inset-right, 0px), var(--safe-area-inset-right, 0px));
+    --king-safe-bottom: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
+    --king-safe-left: max(env(safe-area-inset-left, 0px), var(--safe-area-inset-left, 0px));
 }
 
 body {
@@ -32,14 +47,27 @@ body {
     touch-action: manipulation;
 }
 
+/* Keep scrolled cards from sitting under the clock / status icons. */
+body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--king-safe-top);
+    background: var(--bg);
+    z-index: 1500;
+    pointer-events: none;
+}
+
 .container {
     width: 100%;
     max-width: 480px;
     margin: 0 auto;
-    padding: 16px 16px calc(40px + env(safe-area-inset-bottom, 0px));
-    padding-top: max(16px, env(safe-area-inset-top, 0px));
-    padding-left: max(16px, env(safe-area-inset-left, 0px));
-    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding: 16px 16px calc(40px + var(--king-safe-bottom));
+    padding-top: max(16px, var(--king-safe-top));
+    padding-left: max(16px, var(--king-safe-left));
+    padding-right: max(16px, var(--king-safe-right));
 }
 
 /* ── CARDS ──────────────────────────────────────── */
@@ -49,7 +77,6 @@ body {
     padding: 12px;
     margin-bottom: 10px;
     box-shadow: 0 2px 12px rgba(0,0,0,0.07);
-    animation: fadeUp 0.4s ease both;
 }
 
 .premium-gated {
@@ -338,6 +365,21 @@ body {
     margin-bottom: 0;
 }
 
+.learn-log-strong {
+    color: var(--green);
+    font-weight: 700;
+}
+
+.learn-log-slip {
+    color: #ff3b30;
+    font-weight: 700;
+}
+
+.learn-score-inline {
+    font-weight: 700;
+    color: var(--text);
+}
+
 .learn-list {
     margin: 0 0 10px;
     padding: 0 0 0 1.15em;
@@ -357,11 +399,6 @@ body {
 
 .learn-powers,
 .learn-ladder {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
-    gap: 0.2em 0.35em;
     margin: 10px 0 12px;
     padding: 12px 14px;
     border-radius: 12px;
@@ -372,6 +409,23 @@ body {
     color: var(--green);
     letter-spacing: -0.2px;
     font-variant-numeric: tabular-nums;
+}
+
+.learn-powers.learn-seq-row {
+    justify-content: center;
+}
+
+.learn-seq-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.2em 0.35em;
+    line-height: 1;
+}
+
+.learn-seq-row > span:not(.learn-seq-arrow) {
+    display: inline-flex;
+    align-items: center;
     line-height: 1;
 }
 
@@ -383,28 +437,67 @@ body {
     font-weight: 800;
 }
 
-/* Match header slip score: 0–1 slips green, 2–3 slips yellow-orange. */
+/* Match header slip score / chances label relapse tiers */
 .learn-powers .learn-pow-ok { color: var(--green); }
 .learn-powers .learn-pow-warn { color: #e6ac00; }
+.learn-powers .learn-pow-orange { color: #e07000; }
+.learn-powers .learn-pow-danger { color: #ff453a; }
+.learn-powers .learn-pow-critical { color: #7b2d26; }
+
+.learn-seq-gap {
+    display: inline-flex;
+    align-items: center;
+    line-height: 1;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    opacity: 0.85;
+}
 
 .learn-seq-arrow {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
+    min-width: 1em;
     line-height: 1;
-    height: 1em;
-    font-weight: 700;
-    opacity: 0.8;
-    /* Optical vertical centre on Android system fonts without shifting iOS much */
-    transform: translateY(-0.06em);
+    font-size: 1em;
+    font-weight: 600;
+    opacity: 0.72;
+    /* Roboto → glyph sits on baseline; lift to visual centre of adjacent text */
+    transform: translateY(-0.14em);
 }
 
 .learn-score-line {
     margin: 4px 0 10px;
+    letter-spacing: -0.2px;
+}
+
+.learn-score-highlight {
     font-size: 16px;
     font-weight: 700;
     color: var(--text);
-    letter-spacing: -0.2px;
+}
+
+.learn-score-example {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+.learn-record-example {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin: 0;
+    line-height: 1.35;
+}
+
+.learn-record-example:first-of-type {
+    margin-top: 4px;
+}
+
+.learn-record-example:last-of-type {
+    margin-bottom: 10px;
 }
 
 .learn-score-delta {
@@ -732,7 +825,7 @@ body {
     text-align: center;
     font-size: 15px;
     font-weight: 600;
-    transition: color 0.25s ease;
+    color: var(--green);
 }
 
 .chances-label.relapse-0 { color: var(--green); }
@@ -835,22 +928,25 @@ button {
     border: 1px solid var(--border);
     font-weight: 600;
 }
-
-.actions-card .btn-backup:hover {
+.actions-card .btn-backup:active {
     border-color: var(--green);
     color: var(--green);
 }
-
 .actions-card .btn-reset {
     background: transparent;
     color: var(--text-muted);
     border: 1px solid var(--border);
     font-weight: 500;
 }
-
-.actions-card .btn-reset:hover {
-    border-color: #ff3b30;
-    color: #ff3b30;
+@media (hover: hover) and (pointer: fine) {
+    .actions-card .btn-backup:hover {
+        border-color: var(--green);
+        color: var(--green);
+    }
+    .actions-card .btn-reset:hover {
+        border-color: #ff3b30;
+        color: #ff3b30;
+    }
 }
 
 .backup-status {
@@ -897,6 +993,262 @@ button {
 
 .tab-content { display: none; }
 .tab-content.active { display: block; }
+
+.remind-panel {
+    padding: 4px 12px 16px;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+.remind-group {
+    background: var(--bg);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.remind-group-time {
+    margin-top: 8px;
+    padding: 0 0 2px;
+}
+
+.remind-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 44px;
+    padding: 6px 16px;
+    margin: 0;
+    background: #ffffff;
+}
+
+.remind-copy {
+    min-width: 0;
+    flex: 1;
+}
+
+.remind-title {
+    font-size: 17px;
+    font-weight: 400;
+    letter-spacing: -0.41px;
+    color: #000000;
+    margin: 0;
+    line-height: 1.29;
+}
+
+.remind-footer {
+    margin: 6px 16px 0;
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: -0.08px;
+    color: #8e8e93;
+    line-height: 1.35;
+}
+
+.remind-switch {
+    position: relative;
+    flex-shrink: 0;
+    width: 51px;
+    height: 31px;
+}
+
+.remind-switch input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    margin: 0;
+    cursor: pointer;
+    z-index: 1;
+}
+
+.remind-switch-ui {
+    display: block;
+    width: 51px;
+    height: 31px;
+    border-radius: 16px;
+    background: #e9e9eb;
+    position: relative;
+    transition: background-color 0.22s ease;
+}
+
+.remind-switch-ui::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 27px;
+    height: 27px;
+    border-radius: 50%;
+    background: #ffffff;
+    box-shadow:
+        0 3px 8px rgba(0, 0, 0, 0.15),
+        0 1px 1px rgba(0, 0, 0, 0.16);
+    transition: transform 0.22s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.remind-switch input:checked + .remind-switch-ui {
+    background: #34c759;
+}
+
+.remind-switch input:checked + .remind-switch-ui::after {
+    transform: translateX(20px);
+}
+
+.remind-time-label {
+    display: block;
+    padding: 10px 16px 0;
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: -0.08px;
+    color: #8e8e93;
+    text-transform: none;
+    margin: 0;
+}
+
+.remind-time-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    margin: 4px 12px 12px;
+    padding: 10px 8px;
+    border-radius: 10px;
+    background: #ffffff;
+    border: none;
+}
+
+.remind-time-colon {
+    font-size: 28px;
+    font-weight: 510;
+    letter-spacing: 0.2px;
+    color: #3c3c43;
+    line-height: 1;
+    padding: 0 2px;
+    font-variant-numeric: tabular-nums;
+}
+
+.remind-time-btn {
+    flex: 0 0 auto;
+    min-width: 52px;
+    box-sizing: border-box;
+    border: none;
+    background: transparent;
+    color: #3c3c43;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 28px;
+    font-weight: 510;
+    letter-spacing: 0.35px;
+    font-family: inherit;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color 0.15s ease;
+}
+
+.remind-time-btn:active {
+    background: rgba(120, 120, 128, 0.16);
+}
+
+.remind-time-ampm {
+    flex: 0 0 auto;
+    min-width: 58px;
+    margin-left: 4px;
+    font-size: 22px;
+    font-weight: 510;
+    letter-spacing: -0.2px;
+}
+
+.remind-time-row.is-disabled .remind-time-btn,
+.remind-time-row.is-disabled .remind-time-colon {
+    opacity: 0.35;
+    pointer-events: none;
+}
+
+.remind-time-picker-card {
+    max-width: 320px;
+    padding: 0;
+    text-align: left;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.22);
+}
+
+.remind-time-picker-card h3 {
+    margin: 0;
+    padding: 16px 16px 12px;
+    text-align: center;
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.41px;
+    color: #000000;
+    border-bottom: 0.5px solid rgba(60, 60, 67, 0.29);
+}
+
+.remind-time-picker-list {
+    max-height: min(52vh, 360px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    border: none;
+    border-radius: 0;
+    background: #ffffff;
+    margin: 0;
+}
+
+.remind-time-picker-option {
+    display: block;
+    width: 100%;
+    min-height: 44px;
+    border: none;
+    border-bottom: 0.5px solid rgba(60, 60, 67, 0.12);
+    background: #ffffff;
+    color: #000000;
+    font-size: 17px;
+    font-weight: 400;
+    letter-spacing: -0.41px;
+    font-family: inherit;
+    font-variant-numeric: tabular-nums;
+    padding: 11px 16px;
+    text-align: center;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.remind-time-picker-option:last-child {
+    border-bottom: none;
+}
+
+.remind-time-picker-option.is-selected {
+    background: #ffffff;
+    color: #000000;
+    font-weight: 600;
+    box-shadow: inset 3px 0 0 #34c759;
+}
+
+.remind-time-picker-option:active {
+    background: rgba(120, 120, 128, 0.16);
+}
+
+.remind-time-picker-close {
+    width: 100%;
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    border-top: 0.5px solid rgba(60, 60, 67, 0.29);
+    background: #ffffff;
+    color: #007aff;
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.41px;
+    padding: 14px 16px;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.remind-time-picker-close:active {
+    background: rgba(120, 120, 128, 0.12);
+}
 
 /* ── WEEKLY STREAK TRACK ─────────────────────────── */
 .weekly-streak-card {
@@ -1306,6 +1658,8 @@ button {
 /* Journey tab + Progress tab: grey on journey end (pending next journey) */
 #tab-journey.journey-ended-day .milestone-item.achieved .milestone-name,
 #tab-journey.journey-ended-day .milestone-item.achieved .milestone-status,
+#tab-journey.journey-ended-day .milestone-item.achieved-earned .milestone-name,
+#tab-journey.journey-ended-day .milestone-item.achieved-earned .milestone-status,
 #tab-journey.journey-ended-day .milestone-item.achieved-glow .milestone-name,
 #tab-journey.journey-ended-day .milestone-item.achieved-glow .milestone-status,
 #tab-journey.journey-ended-day .milestone-item.journey-ended-item .milestone-name,
@@ -1315,6 +1669,7 @@ button {
 }
 
 #tab-journey.journey-ended-day .milestone-item.achieved,
+#tab-journey.journey-ended-day .milestone-item.achieved-earned,
 #tab-journey.journey-ended-day .milestone-item.achieved-glow,
 #tab-journey.journey-ended-day .milestone-item.journey-ended-item {
     border-color: rgba(142, 142, 147, 0.45);
@@ -1420,6 +1775,13 @@ button {
 /* Past milestone: green text, no background change */
 .milestone-item.achieved .milestone-name,
 .milestone-item.achieved .milestone-status {
+    color: var(--green);
+    font-weight: 600;
+}
+
+/* Prior journeys peaked here — default card, green label + count only */
+.milestone-item.achieved-earned .milestone-name,
+.milestone-item.achieved-earned .milestone-status {
     color: var(--green);
     font-weight: 600;
 }
@@ -2033,11 +2395,13 @@ button {
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.5);
-    backdrop-filter: blur(10px);
     z-index: 3500;
     justify-content: center;
     align-items: center;
-    padding: 20px;
+    padding: max(20px, var(--king-safe-top)) 20px calc(20px + var(--king-safe-bottom));
+}
+@media (hover: hover) and (pointer: fine) {
+    .modal { backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
 }
 
 .modal.active { display: flex; }
@@ -2063,6 +2427,44 @@ button {
     font-weight: 600;
     margin-bottom: 24px;
     color: var(--text);
+}
+
+.export-choice-card h3 {
+    margin-bottom: 10px;
+}
+
+.export-choice-note {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin: 0 0 16px;
+}
+
+.export-choice-btn {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0 0 8px;
+    font-size: 13px;
+    padding: 10px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+    font-weight: 600;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.export-choice-btn:active {
+    transform: scale(0.98);
+}
+
+.export-choice-cancel {
+    width: 100%;
+    margin-top: 4px;
 }
 
 .modal-buttons {
@@ -2094,18 +2496,22 @@ button {
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.5);
-    backdrop-filter: blur(6px);
     z-index: 3200;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     opacity: 0;
+    visibility: hidden;
     pointer-events: none;
-    transition: opacity 0.35s ease;
+}
+@media (hover: hover) and (pointer: fine) {
+    .celebration-overlay { backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
 }
 
 .celebration-overlay.active {
+    display: flex;
     opacity: 1;
+    visibility: visible;
     pointer-events: all;
 }
 
@@ -2179,7 +2585,7 @@ button {
 /* ── TOAST ──────────────────────────────────────── */
 #toast {
     position: fixed;
-    bottom: 32px;
+    bottom: calc(32px + var(--king-safe-bottom));
     left: 50%;
     transform: translateX(-50%) translateY(20px);
     background: var(--green);
@@ -2226,19 +2632,22 @@ button {
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.6);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
     z-index: 2000;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
-    padding: 20px;
+    padding: max(20px, var(--king-safe-top)) 20px calc(20px + var(--king-safe-bottom));
     opacity: 0;
+    visibility: hidden;
     pointer-events: none;
-    transition: opacity 0.3s ease;
+}
+@media (hover: hover) and (pointer: fine) {
+    .overlay { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 }
 .overlay.active {
+    display: flex;
     opacity: 1;
+    visibility: visible;
     pointer-events: all;
 }
 .overlay-card {
@@ -2254,6 +2663,15 @@ button {
 }
 .overlay.active .overlay-card {
     transform: scale(1) translateY(0);
+}
+@media (hover: none) {
+    .overlay-card,
+    .overlay.active .overlay-card,
+    .celebration-card,
+    .celebration-overlay.active .celebration-card {
+        transform: none;
+        transition: none;
+    }
 }
 
 /* ── URGE TIMER ── */
@@ -2313,6 +2731,63 @@ button {
 
 /* ── JOURNEY COMPARISON ── */
 .compare-card { padding: 28px 20px 20px; }
+
+.journey-compare-popup {
+    margin: 0;
+    text-align: left;
+}
+
+.journey-compare-popup .journey-compare-card-green {
+    border-color: rgba(52, 199, 89, 0.45);
+    background: rgba(52, 199, 89, 0.08);
+}
+
+.journey-compare-popup .journey-compare-card-green .onb-journey-label {
+    color: var(--green);
+}
+
+.journey-compare-popup .journey-compare-card-green .onb-journey-score strong {
+    color: var(--green);
+}
+
+.journey-compare-popup .journey-compare-card-gold {
+    border-color: rgba(255, 159, 10, 0.5);
+    background: rgba(255, 159, 10, 0.1);
+}
+
+.journey-compare-popup .journey-compare-card-gold .onb-journey-label {
+    color: var(--gold);
+}
+
+.journey-compare-popup .journey-compare-card-gold .onb-journey-score strong {
+    color: var(--gold);
+}
+
+.journey-compare-popup .onb-journey-label {
+    display: block;
+    margin-bottom: 8px;
+    padding-bottom: 0;
+    border-bottom: none;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.journey-compare-popup .journey-compare-verdict {
+    margin-top: 14px;
+    margin-bottom: 0;
+    color: var(--green);
+}
+
+.journey-compare-popup .journey-compare-verdict-muted {
+    color: var(--text-muted);
+    font-weight: 700;
+}
+
+.compare-header[hidden] {
+    display: none !important;
+}
 .compare-header { margin-bottom: 20px; }
 .compare-badge {
     font-size: 10px;

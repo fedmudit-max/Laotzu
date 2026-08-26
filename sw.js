@@ -1,4 +1,4 @@
-const CACHE_NAME = 'king-v69';
+const CACHE_NAME = 'king-v89';
 
 const ASSETS = [
     './',
@@ -12,6 +12,7 @@ const ASSETS = [
     './billing.js',
     './firebase.js',
     './backup.js',
+    './reminder.js',
     './ui-main.js',
     './ui-overlays.js',
     './ui-actions.js',

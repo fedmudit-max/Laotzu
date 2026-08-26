@@ -1,0 +1,17 @@
+---
+description: Always rebuild and install King on the phone after app changes so testing matches the latest code
+alwaysApply: true
+---
+
+# Always install after app changes
+
+The Samsung/native app does **not** load repo files. It loads the last installed APK. Copying web assets is not enough.
+
+After any change that can appear on the device (HTML, CSS, JS, `www/`, Capacitor, Android native, assets), **before telling the user it is done**:
+
+1. Run `npm run android:install` (copies web, builds debug APK, installs, launches).
+2. Only then say the change is on the phone.
+
+Do not report copy-web, Gradle assemble, or a repo edit as “updated in the app.”
+
+Skip install only for non-app work (docs, rules, comments with no runtime effect). If install fails, say so — do not imply the phone has the change.

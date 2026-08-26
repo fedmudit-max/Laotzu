@@ -41,6 +41,9 @@ function saveToStorage(stateObj) {
     try {
         syncJourneyMilestoneCountsFromHistory(stateObj);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(stateObj));
+        if (typeof syncReminderLoggedDate === 'function') {
+            try { syncReminderLoggedDate(); } catch (e) { /* reminder layer optional */ }
+        }
         return { ok: true };
     } catch (e) {
         const isQuota = e && (e.name === 'QuotaExceededError' || e.code === 22);
@@ -211,6 +214,66 @@ function getWallDateLogStatus(wallDate) {
     return entry ? logStatus(entry) : null;
 }
 
+/**
+ * Unique wall dates in dailyLog with status strong (lifetime Strong Days — no double count).
+ */
+function countLifetimeStrongDays() {
+    var log = state.dailyLog || {};
+    var seen = Object.create(null);
+    var n = 0;
+    Object.keys(log).forEach(function (k) {
+        var entry = log[k];
+        if (logStatus(entry) !== 'strong') return;
+        var dateKey = (entry && typeof entry === 'object' && entry.date)
+            ? entry.date
+            : (/^\d{4}-\d{2}-\d{2}$/.test(k) ? k : null);
+        if (!dateKey || seen[dateKey]) return;
+        seen[dateKey] = true;
+        n++;
+    });
+    return n;
+}
+
+/**
+ * Total slip events from dailyLog (multi-slip days add slipCount). Lifetime Relapses.
+ */
+function countLifetimeRelapses() {
+    var log = state.dailyLog || {};
+    var seen = Object.create(null);
+    var n = 0;
+    Object.keys(log).forEach(function (k) {
+        var entry = log[k];
+        if (logStatus(entry) !== 'slip') return;
+        var dateKey = (entry && typeof entry === 'object' && entry.date)
+            ? entry.date
+            : (/^\d{4}-\d{2}-\d{2}$/.test(k) ? k : null);
+        if (!dateKey) return;
+        if (seen[dateKey]) return;
+        seen[dateKey] = true;
+        n += (entry && typeof entry === 'object' && entry.slipCount)
+            ? Math.max(1, Number(entry.slipCount) || 1)
+            : 1;
+    });
+    return n;
+}
+
+/**
+ * Journeys started including the current one (completed archives + live if not archived yet).
+ */
+function countLifetimeJourneys() {
+    var completed = (state.completedJourneys || []).length;
+    var attempt = Math.max(1, Math.floor(Number(state.attempt) || 1));
+    var archivedCurrent = false;
+    var journeys = state.completedJourneys || [];
+    for (var i = 0; i < journeys.length; i++) {
+        if (Math.max(1, Math.floor(Number(journeys[i].attempt) || 1)) === attempt) {
+            archivedCurrent = true;
+            break;
+        }
+    }
+    return completed + (archivedCurrent ? 0 : 1);
+}
+
 function nextSlipCount(logDate, calDay) {
     var prev = getDailyLogEntry(logDate, calDay);
     if (prev && logStatus(prev) === 'slip') {
@@ -257,6 +320,8 @@ function getDefaultState() {
         lastFreezeDate: '',
         trialStartedAt: '',
         premiumUntil: '',
+        lastVerifiedAt: '',
+        source: '',
     };
 }
 
@@ -472,6 +537,21 @@ function bestScoreFromCompletedJourneys(journeys) {
     return best;
 }
 
+/** Completed journey row matching an exact score (for compare popup labels). */
+function findCompletedJourneyForScore(journeys, score) {
+    if (!journeys || !journeys.length || !score) return null;
+    var targetSuccess = Number(score.success) || 0;
+    var targetFailures = Number(score.failures) || 0;
+    for (var i = 0; i < journeys.length; i++) {
+        var sc = journeys[i].score || {};
+        if ((Number(sc.success) || 0) === targetSuccess
+            && (Number(sc.failures) || 0) === targetFailures) {
+            return journeys[i];
+        }
+    }
+    return null;
+}
+
 /**
  * Header Best: permanent N/10 Best, or live current if it is strictly better
  * (more strong days, or same strong with fewer slips).
@@ -576,6 +656,13 @@ function isJourneyMilestoneRevealed(unlockAt) {
 
 function shouldJourneyMilestoneGlow(day) {
     return journeyScoreSuccess() >= day;
+}
+
+/** Peaked in a prior journey — not reached on this run yet (green labels only). */
+function isJourneyMilestonePreviouslyAchieved(day, s) {
+    s = s || state;
+    if (journeyScoreSuccess(s) >= day) return false;
+    return getJourneyMilestoneDisplayCount(day) > 0;
 }
 
 function getJourneyMilestoneDisplayCount(day) {
@@ -740,7 +827,8 @@ function buildJourneyMilestoneCelebration(hitDay, s) {
 }
 
 /** Standard milestone rows for a Journey tab section. */
-function expandSectionMilestones(sectionDays) {
+function expandSectionMilestones(sectionDays, options) {
+    options = options || {};
     var out = [];
     for (var i = 0; i < sectionDays.length; i++) {
         var day = sectionDays[i];
@@ -749,7 +837,7 @@ function expandSectionMilestones(sectionDays) {
             day: day,
             emoji: meta.emoji,
             label: day + ' Days',
-            unlockAt: getMilestoneUnlockDay(day),
+            unlockAt: options.alwaysVisible ? 0 : getMilestoneUnlockDay(day),
         });
     }
     return out;
@@ -781,8 +869,7 @@ function isBrainPhaseBoundaryComplete(completed) {
 
 /**
  * Progress “you are here” day on the recovery continuum:
- *  - After slip (0 strong): day 1 of Withdrawal (3 days left), next calendar day only
- *    (slip day stays freeze/grey via UI — not this function’s job)
+ *  - Before first strong day logged: no active phase (Withdrawal unlocks after Day 1)
  *  - After completing a phase end day (e.g. day 3 logged): next wall day = first day of next phase
  *  - Otherwise: equals completed strong days after each log
  */
@@ -791,8 +878,7 @@ function getBrainProgressStreak() {
     if (typeof isStreakFreezeDay === 'function' && isStreakFreezeDay()) return completed;
     if (typeof isJourneyEndedDisplay === 'function' && isJourneyEndedDisplay()) return completed;
 
-    // Fresh run / after slip: place on Withdrawal day 1 until first strong is logged.
-    if (completed === 0) return 1;
+    if (completed === 0) return 0;
 
     // Phase end fully logged; new calendar day not logged yet → enter next phase day.
     if (state.todayStatus === 'none' && isBrainPhaseBoundaryComplete(completed)) {
@@ -803,7 +889,7 @@ function getBrainProgressStreak() {
 
 /**
  * Days left in a phase from completed-strong rule:
- *  slip next day (0 done / working day 1): 3 left
+ *  slip next day (0 done): no active phase until Day 1 strong is logged
  *  after day-1 log: 2 left … day-3 log: 0 → Phase completed
  *  next day in Flatline before day-4 log: 11 left; after day-4 log: 10 left
  */
@@ -988,11 +1074,12 @@ function getWeeklyInsightDay(progress) {
 
 /**
  * After a full 7-day week, show a fresh timeline from the next calendar day.
- * While Day 7 is still logged strong today, freeze the week on Day 7 —
+ * While Day 7 is still logged strong today, hold that week —
  * do not jump to the next week until midnight / the next day starts.
+ * A slip on that next day (ended streak 7/14/…) must also refresh so freeze
+ * greys Day 1 of the new week — not Day 7 of the week already finished.
  */
 function shouldRefreshWeeklyTimeline(streak) {
-    if (isStreakFreezeDay()) return false;
     if (!streak || streak <= 0 || streak % 7 !== 0) return false;
     // Completed week sealed today — hold Day 7 until the calendar day rolls over.
     if (state.todayStatus === 'success') return false;
@@ -1564,10 +1651,14 @@ function archiveCompletedJourney(endWallDate) {
     if (isAwaitingNextJourney()) return null;
 
     const prevBestScore = bestScoreFromCompletedJourneys(state.completedJourneys);
+    var prevBestJourney = prevBestScore
+        ? findCompletedJourneyForScore(state.completedJourneys, prevBestScore)
+        : null;
     const comparison = {
         attempt: state.attempt,
         score: { ...state.score },
         prevBestScore,
+        prevBestAttempt: prevBestJourney ? prevBestJourney.attempt : null,
     };
 
     state.completedJourneys.push({

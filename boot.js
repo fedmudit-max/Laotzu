@@ -2,7 +2,20 @@
  * boot.js — Service worker, button router, app startup. Load last.
  */
 
+function isCapacitorNative() {
+    try {
+        return !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function'
+            && window.Capacitor.isNativePlatform());
+    } catch (e) {
+        return false;
+    }
+}
+
 function registerServiceWorkerDeferred() {
+    // Native Capacitor apps ship files in the bundle — do not use a service worker
+    // (Capacitor WebView is https://localhost, which is not GitHub Pages).
+    if (isCapacitorNative()) return;
+
     // PWA install (Android app icon / standalone) needs HTTPS or localhost + SW.
     // file:// always becomes a plain Chrome shortcut — cannot install as app.
     if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
@@ -40,12 +53,46 @@ function registerServiceWorkerDeferred() {
 
 registerServiceWorkerDeferred();
 
-function dismissLoadScreen() {
+var KING_QUOTE_MS = 100;
+var KING_APP_BG = '#f2f2f7';
+
+function hideLoadScreenNow() {
     var ls = document.getElementById('loadScreen');
     if (!ls) return;
-    ls.style.pointerEvents = 'none';
+    document.documentElement.style.background = KING_APP_BG;
+    document.body.style.background = KING_APP_BG;
+    document.documentElement.classList.remove('king-loading');
+    ls.style.transition = 'none';
     ls.style.opacity = '0';
-    setTimeout(function () { ls.style.display = 'none'; }, 300);
+    ls.style.pointerEvents = 'none';
+    ls.style.display = 'none';
+}
+
+function whenSplashGone(done) {
+    if (!isCapacitorNative() || window.__kingSplashGone) {
+        done();
+        return;
+    }
+    var started = Date.now();
+    var timer = setInterval(function () {
+        if (window.__kingSplashGone || Date.now() - started > 800) {
+            clearInterval(timer);
+            done();
+        }
+    }, 16);
+}
+
+function dismissLoadScreen(onReady) {
+    var ls = document.getElementById('loadScreen');
+    if (!ls || ls.getAttribute('data-king-hide') === '1') return;
+    ls.setAttribute('data-king-hide', '1');
+
+    whenSplashGone(function () {
+        setTimeout(function () {
+            if (typeof onReady === 'function') onReady();
+            requestAnimationFrame(hideLoadScreenNow);
+        }, KING_QUOTE_MS);
+    });
 }
 
 function showFileProtocolBanner() {
@@ -107,6 +154,9 @@ function showFileProtocolBanner() {
             'close-learn-journey': closeLearnJourney,
             'export-backup': exportProgressBackup,
             'import-backup': openImportPicker,
+            'export-save-downloads': function () { runAndroidNativeExport('downloads'); },
+            'export-choose-folder': function () { runAndroidNativeExport('folder'); },
+            'export-choice-cancel': closeExportChoiceModal,
         };
         if (actions[action]) actions[action]();
     }
@@ -130,6 +180,13 @@ function showFileProtocolBanner() {
     if (learnOverlay) {
         learnOverlay.addEventListener('click', function (e) {
             if (e.target.id === 'learnJourneyOverlay') closeLearnJourney();
+        });
+    }
+
+    var exportChoiceModal = document.getElementById('exportChoiceModal');
+    if (exportChoiceModal) {
+        exportChoiceModal.addEventListener('click', function (e) {
+            if (e.target.id === 'exportChoiceModal') closeExportChoiceModal();
         });
     }
 
@@ -178,11 +235,13 @@ function showFileProtocolBanner() {
     function startApp() {
         try { initFirebase(); } catch (err) { console.error('King firebase init failed:', err); }
         try { init(); } catch (err) { console.error('King init failed:', err); }
+        try { initReminders(); } catch (err) { console.error('King reminder init failed:', err); }
         initPremiumStartup();
-        paintApp(true);
-        try { checkOnboarding(); } catch (err) { console.error('King onboarding failed:', err); }
-        dismissLoadScreen();
-        deferStartupHeavyWork();
+        dismissLoadScreen(function () {
+            try { paintApp(true); } catch (err) { console.error('King render failed:', err); }
+            try { checkOnboarding(); } catch (err) { console.error('King onboarding failed:', err); }
+            deferStartupHeavyWork();
+        });
     }
 
     showFileProtocolBanner();
@@ -191,6 +250,7 @@ function showFileProtocolBanner() {
     document.addEventListener('visibilitychange', function () {
         if (document.visibilityState === 'visible') {
             refreshOnAppOpen();
+            if (typeof consumeReminderLogAction === 'function') consumeReminderLogAction();
             if (safeGet('onboardingComplete')) {
                 try { updateWeeklyTravelerPosition(); } catch (err) { console.error('King weekly render failed:', err); }
             }
