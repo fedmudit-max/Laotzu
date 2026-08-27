@@ -61,6 +61,11 @@ android {
     }
     buildTypes {
         release {
+            // MINIFY OFF for v1 / closed testing — JS is most of the app; native layer is small.
+            // BEFORE minifyEnabled true:
+            //   1. Confirm android/app/proguard-rules.pro has keep rules (Capacitor, King plugins, billing)
+            //   2. ./gradlew :app:assembleRelease && install release APK on a real device
+            //   3. Smoke-test KingBilling + KingReminder (see ARCHITECTURE.md → Android release builds)
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

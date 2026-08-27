@@ -1,21 +1,23 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
+# King — ProGuard / R8 keep rules
 #
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# release.minifyEnabled is false today (see app/build.gradle).
+# BEFORE turning minify on: keep rules must stay in sync with native plugins,
+# then smoke-test a release APK on a real device:
+#   - KingBilling (queryProducts, queryPurchases)
+#   - KingReminder (schedule, notification tap → log)
+#
+# See ARCHITECTURE.md → Android release builds.
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Capacitor bridge + @CapacitorPlugin discovery
+-keep class com.getcapacitor.** { *; }
+-keepattributes *Annotation*
+-keepattributes JavascriptInterface
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# King native plugins (billing, reminder, backup, receivers)
+-keep class com.kingtracker.app.** { *; }
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# Google Play Billing
+-keep class com.android.billingclient.** { *; }
+
+# Readable stack traces if minify strips line numbers (optional but useful)
+-keepattributes SourceFile,LineNumberTable

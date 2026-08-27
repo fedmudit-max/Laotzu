@@ -3,7 +3,7 @@
  * copies: www/ (webDir), then overlay Android/iOS public folders.
  *
  * Edit root files only. Do not edit www/ or native assets by hand.
- * Android Gradle preBuild runs this so Studio ▶ Run cannot ship a stale billing.js.
+ * Android Gradle preBuild runs this so Studio ▶ Run cannot ship stale web assets.
  * Still run `npm run cap:sync` after plugin / capacitor.config.json changes.
  */
 const fs = require('fs');
@@ -94,7 +94,7 @@ const nativePublic = [];
 if (fs.existsSync(path.dirname(ANDROID_PUBLIC))) nativePublic.push(ANDROID_PUBLIC);
 if (fs.existsSync(path.dirname(IOS_PUBLIC))) nativePublic.push(IOS_PUBLIC);
 nativePublic.forEach(function (dest) {
-    publishPwa(dest, false);
+    publishPwa(dest, true);
 });
 
 files.forEach(function (rel) {

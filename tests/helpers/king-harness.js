@@ -56,10 +56,16 @@ function createKingContext() {
         'constants.js',
         'data.js',
         'migration.js',
-        'logic.js',
+        'logic-storage-state.js',
+        'logic-dates-log.js',
+        'logic-journey.js',
+        'logic-streak.js',
+        'logic-logging.js',
         'entitlement.js',
         'backup.js',
-        'billing.js',
+        'billing-offers.js',
+        'billing-store-play.js',
+        'billing-ui.js',
     ];
     for (const file of files) {
         const code = fs.readFileSync(path.join(ROOT, file), 'utf8');
@@ -68,7 +74,7 @@ function createKingContext() {
     return sandbox;
 }
 
-/** `let state` in logic.js is not a sandbox property — read through the VM. */
+/** `let state` in logic-storage-state.js is not a sandbox property — read through the VM. */
 function getState(ctx) {
     return vm.runInContext('state', ctx);
 }
@@ -107,6 +113,75 @@ function seedJourney(ctx, options) {
     }));
 }
 
+/** Mirrors ui-main init() after scripts load — load, merge, heal, recompute. */
+function simulateColdStartInit(ctx) {
+    vm.runInContext(`
+(function () {
+    var saved = loadFromStorage();
+    if (!saved) {
+        replaceState(getDefaultState());
+    } else {
+        var beforeCounts = JSON.stringify(saved.journeyMilestones || {});
+        replaceState(mergeSavedState(saved));
+        if (beforeCounts !== JSON.stringify(state.journeyMilestones || {})) {
+            saveToStorage(state);
+        }
+    }
+    if (ensureTrialStarted(state)) saveToStorage(state);
+    if (healStrandedJourneyEnd()) saveToStorage(state);
+    var beforeStreak = state.currentStreak;
+    recomputeCurrentStreak();
+    if (beforeStreak !== state.currentStreak) saveToStorage(state);
+})();
+`, ctx);
+}
+
+/** merge → heal → recompute (no save). */
+function runRestorePipeline(ctx, saved) {
+    ctx.replaceState(ctx.mergeSavedState(saved));
+    ctx.healStrandedJourneyEnd();
+    ctx.recomputeCurrentStreak();
+}
+
+/**
+ * Mirrors restoreImportBackup logic (no DOM/render):
+ * merge → replace → heal → recompute → save (+ onboarding flag).
+ */
+function simulateRestoreImportBackup(ctx, backup) {
+    if (!backup || !backup.state) return false;
+    ctx.replaceState(ctx.mergeSavedState(backup.state));
+    ctx.healStrandedJourneyEnd();
+    ctx.recomputeCurrentStreak();
+    if (backup.onboardingComplete === true) {
+        ctx.safeSet('onboardingComplete', 'true');
+    } else if (backup.onboardingComplete === false) {
+        ctx.safeRemove('onboardingComplete');
+    }
+    ctx.saveToStorage(getState(ctx));
+    return true;
+}
+
+/** Mirrors recordSuccess write path (no UI). */
+function simulateLogStrongToday(ctx) {
+    vm.runInContext(`
+state.lastOpenedDate = todayKey();
+`, ctx);
+    const result = ctx.applyStrongDay({ logDate: vm.runInContext('todayKey()', ctx), suppressUI: false });
+    if (result && result.applied) {
+        ctx.saveToStorage(getState(ctx));
+    }
+    return result;
+}
+
+/** Mirrors recordFailure / recordSlipToday write path (no UI). */
+function simulateLogSlipToday(ctx) {
+    return ctx.recordSlipToday();
+}
+
+function putSavedStateInStorage(ctx, saved) {
+    ctx.localStorage.setItem('habitTracker_v3', JSON.stringify(saved));
+}
+
 function isoDaysFromNow(days) {
     return new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
 }
@@ -118,4 +193,10 @@ module.exports = {
     isoDaysFromNow,
     getState,
     setState,
+    simulateColdStartInit,
+    runRestorePipeline,
+    simulateRestoreImportBackup,
+    simulateLogStrongToday,
+    simulateLogSlipToday,
+    putSavedStateInStorage,
 };

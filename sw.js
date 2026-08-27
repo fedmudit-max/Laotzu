@@ -1,4 +1,4 @@
-const CACHE_NAME = 'king-v89';
+const CACHE_NAME = 'king-v91';
 
 const ASSETS = [
     './',
@@ -7,9 +7,15 @@ const ASSETS = [
     './constants.js',
     './data.js',
     './migration.js',
-    './logic.js',
+    './logic-storage-state.js',
+    './logic-dates-log.js',
+    './logic-journey.js',
+    './logic-streak.js',
+    './logic-logging.js',
     './entitlement.js',
-    './billing.js',
+    './billing-offers.js',
+    './billing-store-play.js',
+    './billing-ui.js',
     './firebase.js',
     './backup.js',
     './reminder.js',

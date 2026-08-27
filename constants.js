@@ -51,11 +51,14 @@ const PREMIUM_PLAY_CACHE_DAYS = 3;
 const PREMIUM_ANNUAL_VALUE_MESSAGE = 'Best value for the long journey';
 /** Display-only annual strikethrough / “was” price for % off vs annual sale. */
 const PREMIUM_ANNUAL_COMPARE_AMOUNT = 2299;
-/** Dev mock until Play/App Store supplies localized plan prices. Display-only. */
+/** Dev mock until Play/App Store supplies localized plan prices. Web / harness only — not shown on Android billing builds. */
 const PREMIUM_PLANS_MOCK = [
     { id: 'monthly', listAmount: 199, amount: 149, period: 'month' },
     { id: 'annual', amount: 1499, period: 'year', message: PREMIUM_ANNUAL_VALUE_MESSAGE },
 ];
+/** Paywall copy when Play pricing cannot be loaded on Android. */
+const PREMIUM_PRICE_UNAVAILABLE = 'Price unavailable';
+const PREMIUM_PRICE_LOADING = 'Loading price…';
 /** Feature bullets on paywall + premium panel. */
 const PREMIUM_FEATURES = [
     'Weekly timeline — one week at a time',

@@ -574,10 +574,10 @@ function renderMonthGrid() {
 
     // Journey start wall date for current journey Day index.
     // App install / first Day 1 — grey month cells only before this (does not reset on new journey).
-    const journeyStart = (typeof getAppStartWallDate === 'function')
-        ? getAppStartWallDate()
-        : ((typeof getJourneyAnchorWallDate === 'function')
-            ? getJourneyAnchorWallDate()
+    const journeyStart = (typeof readAppStartWallDate === 'function')
+        ? (readAppStartWallDate() || inferAppStartFromLog())
+        : ((typeof readJourneyAnchorWallDate === 'function')
+            ? (readJourneyAnchorWallDate() || inferJourneyStartFromLog())
             : (state.lastOpenedDate || appToday));
 
     // Day labels

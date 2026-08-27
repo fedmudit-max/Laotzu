@@ -91,7 +91,7 @@ function checkNewDay() {
         }
     }
 
-    const anchor = getJourneyAnchorWallDate();
+    const anchor = ensureJourneyAnchorWallDate();
     if (yesterday >= anchor && !isWallDateLogged(yesterday)) {
         // Paint auto-strong / score updates before the overlay (don't leave stale header).
         saveToStorage(state);

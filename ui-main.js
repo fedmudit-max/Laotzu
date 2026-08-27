@@ -78,7 +78,7 @@ function saveAndRender() {
 function renderAll(options) {
     options = options || {};
     // Always paint premium UI after onboarding so expired trial still *shows* features.
-    // Access is gated by requirePremium + lock veil (billing.js), not by skipping render.
+    // Access is gated by requirePremium + lock veil (billing-ui.js), not by skipping render.
     const full = true;
     const jobs = [
         renderTopStats,

@@ -1,5 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
+const vm = require('node:vm');
 const {
     createKingContext,
     resetKing,
@@ -7,6 +8,64 @@ const {
     getState,
     setState,
 } = require('./helpers/king-harness');
+
+function stubNativeAndroidBilling(ctx, billingPlugin) {
+    ctx.__billingPlugin = billingPlugin || {};
+    vm.runInContext(`
+        window = {
+            Capacitor: {
+                isNativePlatform: function () { return true; },
+                getPlatform: function () { return 'android'; },
+                Plugins: { KingBilling: __billingPlugin },
+            },
+        };
+    `, ctx);
+}
+
+test('getPremiumOffer uses mock plans on web harness', () => {
+    const ctx = createKingContext();
+    resetKing(ctx);
+    const offer = ctx.getPremiumOffer();
+    assert.equal(offer.source, 'mock');
+    assert.ok(offer.plans.length >= 2);
+    assert.match(offer.plans[0].price, /₹/);
+});
+
+test('getPremiumOffer never shows mock on native without Play prices', () => {
+    const ctx = createKingContext();
+    resetKing(ctx);
+    stubNativeAndroidBilling(ctx);
+    const offer = ctx.getPremiumOffer();
+    assert.equal(offer.source, 'loading');
+    assert.equal(offer.plans.length, 0);
+});
+
+test('getPremiumOffer shows Play prices after setPremiumOfferFromStore', () => {
+    const ctx = createKingContext();
+    resetKing(ctx);
+    stubNativeAndroidBilling(ctx);
+    ctx.setPremiumOfferFromStore({
+        source: 'play',
+        plans: [
+            { id: 'monthly', price: '$4.99', amount: 4.99 },
+            { id: 'annual', price: '$39.99', amount: 39.99 },
+        ],
+    });
+    const offer = ctx.getPremiumOffer();
+    assert.equal(offer.source, 'play');
+    assert.equal(offer.plans[0].price, '$4.99');
+    assert.equal(offer.plans.some((p) => String(p.price).indexOf('₹149') !== -1), false);
+});
+
+test('getPremiumOffer unavailable when Play pricing load fails on native', () => {
+    const ctx = createKingContext();
+    resetKing(ctx);
+    stubNativeAndroidBilling(ctx);
+    vm.runInContext('premiumOfferLoadState = "unavailable"', ctx);
+    const offer = ctx.getPremiumOffer();
+    assert.equal(offer.source, 'unavailable');
+    assert.equal(offer.plans.length, 0);
+});
 
 test('updateEntitlementSnapshot ignores non-play sources', () => {
     const ctx = createKingContext();

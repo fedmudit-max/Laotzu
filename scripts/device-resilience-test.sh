@@ -11,8 +11,8 @@ ADB="${ADB:-adb}"
 if ! command -v "$ADB" >/dev/null 2>&1; then
   if [[ -x "${ANDROID_HOME:-}/platform-tools/adb" ]]; then
     ADB="${ANDROID_HOME}/platform-tools/adb"
-  elif [[ -x "/Users/muditpokhriyal/Library/Android/sdk/platform-tools/adb" ]]; then
-    ADB="/Users/muditpokhriyal/Library/Android/sdk/platform-tools/adb"
+  elif [[ -x "${HOME}/Library/Android/sdk/platform-tools/adb" ]]; then
+    ADB="${HOME}/Library/Android/sdk/platform-tools/adb"
   else
     echo "adb not found. Set ADB or ANDROID_HOME."
     exit 1

@@ -3344,6 +3344,16 @@ button {
     display: none;
 }
 
+.premium-price-unavailable {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--text-muted);
+    padding: 12px 0;
+    text-align: center;
+}
+
 .btn-premium-buy {
     width: 100%;
     padding: 14px;
