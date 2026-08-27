@@ -59,6 +59,8 @@ const PREMIUM_PLANS_MOCK = [
 /** Paywall copy when Play pricing cannot be loaded on Android. */
 const PREMIUM_PRICE_UNAVAILABLE = 'Price unavailable';
 const PREMIUM_PRICE_LOADING = 'Loading price…';
+/** Web / PWA — no store billing; avoid showing dev mock INR prices. */
+const PREMIUM_PRICE_WEB_HINT = 'Subscribe in the King Android app — Google Play shows your local price.';
 /** Feature bullets on paywall + premium panel. */
 const PREMIUM_FEATURES = [
     'Weekly timeline — one week at a time',

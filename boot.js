@@ -240,6 +240,7 @@ function showFileProtocolBanner() {
         dismissLoadScreen(function () {
             try { paintApp(true); } catch (err) { console.error('King render failed:', err); }
             try { checkOnboarding(); } catch (err) { console.error('King onboarding failed:', err); }
+            if (typeof consumeReminderLogAction === 'function') consumeReminderLogAction();
             deferStartupHeavyWork();
         });
     }

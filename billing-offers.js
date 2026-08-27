@@ -122,6 +122,14 @@ function usesNativeBillingPricing() {
     return !!getKingBillingPlugin();
 }
 
+/** Dev mock INR plans: local web only (localhost / node tests). Never on GitHub Pages or Android. */
+function allowsMockPremiumPricing() {
+    if (usesNativeBillingPricing()) return false;
+    if (typeof location === 'undefined') return true;
+    var host = String(location.hostname || '').toLowerCase();
+    return host === 'localhost' || host === '127.0.0.1';
+}
+
 /**
  * Store modules call when Play/App Store returns localized products.
  * @param {{ price?: string, trialDays?: number, plans?: Array, source?: string }|null} offer
@@ -173,9 +181,16 @@ function getPremiumOffer() {
             source: 'loading',
         };
     }
+    if (allowsMockPremiumPricing()) {
+        return {
+            trialDays: PREMIUM_TRIAL_DAYS,
+            plans: normalizePremiumPlans(PREMIUM_PLANS_MOCK, true),
+            source: 'mock',
+        };
+    }
     return {
         trialDays: PREMIUM_TRIAL_DAYS,
-        plans: normalizePremiumPlans(PREMIUM_PLANS_MOCK, true),
-        source: 'mock',
+        plans: [],
+        source: 'web',
     };
 }

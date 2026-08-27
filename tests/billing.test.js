@@ -67,6 +67,15 @@ test('getPremiumOffer unavailable when Play pricing load fails on native', () =>
     assert.equal(offer.plans.length, 0);
 });
 
+test('getPremiumOffer never shows mock on production web host', () => {
+    const ctx = createKingContext();
+    resetKing(ctx);
+    vm.runInContext('location = { hostname: "fedmudit-max.github.io" };', ctx);
+    const offer = ctx.getPremiumOffer();
+    assert.equal(offer.source, 'web');
+    assert.equal(offer.plans.length, 0);
+});
+
 test('updateEntitlementSnapshot ignores non-play sources', () => {
     const ctx = createKingContext();
     resetKing(ctx);

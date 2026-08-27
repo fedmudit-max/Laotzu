@@ -22,7 +22,7 @@ function handleSuccess() {
     showModal('success');
 }
 
-/** Log from the reminder notification — no confirm modal (the tap is the confirm). */
+/** Log from the reminder notification — same confirm modal as in-app buttons. */
 function applyNotificationLog(kind) {
     if (safeGet('onboardingComplete') !== 'true') return;
     if (kind !== 'strong' && kind !== 'slip') return;
@@ -44,14 +44,14 @@ function applyNotificationLog(kind) {
             showToast(0, 'Already logged strong today.');
             return;
         }
-        recordSuccess();
+        showModal('success');
         return;
     }
     if (state.todayStatus === 'success') {
         showToast(0, 'Already logged strong today.');
         return;
     }
-    recordFailure();
+    showModal('fail');
 }
 
 function showModal(action) {

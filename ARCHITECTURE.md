@@ -278,7 +278,7 @@ Samsung/native app loads the installed APK, not repo files. Run `npm run android
 
 OS-scheduled check-in: **`KingReminder` plugin** wrapping AlarmManager **`setAlarmClock()`** (primary). Fallback: **`setExactAndAllowWhileIdle()`** when exact-alarm permission granted, else inexact. Declares **`SCHEDULE_EXACT_ALARM`** (declare in Play Console: optional user-scheduled daily reminder). User grants **scheduled reminders** in system settings when enabling — required on Android 12+ for `setAlarmClock` on many devices. No `USE_EXACT_ALARM`, `USE_FULL_SCREEN_INTENT`, `WAKE_LOCK`, or battery Unrestricted prompts in v1. Notifications: **`IMPORTANCE_HIGH`** + **`CATEGORY_REMINDER`** (heads-up banner; not alarm category).
 
-Enable + time UI lives in the **Reminder** card (below Lifetime Stats). Time is user-chosen via hour / minute / AM-PM dropdowns (default 8:00 PM until they change it; not a fixed 8 PM reminder). The notification offers **I STAYED STRONG TODAY** and **I slipped**; those taps log today through the same Journey write path (`recordSuccess` / `recordFailure`), without the in-app confirm modal. Changing the time cancels the previous alarm, then sets the new one. **User Off** cancels and sets native `enabled=false`. **Premium pause** cancels the alarm only — keep `enabled` so boot / next day can restore. UI shows **Reminder paused — Premium required.** Restoring Premium reschedules if still enabled.
+Enable + time UI lives in the **Reminder** card (below Lifetime Stats). Time is user-chosen via hour / minute / AM-PM dropdowns (default 8:00 PM until they change it; not a fixed 8 PM reminder). The notification offers **I STAYED STRONG TODAY** and **I slipped**; those taps open the same confirm modal as in-app logging, then write through the Journey path (`recordSuccess` / `recordFailure`). Changing the time cancels the previous alarm, then sets the new one. **User Off** cancels and sets native `enabled=false`. **Premium pause** cancels the alarm only — keep `enabled` so boot / next day can restore. UI shows **Reminder paused — Premium required.** Restoring Premium reschedules if still enabled.
 
 ---
 
@@ -365,7 +365,7 @@ Unlocking King **never** reads a price. The Premium modal is a display shell:
 showPremiumModal({ trialDays, plans })
 ```
 
-Today `PREMIUM_PLANS_MOCK` is for web / harness dev only — Android with Play Billing shows Play `formattedPrice` when `queryProducts` succeeds, **Loading price…** while loading, or **Price unavailable** if Play returns nothing. Do not show mock INR on native. Store strings are used as-is (`₹…`, `$…`, `€…`). Do not wrap store strings in a rupee formatter.
+Today `PREMIUM_PLANS_MOCK` is for **localhost / node tests only**. GitHub Pages and Android never show mock INR — web shows `PREMIUM_PRICE_WEB_HINT`; Android shows Play prices when `queryProducts` succeeds, otherwise loading or unavailable.
 
 ```text
 Entitlement.getAccess()

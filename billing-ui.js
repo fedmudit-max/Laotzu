@@ -185,7 +185,7 @@ function renderPremiumSheet(opts) {
     var planInput = opts.plans && opts.plans.length ? opts.plans : base.plans;
     var offer = {
         trialDays: opts.trialDays != null ? opts.trialDays : base.trialDays,
-        plans: normalizePremiumPlans(planInput, !usesNativeBillingPricing()),
+        plans: normalizePremiumPlans(planInput, allowsMockPremiumPricing()),
         source: opts.source || base.source,
     };
     lastPremiumModalOpts = offer;
@@ -263,7 +263,7 @@ function renderPremiumPlans(offer) {
     if (!plans.length) {
         var statusCopy = offer.source === 'loading'
             ? PREMIUM_PRICE_LOADING
-            : PREMIUM_PRICE_UNAVAILABLE;
+            : (!usesNativeBillingPricing() ? PREMIUM_PRICE_WEB_HINT : PREMIUM_PRICE_UNAVAILABLE);
         var note = Entitlement.isTrialActive()
             ? '<div class="premium-price-note">after ' + offer.trialDays + '-day trial</div>'
             : '';

@@ -602,7 +602,6 @@ function initReminders() {
     reconcileReminderEnableState();
     applyReminderAlarms();
     listenForReminderLogActions();
-    consumeReminderLogAction();
 }
 
 function listenForReminderLogActions() {
