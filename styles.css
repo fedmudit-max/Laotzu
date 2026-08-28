@@ -1634,6 +1634,8 @@ button {
 /* Streak tab: slip freeze — grey instead of green */
 #tab-streak.streak-freeze-day .milestone-item.achieved .milestone-name,
 #tab-streak.streak-freeze-day .milestone-item.achieved .milestone-status,
+#tab-streak.streak-freeze-day .milestone-item.achieved-earned .milestone-name,
+#tab-streak.streak-freeze-day .milestone-item.achieved-earned .milestone-status,
 #tab-streak.streak-freeze-day .milestone-item.achieved-glow .milestone-name,
 #tab-streak.streak-freeze-day .milestone-item.achieved-glow .milestone-status {
     color: #8e8e93 !important;
@@ -1641,6 +1643,7 @@ button {
 }
 
 #tab-streak.streak-freeze-day .milestone-item.achieved,
+#tab-streak.streak-freeze-day .milestone-item.achieved-earned,
 #tab-streak.streak-freeze-day .milestone-item.achieved-glow {
     border-color: rgba(142, 142, 147, 0.45);
     background: rgba(142, 142, 147, 0.08);
@@ -1649,10 +1652,17 @@ button {
     opacity: 1;
 }
 
-#tab-streak.streak-freeze-day .milestone-item.achieved .milestone-status {
+/* "Ended" on day milestones only — not count digits in Records */
+#tab-streak.streak-freeze-day > .milestone-list:first-of-type .milestone-item.achieved .milestone-status {
     font-size: 12px;
     letter-spacing: 0.02em;
     color: #8e8e93 !important;
+}
+
+#tab-streak.streak-freeze-day #bestStreakSection .milestone-status,
+#tab-streak.streak-freeze-day #streakRecordsSection .milestone-status {
+    font-size: 18px;
+    letter-spacing: normal;
 }
 
 /* Journey tab + Progress tab: grey on journey end (pending next journey) */
@@ -1750,6 +1760,30 @@ button {
     border: 1px solid var(--border);
     border-radius: 12px;
     transition: all 0.2s ease;
+}
+
+.milestone-item[hidden],
+.milestone-item.milestone-row-hidden {
+    display: none !important;
+}
+
+.streak-records-block[hidden],
+.streak-records-block.streak-records-locked {
+    display: none !important;
+}
+
+/* Day milestones → Best Streak (after Day 30 unlock) */
+#tab-streak #bestStreakSection {
+    margin-top: 10px;
+}
+
+/* Best Streak → Records section */
+#tab-streak #streakRecordsBlock:not(.streak-records-locked) {
+    margin-top: 10px;
+}
+
+#tab-streak .streak-records-block:not(.streak-records-locked) #streakRecordsSection {
+    margin-top: 0;
 }
 
 .milestone-info {

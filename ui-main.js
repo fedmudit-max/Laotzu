@@ -285,6 +285,32 @@ function renderButtons() {
     }
 }
 
+function applyStreakRecordsRowToDom(id, row) {
+    const item = document.getElementById(id);
+    if (!item || !row) return;
+    item.hidden = !row.visible;
+    item.classList.toggle('milestone-row-hidden', !row.visible);
+    if (!row.visible) return;
+    setMilestoneState(item, row.className);
+    const statEl = item.querySelector('.milestone-status');
+    if (statEl) statEl.textContent = row.status;
+}
+
+function renderStreakRecordsPanel(panel) {
+    if (!panel) return;
+    const block = document.getElementById('streakRecordsBlock');
+    if (block) block.classList.toggle('streak-records-locked', panel.recordsBlockLocked);
+    const label = document.getElementById('streakRecordsLabel');
+    if (label) label.hidden = !panel.recordsLabelVisible;
+    applyStreakRecordsRowToDom('cs-day50', panel.day50);
+    applyStreakRecordsRowToDom('cs-day100', panel.day100);
+}
+
+function renderBestStreakRow(panel) {
+    if (!panel) return;
+    applyStreakRecordsRowToDom('bestStreakItem', panel.bestStreak);
+}
+
 function renderStreakMilestones() {
     const streak = getDisplayStreak();
     const freeze = isStreakFreezeDay();
@@ -321,42 +347,18 @@ function renderStreakMilestones() {
         }
     });
 
-    // Count badges (lifetime — still show counts; highlight only if live/frozen streak qualifies)
-    renderCountMilestone('cs-day50',  streak >= 50,  state.day50Count);
-    renderCountMilestone('cs-day100', streak >= 100, state.day100Count);
-
-    // Best streak (gold when live record; frozen ends use longest only)
-    const best = document.getElementById('bestStreakItem');
-    const disp = document.getElementById('longestStreakDisplay');
-    if (!freeze && state.currentStreak > 0 && state.currentStreak >= state.longestStreak) {
-        setMilestoneState(best, 'golden');
-        disp.textContent = state.currentStreak;
-    } else {
-        setMilestoneState(best, null);
-        disp.textContent = state.longestStreak;
-    }
+    const panel = getStreakRecordsPanelState(state, streak, freeze);
+    renderBestStreakRow(panel);
+    renderStreakRecordsPanel(panel);
 }
 
-/** Sets achieved/achieved-glow/golden/null on a milestone item */
+/** Sets achieved/achieved-glow/achieved-earned/golden/null on a milestone item */
 function setMilestoneState(item, className) {
-    item.classList.remove('achieved', 'achieved-glow', 'golden', 'streak-ended');
+    item.classList.remove('achieved', 'achieved-glow', 'achieved-earned', 'golden', 'streak-ended');
     if (!className) return;
     className.split(/\s+/).forEach(function (c) {
         if (c) item.classList.add(c);
     });
-}
-
-/** Renders a count-based milestone (50-day, 100-day) */
-function renderCountMilestone(id, isActive, count) {
-    const item   = document.getElementById(id);
-    const statEl = item.querySelector('.milestone-status');
-    if (isActive) {
-        setMilestoneState(item, 'achieved-glow');
-        statEl.textContent = count > 0 ? count : '✓';
-    } else {
-        setMilestoneState(item, null);
-        statEl.textContent = count > 0 ? count : '0';
-    }
 }
 
 function syncWeeklyTrackWidth(track) {

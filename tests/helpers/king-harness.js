@@ -60,6 +60,7 @@ function createKingContext() {
         'logic-dates-log.js',
         'logic-journey.js',
         'logic-streak.js',
+        'logic-streak-records.js',
         'logic-logging.js',
         'entitlement.js',
         'backup.js',
@@ -178,6 +179,12 @@ function simulateLogSlipToday(ctx) {
     return ctx.recordSlipToday();
 }
 
+function setToday(ctx, date) {
+    ctx.todayKey = function todayKey() {
+        return date;
+    };
+}
+
 function putSavedStateInStorage(ctx, saved) {
     ctx.localStorage.setItem('habitTracker_v3', JSON.stringify(saved));
 }
@@ -199,4 +206,5 @@ module.exports = {
     simulateLogStrongToday,
     simulateLogSlipToday,
     putSavedStateInStorage,
+    setToday,
 };

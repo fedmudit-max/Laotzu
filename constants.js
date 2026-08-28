@@ -70,6 +70,7 @@ const PREMIUM_FEATURES = [
     'Progress Graph',
     'Export & import progress',
     'Daily reminder to log your day',
+    'Features in future',
 ];
 
 /** Shown under the feature list on the premium panel. */

@@ -137,19 +137,23 @@
                     <div class="milestone-status">—</div>
                 </div>
             </div>
-            <div class="section-label">Records</div>
-            <div class="milestone-list" id="streakRecordsSection">
-                <div class="milestone-item" id="cs-day50">
-                    <div class="milestone-info"><div class="milestone-icon">⭐</div><div class="milestone-name">50 Days Count</div></div>
-                    <div class="milestone-status">0</div>
-                </div>
-                <div class="milestone-item" id="cs-day100">
-                    <div class="milestone-info"><div class="milestone-icon">💯</div><div class="milestone-name">100 Days Count</div></div>
-                    <div class="milestone-status">0</div>
-                </div>
+            <div class="milestone-list" id="bestStreakSection">
                 <div class="milestone-item" id="bestStreakItem">
                     <div class="milestone-info"><div class="milestone-icon">🏆</div><div class="milestone-name">Best Streak</div></div>
                     <div class="milestone-status" id="longestStreakDisplay">0</div>
+                </div>
+            </div>
+            <div id="streakRecordsBlock" class="streak-records-block streak-records-locked">
+                <div class="section-label streak-records-label" id="streakRecordsLabel" hidden>Records</div>
+                <div class="milestone-list" id="streakRecordsSection">
+                    <div class="milestone-item milestone-row-hidden" id="cs-day50" hidden>
+                        <div class="milestone-info"><div class="milestone-icon">⭐</div><div class="milestone-name">50 Days Streak</div></div>
+                        <div class="milestone-status">0</div>
+                    </div>
+                    <div class="milestone-item milestone-row-hidden" id="cs-day100" hidden>
+                        <div class="milestone-info"><div class="milestone-icon">💯</div><div class="milestone-name">100 Days Streak</div></div>
+                        <div class="milestone-status">0</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -762,6 +766,7 @@
     <script defer src="./logic-dates-log.js"></script>
     <script defer src="./logic-journey.js"></script>
     <script defer src="./logic-streak.js"></script>
+    <script defer src="./logic-streak-records.js"></script>
     <script defer src="./logic-logging.js"></script>
     <script defer src="./entitlement.js"></script>
     <script defer src="./billing-offers.js"></script>
