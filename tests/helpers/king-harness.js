@@ -60,7 +60,6 @@ function createKingContext() {
         'logic-dates-log.js',
         'logic-journey.js',
         'logic-streak.js',
-        'logic-streak-records.js',
         'logic-logging.js',
         'entitlement.js',
         'backup.js',

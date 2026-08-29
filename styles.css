@@ -1652,15 +1652,13 @@ button {
     opacity: 1;
 }
 
-/* "Ended" on day milestones only — not count digits in Records */
 #tab-streak.streak-freeze-day > .milestone-list:first-of-type .milestone-item.achieved .milestone-status {
     font-size: 12px;
     letter-spacing: 0.02em;
     color: #8e8e93 !important;
 }
 
-#tab-streak.streak-freeze-day #bestStreakSection .milestone-status,
-#tab-streak.streak-freeze-day #streakRecordsSection .milestone-status {
+#tab-streak.streak-freeze-day #bestStreakSection .milestone-status {
     font-size: 18px;
     letter-spacing: normal;
 }
@@ -1767,23 +1765,8 @@ button {
     display: none !important;
 }
 
-.streak-records-block[hidden],
-.streak-records-block.streak-records-locked {
-    display: none !important;
-}
-
-/* Day milestones → Best Streak (after Day 30 unlock) */
 #tab-streak #bestStreakSection {
     margin-top: 10px;
-}
-
-/* Best Streak → Records section */
-#tab-streak #streakRecordsBlock:not(.streak-records-locked) {
-    margin-top: 10px;
-}
-
-#tab-streak .streak-records-block:not(.streak-records-locked) #streakRecordsSection {
-    margin-top: 0;
 }
 
 .milestone-info {
@@ -1869,7 +1852,29 @@ button {
     color: var(--gold);
 }
 
-/* Section label above a group of milestones (Streak Records / Journey Strong-Warrior-King) */
+/* Locked journey milestone placeholder (Warrior / King progressive reveal) */
+.milestone-item.milestone-locked {
+    border-style: dashed;
+    background: var(--bg);
+    justify-content: center;
+}
+
+.milestone-item.milestone-locked .milestone-info {
+    justify-content: center;
+    flex: 1;
+}
+
+.milestone-item.milestone-locked .milestone-icon {
+    font-size: 18px;
+}
+
+.milestone-item.milestone-locked .milestone-name {
+    color: var(--text-muted);
+    font-weight: 600;
+    text-align: center;
+}
+
+/* Section label above a group of milestones (Journey Strong-Warrior-King) */
 .section-label {
     font-size: 13px;
     font-weight: 700;
@@ -1881,6 +1886,17 @@ button {
 
 /* First section title in a tab (e.g. Journey → Strong) */
 .tab-content > .section-label:first-child { margin-top: 0; }
+
+/* Journey Strong / Warrior / King — same 12px rhythm; labels nudged 2px down */
+#tab-journey > .section-label {
+    margin-top: 14px;
+    margin-bottom: 10px;
+}
+
+#tab-journey > .section-label:first-child {
+    margin-top: 2px;
+    margin-bottom: 10px;
+}
 
 /* ── STREAK CHART ───────────────────────────────── */
 .chart-header {
@@ -2360,24 +2376,7 @@ button {
     letter-spacing: 0.3px;
 }
 
-/* ── PROGRESSIVE REVEAL — LOCKED SECTIONS ── */
-.next-unlock {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 14px 16px;
-    background: var(--bg);
-    border: 1px dashed var(--border);
-    border-radius: 12px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-muted);
-}
-
-.next-unlock-icon { font-size: 16px; }
-
-/* Full mystery lock — no text, no silhouettes */
+/* ── PROGRESSIVE REVEAL — King section mystery lock (before 400 days) ── */
 .mystery-lock {
     display: flex;
     flex-direction: column;

@@ -47,8 +47,6 @@ function applyStrongDay({ logDate, suppressUI = false } = {}) {
         state.recordCelebrated = true;
     }
 
-    applyStreakRecordsMilestonesOnStrongDay(state);
-
     var personalBestCrossing = isPersonalBestJourneyCrossing(state.score.success);
 
     updateBestJourney();

@@ -114,12 +114,6 @@ function getDefaultState() {
         currentStreak: 0,
         longestStreak: 0,
         longestStreakAtStreakStart: 0,
-        day50Count: 0,
-        day100Count: 0,
-        /** Records label + 50-day row revealed at Day 30 streak (logic-streak-records.js). */
-        streak50CountUnlocked: false,
-        /** 100-day row revealed on first 50-day count. */
-        streak100CountUnlocked: false,
         journeyMilestones: defaultJourneyMilestoneCounts(),
         bestJourney: { success: 0, failures: 0 },
         completedJourneys: [],
@@ -170,9 +164,6 @@ function mergeSavedState(saved) {
                 migrated.bestJourney,
             );
         }
-    }
-    if (typeof syncStreakRecordsUnlockFlags === 'function') {
-        syncStreakRecordsUnlockFlags(migrated);
     }
     return migrated;
 }

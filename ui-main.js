@@ -285,30 +285,14 @@ function renderButtons() {
     }
 }
 
-function applyStreakRecordsRowToDom(id, row) {
-    const item = document.getElementById(id);
-    if (!item || !row) return;
-    item.hidden = !row.visible;
-    item.classList.toggle('milestone-row-hidden', !row.visible);
-    if (!row.visible) return;
-    setMilestoneState(item, row.className);
+function renderBestStreakRow(streak, freeze) {
+    const item = document.getElementById('bestStreakItem');
+    if (!item) return;
+    const liveStreak = state.currentStreak || 0;
+    const liveBest = !freeze && liveStreak > 0 && liveStreak >= (state.longestStreak || 0);
+    setMilestoneState(item, liveBest ? 'golden' : null);
     const statEl = item.querySelector('.milestone-status');
-    if (statEl) statEl.textContent = row.status;
-}
-
-function renderStreakRecordsPanel(panel) {
-    if (!panel) return;
-    const block = document.getElementById('streakRecordsBlock');
-    if (block) block.classList.toggle('streak-records-locked', panel.recordsBlockLocked);
-    const label = document.getElementById('streakRecordsLabel');
-    if (label) label.hidden = !panel.recordsLabelVisible;
-    applyStreakRecordsRowToDom('cs-day50', panel.day50);
-    applyStreakRecordsRowToDom('cs-day100', panel.day100);
-}
-
-function renderBestStreakRow(panel) {
-    if (!panel) return;
-    applyStreakRecordsRowToDom('bestStreakItem', panel.bestStreak);
+    if (statEl) statEl.textContent = String(liveBest ? liveStreak : state.longestStreak || 0);
 }
 
 function renderStreakMilestones() {
@@ -347,9 +331,7 @@ function renderStreakMilestones() {
         }
     });
 
-    const panel = getStreakRecordsPanelState(state, streak, freeze);
-    renderBestStreakRow(panel);
-    renderStreakRecordsPanel(panel);
+    renderBestStreakRow(streak, freeze);
 }
 
 /** Sets achieved/achieved-glow/achieved-earned/golden/null on a milestone item */
@@ -593,6 +575,31 @@ function updateWeeklyTravelerPosition() {
     if (startLabel) startLabel.classList.toggle('done', startDone);
 }
 
+function lockedMilestoneSlotsForSection(unrevealedCount) {
+    if (unrevealedCount <= 0) return 0;
+    if (unrevealedCount > 1) return Math.min(unrevealedCount - 1, 2);
+    return 1;
+}
+
+function countUnrevealedJourneyMilestones(milestones, alwaysShow) {
+    var n = 0;
+    for (var i = 0; i < milestones.length; i++) {
+        if (!alwaysShow && !isJourneyMilestoneRevealed(milestones[i].unlockAt)) n++;
+    }
+    return n;
+}
+
+function buildLockedMilestonePlaceholderHtml() {
+    return (
+        '<div class="milestone-item milestone-locked">' +
+            '<div class="milestone-info">' +
+                '<div class="milestone-icon">🔒</div>' +
+                '<div class="milestone-name">Keep going to unlock</div>' +
+            '</div>' +
+        '</div>'
+    );
+}
+
 function buildMilestoneSectionHtml(milestones, options) {
     options = options || {};
     var alwaysShow = !!options.alwaysShow;
@@ -604,7 +611,9 @@ function buildMilestoneSectionHtml(milestones, options) {
     }
 
     var html = '';
-    var teaserShown = false;
+    var lockedSlotsLeft = lockedMilestoneSlotsForSection(
+        countUnrevealedJourneyMilestones(milestones, alwaysShow),
+    );
     for (var i = 0; i < milestones.length; i++) {
         var m = milestones[i];
         if (alwaysShow || isJourneyMilestoneRevealed(m.unlockAt)) {
@@ -624,13 +633,9 @@ function buildMilestoneSectionHtml(milestones, options) {
                     '</div>' +
                     '<div class="milestone-status">' + status + '</div>' +
                 '</div>';
-        } else if (!teaserShown) {
-            html +=
-                '<div class="next-unlock">' +
-                    '<span class="next-unlock-icon">🔒</span>' +
-                    'Keep going to unlock' +
-                '</div>';
-            teaserShown = true;
+        } else if (lockedSlotsLeft > 0) {
+            html += buildLockedMilestonePlaceholderHtml();
+            lockedSlotsLeft--;
         }
     }
     return html;

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'king-v111';
+const CACHE_NAME = 'king-v119';
 
 const ASSETS = [
     './',
@@ -11,7 +11,6 @@ const ASSETS = [
     './logic-dates-log.js',
     './logic-journey.js',
     './logic-streak.js',
-    './logic-streak-records.js',
     './logic-logging.js',
     './entitlement.js',
     './billing-offers.js',
