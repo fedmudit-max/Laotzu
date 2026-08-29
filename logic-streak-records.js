@@ -47,18 +47,6 @@ function syncStreakRecordsUnlockFlags(s) {
     }
 }
 
-function isStreakRecordsSectionRevealed(s) {
-    s = s || state;
-    syncStreakRecordsUnlockFlags(s);
-    return !!s.streak50CountUnlocked;
-}
-
-function isStreak100CountRowRevealed(s) {
-    s = s || state;
-    syncStreakRecordsUnlockFlags(s);
-    return !!s.streak100CountUnlocked;
-}
-
 /** Called from logic-logging after streak is updated on a strong day. */
 function applyStreakRecordsMilestonesOnStrongDay(s) {
     s = s || state;

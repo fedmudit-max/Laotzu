@@ -90,7 +90,6 @@ test('streak milestone counters increment at 50 days', () => {
     assert.equal(s.day50Count, 1);
     assert.equal(s.currentStreak, 50);
     assert.equal(s.streak100CountUnlocked, true);
-    assert.equal(ctx.isStreak100CountRowRevealed(), true);
 });
 
 test('50-day count milestone hidden until Day 30 streak', () => {
@@ -100,7 +99,7 @@ test('50-day count milestone hidden until Day 30 streak', () => {
     resetKing(ctx, { today });
     seedJourney(ctx, { today, start });
 
-    assert.equal(ctx.isStreakRecordsSectionRevealed(), false);
+    assert.equal(getState(ctx).streak50CountUnlocked, false);
 
     let d = start;
     for (let i = 0; i < 30; i++) {
@@ -111,8 +110,7 @@ test('50-day count milestone hidden until Day 30 streak', () => {
     const s = getState(ctx);
     assert.equal(s.currentStreak, 30);
     assert.equal(s.streak50CountUnlocked, true);
-    assert.equal(ctx.isStreakRecordsSectionRevealed(), true);
-    assert.equal(ctx.isStreak100CountRowRevealed(), false);
+    assert.equal(s.streak100CountUnlocked, false);
 });
 
 test('100-day count milestone hidden until first 50-day count', () => {
@@ -120,15 +118,15 @@ test('100-day count milestone hidden until first 50-day count', () => {
     resetKing(ctx, { today: '2026-06-17' });
     seedJourney(ctx, { today: '2026-06-17', start: '2026-06-15' });
 
-    assert.equal(ctx.isStreak100CountRowRevealed(), false);
+    assert.equal(getState(ctx).streak100CountUnlocked, false);
 
     ctx.applyStrongDay({ logDate: '2026-06-15', suppressUI: true });
     ctx.applyStrongDay({ logDate: '2026-06-16', suppressUI: true });
     ctx.applyStrongDay({ logDate: '2026-06-17', suppressUI: true });
 
     assert.equal(getState(ctx).day50Count, 0);
-    assert.equal(ctx.isStreakRecordsSectionRevealed(), false);
-    assert.equal(ctx.isStreak100CountRowRevealed(), false);
+    assert.equal(getState(ctx).streak50CountUnlocked, false);
+    assert.equal(getState(ctx).streak100CountUnlocked, false);
 });
 
 test('streak milestone counters increment at 100 days', () => {
@@ -162,8 +160,7 @@ test('mergeSavedState unlocks Records when longestStreak >= 30', () => {
         currentStreak: 5,
     });
     assert.equal(merged.streak50CountUnlocked, true);
-    assert.equal(ctx.isStreakRecordsSectionRevealed(merged), true);
-    assert.equal(ctx.isStreak100CountRowRevealed(merged), false);
+    assert.equal(merged.streak100CountUnlocked, false);
 });
 
 test('cold start unlocks Records from saved longestStreak without new logs', () => {
@@ -180,8 +177,7 @@ test('cold start unlocks Records from saved longestStreak without new logs', () 
     simulateColdStartInit(ctx);
     const s = getState(ctx);
     assert.equal(s.streak50CountUnlocked, true);
-    assert.equal(ctx.isStreakRecordsSectionRevealed(), true);
-    assert.equal(ctx.isStreak100CountRowRevealed(), false);
+    assert.equal(s.streak100CountUnlocked, false);
 });
 
 test('count milestone render state: default shows 0 without green class', () => {
@@ -219,7 +215,6 @@ test('mergeSavedState unlocks 100-day row when day50Count already set', () => {
     });
     assert.equal(merged.streak50CountUnlocked, true);
     assert.equal(merged.streak100CountUnlocked, true);
-    assert.equal(ctx.isStreak100CountRowRevealed(merged), true);
 });
 
 test('count milestone render state: prior count after slip uses achieved-earned', () => {
