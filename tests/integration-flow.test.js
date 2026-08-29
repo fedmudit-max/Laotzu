@@ -113,6 +113,9 @@ test('flow: multi-day absence auto-strongs through N-2 then allows today', () =>
     assert.equal(ctx.getWallDateLogStatus('2026-06-14'), null);
     assert.equal(s.score.success, 4);
     assert.equal(ctx.isYesterdayLogPending(), true);
+    assert.equal(s.currentStreak, 0);
+    assert.equal(ctx.getDisplayStreak(), 4);
+    assert.equal(ctx.getWeeklyStreakDay(ctx.getDisplayStreak()), 4);
 });
 
 test('flow: journey end via slips → archive → next journey → log again', () => {

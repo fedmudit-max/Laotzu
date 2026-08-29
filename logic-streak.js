@@ -103,6 +103,11 @@ function isStreakFreezeDay() {
 
 function getDisplayStreak() {
     if (isStreakFreezeDay()) return getEndedStreakLength();
+    // Yesterday unanswered: live streak is 0 until the chain includes N-1, but UI should
+    // reflect strong days already logged (auto-strong through N-2, etc.).
+    if (isYesterdayLogPending()) {
+        return streakCountStrongEndingBefore(getYesterdayKey());
+    }
     return Math.max(0, state.currentStreak || 0);
 }
 
@@ -123,7 +128,7 @@ function getBrainCompletedStrongDays() {
     if (isJourneyEndedDisplay()) {
         return getDisplayStreak();
     }
-    return Math.max(0, state.currentStreak || 0);
+    return getDisplayStreak();
 }
 
 function isBrainPhaseBoundaryComplete(completed) {
