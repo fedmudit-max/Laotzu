@@ -27,15 +27,6 @@ function unlockStreak100CountRow(s) {
     s.streak100CountUnlocked = true;
 }
 
-/** Back-compat aliases — same flags, clearer call sites in older code. */
-function unlockStreak50CountMilestone(s) {
-    unlockStreakRecordsSection(s);
-}
-
-function unlockStreak100CountMilestone(s) {
-    unlockStreak100CountRow(s);
-}
-
 /**
  * Reconcile unlock flags from lifetime stats (load, merge, render).
  * Does not increment day50/day100 counts — only visibility flags.
@@ -62,18 +53,10 @@ function isStreakRecordsSectionRevealed(s) {
     return !!s.streak50CountUnlocked;
 }
 
-function isStreak50CountMilestoneRevealed(s) {
-    return isStreakRecordsSectionRevealed(s);
-}
-
 function isStreak100CountRowRevealed(s) {
     s = s || state;
     syncStreakRecordsUnlockFlags(s);
     return !!s.streak100CountUnlocked;
-}
-
-function isStreak100CountMilestoneRevealed(s) {
-    return isStreak100CountRowRevealed(s);
 }
 
 /** Called from logic-logging after streak is updated on a strong day. */
@@ -120,11 +103,6 @@ function getStreakCountRowDisplay(isActive, count, freeze) {
         return { className: 'achieved-earned', status: String(n) };
     }
     return { className: null, status: '0' };
-}
-
-/** Back-compat alias for tests. */
-function getStreakCountMilestoneRenderState(isActive, count, freeze) {
-    return getStreakCountRowDisplay(isActive, count, freeze);
 }
 
 function buildStreakCountRowState(visible, thresholdStreak, count, freeze, displayStreak) {
@@ -183,24 +161,6 @@ function getStreakRecordsPanelState(s, displayStreak, freeze) {
             visible: true,
             status: String(liveBest ? s.currentStreak : s.longestStreak || 0),
             className: liveBest ? 'golden' : null,
-        },
-    };
-}
-
-/** Back-compat shape for existing tests. */
-function getStreakRecordsUiState(s, displayStreak, freeze) {
-    var panel = getStreakRecordsPanelState(s, displayStreak, freeze);
-    return {
-        showRecordsLabel: panel.recordsLabelVisible,
-        showDay50: panel.day50.visible,
-        showDay100: panel.day100.visible,
-        day50: {
-            status: panel.day50.status,
-            className: panel.day50.className,
-        },
-        day100: {
-            status: panel.day100.status,
-            className: panel.day100.className,
         },
     };
 }

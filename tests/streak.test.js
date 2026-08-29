@@ -90,7 +90,7 @@ test('streak milestone counters increment at 50 days', () => {
     assert.equal(s.day50Count, 1);
     assert.equal(s.currentStreak, 50);
     assert.equal(s.streak100CountUnlocked, true);
-    assert.equal(ctx.isStreak100CountMilestoneRevealed(), true);
+    assert.equal(ctx.isStreak100CountRowRevealed(), true);
 });
 
 test('50-day count milestone hidden until Day 30 streak', () => {
@@ -100,7 +100,7 @@ test('50-day count milestone hidden until Day 30 streak', () => {
     resetKing(ctx, { today });
     seedJourney(ctx, { today, start });
 
-    assert.equal(ctx.isStreak50CountMilestoneRevealed(), false);
+    assert.equal(ctx.isStreakRecordsSectionRevealed(), false);
 
     let d = start;
     for (let i = 0; i < 30; i++) {
@@ -111,8 +111,8 @@ test('50-day count milestone hidden until Day 30 streak', () => {
     const s = getState(ctx);
     assert.equal(s.currentStreak, 30);
     assert.equal(s.streak50CountUnlocked, true);
-    assert.equal(ctx.isStreak50CountMilestoneRevealed(), true);
-    assert.equal(ctx.isStreak100CountMilestoneRevealed(), false);
+    assert.equal(ctx.isStreakRecordsSectionRevealed(), true);
+    assert.equal(ctx.isStreak100CountRowRevealed(), false);
 });
 
 test('100-day count milestone hidden until first 50-day count', () => {
@@ -120,15 +120,15 @@ test('100-day count milestone hidden until first 50-day count', () => {
     resetKing(ctx, { today: '2026-06-17' });
     seedJourney(ctx, { today: '2026-06-17', start: '2026-06-15' });
 
-    assert.equal(ctx.isStreak100CountMilestoneRevealed(), false);
+    assert.equal(ctx.isStreak100CountRowRevealed(), false);
 
     ctx.applyStrongDay({ logDate: '2026-06-15', suppressUI: true });
     ctx.applyStrongDay({ logDate: '2026-06-16', suppressUI: true });
     ctx.applyStrongDay({ logDate: '2026-06-17', suppressUI: true });
 
     assert.equal(getState(ctx).day50Count, 0);
-    assert.equal(ctx.isStreak50CountMilestoneRevealed(), false);
-    assert.equal(ctx.isStreak100CountMilestoneRevealed(), false);
+    assert.equal(ctx.isStreakRecordsSectionRevealed(), false);
+    assert.equal(ctx.isStreak100CountRowRevealed(), false);
 });
 
 test('streak milestone counters increment at 100 days', () => {
@@ -162,8 +162,8 @@ test('mergeSavedState unlocks Records when longestStreak >= 30', () => {
         currentStreak: 5,
     });
     assert.equal(merged.streak50CountUnlocked, true);
-    assert.equal(ctx.isStreak50CountMilestoneRevealed(merged), true);
-    assert.equal(ctx.isStreak100CountMilestoneRevealed(merged), false);
+    assert.equal(ctx.isStreakRecordsSectionRevealed(merged), true);
+    assert.equal(ctx.isStreak100CountRowRevealed(merged), false);
 });
 
 test('cold start unlocks Records from saved longestStreak without new logs', () => {
@@ -180,30 +180,30 @@ test('cold start unlocks Records from saved longestStreak without new logs', () 
     simulateColdStartInit(ctx);
     const s = getState(ctx);
     assert.equal(s.streak50CountUnlocked, true);
-    assert.equal(ctx.isStreak50CountMilestoneRevealed(), true);
-    assert.equal(ctx.isStreak100CountMilestoneRevealed(), false);
+    assert.equal(ctx.isStreakRecordsSectionRevealed(), true);
+    assert.equal(ctx.isStreak100CountRowRevealed(), false);
 });
 
 test('count milestone render state: default shows 0 without green class', () => {
     const ctx = createKingContext();
-    const r = ctx.getStreakCountMilestoneRenderState(false, 0, false);
+    const r = ctx.getStreakCountRowDisplay(false, 0, false);
     assert.equal(r.status, '0');
     assert.equal(r.className, null);
 });
 
 test('count milestone render state: active streak uses achieved-glow', () => {
     const ctx = createKingContext();
-    const live = ctx.getStreakCountMilestoneRenderState(true, 0, false);
+    const live = ctx.getStreakCountRowDisplay(true, 0, false);
     assert.equal(live.status, '✓');
     assert.equal(live.className, 'achieved-glow');
-    const liveCount = ctx.getStreakCountMilestoneRenderState(true, 2, false);
+    const liveCount = ctx.getStreakCountRowDisplay(true, 2, false);
     assert.equal(liveCount.status, '2');
     assert.equal(liveCount.className, 'achieved-glow');
 });
 
 test('count milestone render state: prior count uses achieved-earned green labels', () => {
     const ctx = createKingContext();
-    const earned = ctx.getStreakCountMilestoneRenderState(false, 3, false);
+    const earned = ctx.getStreakCountRowDisplay(false, 3, false);
     assert.equal(earned.status, '3');
     assert.equal(earned.className, 'achieved-earned');
 });
@@ -219,21 +219,21 @@ test('mergeSavedState unlocks 100-day row when day50Count already set', () => {
     });
     assert.equal(merged.streak50CountUnlocked, true);
     assert.equal(merged.streak100CountUnlocked, true);
-    assert.equal(ctx.isStreak100CountMilestoneRevealed(merged), true);
+    assert.equal(ctx.isStreak100CountRowRevealed(merged), true);
 });
 
 test('count milestone render state: prior count after slip uses achieved-earned', () => {
     const ctx = createKingContext();
-    const earned = ctx.getStreakCountMilestoneRenderState(false, 1, false);
+    const earned = ctx.getStreakCountRowDisplay(false, 1, false);
     assert.equal(earned.className, 'achieved-earned');
 });
 
 test('count milestone render state: freeze day uses streak-ended styling', () => {
     const ctx = createKingContext();
-    const frozen = ctx.getStreakCountMilestoneRenderState(true, 1, true);
+    const frozen = ctx.getStreakCountRowDisplay(true, 1, true);
     assert.equal(frozen.status, '1');
     assert.equal(frozen.className, 'achieved streak-ended');
-    const frozenNoCount = ctx.getStreakCountMilestoneRenderState(true, 0, true);
+    const frozenNoCount = ctx.getStreakCountRowDisplay(true, 0, true);
     assert.equal(frozenNoCount.status, 'Ended');
 });
 
@@ -268,13 +268,13 @@ test('records UI: hidden before day 30, label on at 30, 100 row only after 50-da
     resetKing(ctx, { today: today30 });
     seedJourney(ctx, { today: today30, start });
 
-    let ui = ctx.getStreakRecordsUiState(getState(ctx), 5, false);
-    assert.equal(ui.showRecordsLabel, false);
-    assert.equal(ui.showDay50, false);
-    assert.equal(ui.showDay100, false);
-    assert.equal(ctx.getStreakRecordsPanelState(getState(ctx), 5, false).bestStreak.visible, true);
-    assert.equal(ui.day50.status, '0');
-    assert.equal(ui.day50.className, null);
+    let panel = ctx.getStreakRecordsPanelState(getState(ctx), 5, false);
+    assert.equal(panel.recordsLabelVisible, false);
+    assert.equal(panel.day50.visible, false);
+    assert.equal(panel.day100.visible, false);
+    assert.equal(panel.bestStreak.visible, true);
+    assert.equal(panel.day50.status, '0');
+    assert.equal(panel.day50.className, null);
 
     let d = start;
     for (let i = 0; i < 30; i++) {
@@ -283,14 +283,13 @@ test('records UI: hidden before day 30, label on at 30, 100 row only after 50-da
         d = ctx.addDaysToKey(d, 1);
     }
     const at30 = getState(ctx);
-    ui = ctx.getStreakRecordsUiState(at30, 30, false);
-    const panel30 = ctx.getStreakRecordsPanelState(at30, 30, false);
-    assert.equal(ui.showRecordsLabel, true);
-    assert.equal(ui.showDay50, true);
-    assert.equal(ui.showDay100, false);
-    assert.equal(panel30.bestStreak.visible, true);
-    assert.equal(ui.day50.status, '0');
-    assert.equal(ui.day50.className, null);
+    panel = ctx.getStreakRecordsPanelState(at30, 30, false);
+    assert.equal(panel.recordsLabelVisible, true);
+    assert.equal(panel.day50.visible, true);
+    assert.equal(panel.day100.visible, false);
+    assert.equal(panel.bestStreak.visible, true);
+    assert.equal(panel.day50.status, '0');
+    assert.equal(panel.day50.className, null);
 
     for (let i = 0; i < 20; i++) {
         setToday(ctx, d);
@@ -298,13 +297,13 @@ test('records UI: hidden before day 30, label on at 30, 100 row only after 50-da
         d = ctx.addDaysToKey(d, 1);
     }
     const at50 = getState(ctx);
-    ui = ctx.getStreakRecordsUiState(at50, 50, false);
-    assert.equal(ui.showRecordsLabel, true);
-    assert.equal(ui.showDay100, true);
-    assert.equal(ui.day50.status, '1');
-    assert.equal(ui.day50.className, 'achieved-glow');
-    assert.equal(ui.day100.status, '0');
-    assert.equal(ui.day100.className, null);
+    panel = ctx.getStreakRecordsPanelState(at50, 50, false);
+    assert.equal(panel.recordsLabelVisible, true);
+    assert.equal(panel.day100.visible, true);
+    assert.equal(panel.day50.status, '1');
+    assert.equal(panel.day50.className, 'achieved-glow');
+    assert.equal(panel.day100.status, '0');
+    assert.equal(panel.day100.className, null);
 
     for (let i = 0; i < 50; i++) {
         setToday(ctx, d);
@@ -312,7 +311,7 @@ test('records UI: hidden before day 30, label on at 30, 100 row only after 50-da
         d = ctx.addDaysToKey(d, 1);
     }
     const at100 = getState(ctx);
-    ui = ctx.getStreakRecordsUiState(at100, 100, false);
-    assert.equal(ui.day100.status, '1');
-    assert.equal(ui.day100.className, 'achieved-glow');
+    panel = ctx.getStreakRecordsPanelState(at100, 100, false);
+    assert.equal(panel.day100.status, '1');
+    assert.equal(panel.day100.className, 'achieved-glow');
 });
