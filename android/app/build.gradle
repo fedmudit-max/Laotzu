@@ -43,6 +43,12 @@ afterEvaluate {
     tasks.named('preBuild').configure { dependsOn 'syncKingWebAssets' }
 }
 
+def keystorePropertiesFile = rootProject.file('keystore.properties')
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace = "com.kingtracker.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -59,6 +65,16 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (keystorePropertiesFile.exists()) {
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+            }
+        }
+    }
     buildTypes {
         release {
             // MINIFY OFF for v1 / closed testing — JS is most of the app; native layer is small.
@@ -68,6 +84,9 @@ android {
             //   3. Smoke-test KingBilling + KingReminder (see ARCHITECTURE.md → Android release builds)
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (keystorePropertiesFile.exists()) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }

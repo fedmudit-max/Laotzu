@@ -10,6 +10,7 @@
     "cap:ios": "npm run cap:sync && npx cap open ios",
     "android:debug": "npm run web:copy && cd android && ./gradlew :app:assembleDebug",
     "android:install": "npm run android:debug && node scripts/install-debug-apk.js",
+    "android:bundle": "npm run web:copy && cd android && ./gradlew :app:bundleRelease",
     "test": "node --test --test-concurrency=1 tests/*.test.js"
   },
   "repository": {
