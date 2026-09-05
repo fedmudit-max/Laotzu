@@ -123,7 +123,7 @@ const BRAIN_PHASES = [
 
 const KNOWLEDGE_FACTS = [
     { emoji: '🧠', headline: 'Pornography can strongly engage the brain\'s reward and motivation systems.', body: 'That is why the pull can feel so strong — and why every strong day you log still counts on the Journey.' },
-    { emoji: '⚡', headline: 'Urges come in waves.', body: 'You do not have to win forever in one second. Ride it without acting. The point is the choice — not a guarantee it vanishes.' },
+    { emoji: '⚡', headline: 'Urges come in waves.', body: 'You do not have to win forever in one second. Ride it without acting. The point is the choice.' },
     { emoji: '💪', headline: 'Discipline is reps, not speeches.', body: 'Each time you log strong instead of slip, you bank a decision. That is how Kings train — one measured day at a time.' },
     { emoji: '🌱', headline: 'Two weeks of strong days changes the feel of the fight.', body: 'Fog lifts, sleep often improves, and decisions get cleaner. Stay honest with the log either way.' },
     { emoji: '🔥', headline: 'Joy returns to ordinary life.', body: 'The more you stop overloading the next hit, the more normal wins feel like enough again. That is the point of progress.' },
@@ -131,7 +131,7 @@ const KNOWLEDGE_FACTS = [
     { emoji: '😴', headline: 'Sleep often improves when the night habit breaks.', body: 'Late screens and late urges eat rest. Guarding the night is part of guarding the Journey.' },
     { emoji: '👥', headline: 'Real connection gets easier with time.', body: 'When your mind is not scanning for the next hit, conversations and presence get room to matter again.' },
     { emoji: '🏆', headline: 'Identity beats white-knuckle willpower.', body: 'The question isn\'t only "can I resist today" — it\'s "who am I?" Someone who keeps choosing better doesn\'t need a perfect streak to lead.' },
-    { emoji: '🌊', headline: 'Urge surfing is an optional pause tool.', body: 'Ride the urge without acting on it. Breathing here is a way to wait and choose — not a promise the urge will disappear.' },
+    { emoji: '🌊', headline: 'Urge surfing is an optional pause tool.', body: 'Ride the urge without acting on it. Breathing here is a way to wait and choose.' },
     { emoji: '💡', headline: 'Boredom is often the real enemy.', body: 'Empty hours invite the old pattern more than big drama does. Fill the day on purpose — that is strategy, not shame.' },
     { emoji: '🔄', headline: 'A slip does not erase your Journey.', body: 'Strong days still count. Powers used still teach. Fail forward, log honest, start the next stretch smarter.' },
     { emoji: '📈', headline: 'Progress is not a straight line.', body: 'Journeys rise and fall. King exists so you can measure distance across slips — not pretend you never slip.' },

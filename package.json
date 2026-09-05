@@ -11,6 +11,7 @@
     "android:debug": "npm run web:copy && cd android && ./gradlew :app:assembleDebug",
     "android:install": "npm run android:debug && node scripts/install-debug-apk.js",
     "android:bundle": "npm run web:copy && cd android && ./gradlew :app:bundleRelease",
+    "icons:generate": "python3 scripts/generate-icons.py",
     "test": "node --test --test-concurrency=1 tests/*.test.js"
   },
   "repository": {

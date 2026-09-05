@@ -22,7 +22,7 @@ import com.kingtracker.app.reminder.ReminderPlugin;
 import com.kingtracker.app.reminder.ReminderPrefs;
 
 public class MainActivity extends BridgeActivity {
-    private static final int KING_SPLASH_GREEN = 0xFF34C759;
+    private static final int KING_SPLASH_BG = 0xFFFFFFFF;
     private static final int NATIVE_SPLASH_FAILSAFE_MS = 600;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private volatile boolean keepNativeSplash = true;
@@ -48,7 +48,7 @@ public class MainActivity extends BridgeActivity {
             @Override
             public void onPageStarted(WebView webView) {
                 if (webView != null) {
-                    webView.setBackgroundColor(KING_SPLASH_GREEN);
+                    webView.setBackgroundColor(KING_SPLASH_BG);
                 }
             }
 
@@ -133,10 +133,10 @@ public class MainActivity extends BridgeActivity {
         if (getBridge() == null) return;
         WebView webView = getBridge().getWebView();
         if (webView == null) return;
-        webView.setBackgroundColor(KING_SPLASH_GREEN);
+        webView.setBackgroundColor(KING_SPLASH_BG);
         View parent = (View) webView.getParent();
         if (parent != null) {
-            parent.setBackgroundColor(KING_SPLASH_GREEN);
+            parent.setBackgroundColor(KING_SPLASH_BG);
         }
     }
 
