@@ -147,22 +147,13 @@ test('best journey hint on later journeys adds previous best strong days', () =>
         }],
     });
 
-    assert.equal(
-        ctx.getBestJourneyHintText(),
-        'Target 25 strong days\nBest - 38 strong days',
-    );
+    assert.equal(ctx.getBestJourneyHintText(), 'Target 25 strong days');
 
     setState(ctx, { score: { success: 26, failures: 0 } });
-    assert.equal(
-        ctx.getBestJourneyHintText(),
-        'Target 38 strong days\nBest - 38 strong days',
-    );
+    assert.equal(ctx.getBestJourneyHintText(), 'Beat 38 days to win!');
 
     setState(ctx, { score: { success: 40, failures: 0 } });
-    assert.equal(
-        ctx.getBestJourneyHintText(),
-        'New Best! Target 50 Days\nBest - 38 strong days',
-    );
+    assert.equal(ctx.getBestJourneyHintText(), 'New Best! Target 50 strong days');
 });
 
 test('best journey hint shows New Best when current journey beats prior', () => {
@@ -178,10 +169,7 @@ test('best journey hint shows New Best when current journey beats prior', () => 
         }],
     });
 
-    assert.equal(
-        ctx.getBestJourneyHintText(),
-        'New Best! Target 200 Days\nBest - 145 strong days',
-    );
+    assert.equal(ctx.getBestJourneyHintText(), 'New Best! Target 200 strong days');
 });
 
 test('best journey hint hides while awaiting next journey', () => {

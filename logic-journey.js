@@ -410,6 +410,29 @@ function isOnNewBestJourney(s) {
     return isBetterJourneyScore(curS, curF, prior);
 }
 
+function isPriorBestTargetDay(targetDay, curS, s) {
+    s = s || state;
+    curS = Math.max(0, Math.floor(Number(curS) || 0));
+    targetDay = Math.floor(Number(targetDay) || 0);
+    var priorBest = getCompletedJourneysBestSuccess(s);
+    return priorBest > curS && targetDay === priorBest;
+}
+
+function formatJourneyTargetHint(targetDay, curS, s) {
+    s = s || state;
+    curS = Math.max(0, Math.floor(Number(curS) || 0));
+    targetDay = Math.floor(Number(targetDay) || 0);
+    if (!targetDay) return null;
+
+    if (isPriorBestTargetDay(targetDay, curS, s)) {
+        return 'Beat ' + targetDay + ' days to win!';
+    }
+    if (isOnNewBestJourney(s)) {
+        return 'New Best! Target ' + targetDay + ' strong days';
+    }
+    return 'Target ' + targetDay + ' strong days';
+}
+
 function getBestJourneyHintParts(s) {
     s = s || state;
     if (isAwaitingNextJourney(s)) return null;
@@ -419,24 +442,14 @@ function getBestJourneyHintParts(s) {
     var targetDay = getActiveJourneyTargetDay(curS, s);
     if (!targetDay) return null;
 
-    var onNewBest = isOnNewBestJourney(s);
-    var parts = {
-        targetLine: onNewBest
-            ? 'New Best! Target ' + targetDay + ' Days'
-            : 'Target ' + targetDay + ' strong days',
-        bestLine: null,
+    return {
+        targetLine: formatJourneyTargetHint(targetDay, curS, s),
     };
-    var priorBest = getCompletedJourneysBestSuccess(s);
-    if (priorBest > 0) {
-        parts.bestLine = 'Best - ' + priorBest + ' strong days';
-    }
-    return parts;
 }
 
 function getBestJourneyHintText(s) {
     var parts = getBestJourneyHintParts(s);
     if (!parts) return null;
-    if (parts.bestLine) return parts.targetLine + '\n' + parts.bestLine;
     return parts.targetLine;
 }
 
@@ -460,7 +473,7 @@ function buildPersonalBestJourneyCelebration(successCount, s) {
     var next = getNextStandardMilestoneDay(successCount);
     var message = 'You matched your all-time best journey score — you are on your best journey!';
     if (next) {
-        message += ' Next milestone — ' + next + ' strong days.';
+        message += ' ' + formatJourneyTargetHint(next, successCount, s) + '.';
     }
     return {
         emoji: '🏆',
@@ -481,9 +494,9 @@ function buildJourneyMilestoneCelebration(hitDay, s) {
         message: base.message,
     };
     var next = getNextTargetAfterMilestoneHit(hitDay, s);
-    if (next === getCompletedJourneysBestSuccess(s)) {
-        data.message = data.message.replace(/\s*Next target — \d+ strong days\.?\s*$/, '');
-        data.message += ` Next target — beat ${next} strong days to win your best journey.`;
+    if (next) {
+        data.message = data.message.replace(/\s*(Next target —|Target )[^.!?]*[.!?]?\s*$/i, '').trim();
+        data.message += ' ' + formatJourneyTargetHint(next, hitDay, s) + '.';
     }
     return data;
 }

@@ -63,14 +63,14 @@ const STREAK_MILESTONES = {
 
 // Journey sober-day milestone data (keyed by day count)
 const JOURNEY_MILESTONES = {
-    25:   { emoji: '🌱', stage: 'STRONG',   title: '25 Journey Days!',      message: 'Twenty-five successful days. Your identity is shifting. Next target — 50 strong days.' },
-    50:   { emoji: '🔥', stage: 'STRONG',   title: '50 Journey Days!',     message: 'Fifty days of success. Absolute mental strength. Next target — 100 strong days.' },
-    100:  { emoji: '⚔️',  stage: 'STRONG',   title: '100 Journey Days!',     message: '100 days of winning. You\'re a completely different person now. Next target — 200 strong days.' },
-    200:  { emoji: '🛡️',  stage: 'WARRIOR',  title: '200 Journey Days!',     message: 'Two hundred days of endurance. This is who you truly are. Next target — 300 strong days.' },
-    300:  { emoji: '⚡', stage: 'WARRIOR',  title: '300 Journey Days!',     message: '300 days! You\'ve entered a realm most people never reach. Next target — 400 strong days.' },
-    400:  { emoji: '💎', stage: 'WARRIOR',  title: '400 Journey Days!',     message: '400 days of pure diamond-grade discipline. Unbreakable. Next target — 500 strong days.' },
-    500:  { emoji: '🦁', stage: 'KING',     title: '500 Journey Days!',     message: 'FIVE HUNDRED. You are legendary. Next target — 750 strong days.' },
-    750:  { emoji: '🦅', stage: 'KING',     title: '750 Journey Days!',     message: '750 days. You soar above 99.9% of everyone. Next target — 1000 strong days. The crown awaits.' },
+    25:   { emoji: '🌱', stage: 'STRONG',   title: '25 Journey Days!',      message: 'Twenty-five successful days. Your identity is shifting.' },
+    50:   { emoji: '🔥', stage: 'STRONG',   title: '50 Journey Days!',     message: 'Fifty days of success. Absolute mental strength.' },
+    100:  { emoji: '⚔️',  stage: 'STRONG',   title: '100 Journey Days!',     message: '100 days of winning. You\'re a completely different person now.' },
+    200:  { emoji: '🛡️',  stage: 'WARRIOR',  title: '200 Journey Days!',     message: 'Two hundred days of endurance. This is who you truly are.' },
+    300:  { emoji: '⚡', stage: 'WARRIOR',  title: '300 Journey Days!',     message: '300 days! You\'ve entered a realm most people never reach.' },
+    400:  { emoji: '💎', stage: 'WARRIOR',  title: '400 Journey Days!',     message: '400 days of pure diamond-grade discipline. Unbreakable.' },
+    500:  { emoji: '🦁', stage: 'KING',     title: '500 Journey Days!',     message: 'FIVE HUNDRED. You are legendary.' },
+    750:  { emoji: '🦅', stage: 'KING',     title: '750 Journey Days!',     message: '750 days. You soar above 99.9% of everyone. The crown awaits.' },
     1000: { emoji: '👑', stage: 'KING',     title: '1000 Journey Days! 👑', message: 'ONE THOUSAND DAYS. You are the King. You have arrived.' },
 };
 
