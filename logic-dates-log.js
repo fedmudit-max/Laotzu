@@ -79,6 +79,27 @@ function writeDailyLog(calDay, patch) {
     state.dailyLog[dailyLogStorageKey(calDay, patch)] = patch;
 }
 
+function normalizeDayState(state) {
+    if (state === 'rest' || state === 'busy' || state === 'done') return state;
+    return '';
+}
+
+/** Merge optional reflection fields onto an existing logged day — does not change score/streak. */
+function patchDailyLogEntry(wallDate, patch) {
+    var entry = getDailyLogEntry(wallDate);
+    if (!entry || !logStatus(entry)) return false;
+    var calDay = entry.day != null ? entry.day : getCalendarDayForWallDate(wallDate);
+    var next = Object.assign({}, entry, { date: wallDate });
+    if (patch && patch.dayState !== undefined) {
+        next.dayState = normalizeDayState(patch.dayState);
+    }
+    if (patch && patch.note !== undefined) {
+        next.note = String(patch.note || '').trim().slice(0, DAY_ENTRY_NOTE_MAX);
+    }
+    writeDailyLog(calDay, next);
+    return true;
+}
+
 /** True when dailyLog already has strong or slip for this wall date (YYYY-MM-DD). */
 function isWallDateLogged(dateKey) {
     if (!dateKey || !/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return false;

@@ -320,6 +320,108 @@ function isWeeklyStartReached(streak) {
     return getIntraDaySegmentProgress() > 0;
 }
 
+/** Most recent strong wall date in the current weekly segment (before today’s slip on freeze days). */
+function getWeeklyStrongEndpointWallDate() {
+    var today = todayKey();
+    if (isStreakFreezeDay()) {
+        var d = addDaysToKey(today, -1);
+        var anchor = readJourneyAnchorWallDate() || inferJourneyStartFromLog();
+        while (d >= anchor) {
+            if (getWallDateLogStatus(d) === 'strong') return d;
+            if (getWallDateLogStatus(d) === 'slip') break;
+            d = addDaysToKey(d, -1);
+        }
+        return null;
+    }
+    if (getWallDateLogStatus(today) === 'strong') return today;
+    d = addDaysToKey(today, -1);
+    anchor = readJourneyAnchorWallDate() || inferJourneyStartFromLog();
+    while (d >= anchor) {
+        if (getWallDateLogStatus(d) === 'strong') return d;
+        if (getWallDateLogStatus(d) === 'slip') break;
+        d = addDaysToKey(d, -1);
+    }
+    return null;
+}
+
+function walkBackStrongDaysFrom(endDate, strongDaysBack) {
+    if (!endDate || strongDaysBack < 0) return null;
+    if (strongDaysBack === 0) return endDate;
+    var d = endDate;
+    var remaining = strongDaysBack;
+    var anchor = readJourneyAnchorWallDate() || inferJourneyStartFromLog();
+    while (d >= anchor) {
+        if (getWallDateLogStatus(d) === 'strong') {
+            if (remaining === 0) return d;
+            remaining--;
+        }
+        d = addDaysToKey(d, -1);
+    }
+    return null;
+}
+
+/** weekDay 1–7 → wall date for that strong/slip slot in the current weekly track. */
+function getWeeklyDayWallDate(weekDay) {
+    if (weekDay < 1 || weekDay > 7) return null;
+
+    var streak = getDisplayStreak();
+    var freeze = isStreakFreezeDay();
+    var freezeLayout = freeze ? getWeeklyFreezeLayout(streak) : null;
+    var strongDays = freezeLayout ? freezeLayout.strongWeekDay : getWeeklyStreakDay(streak);
+
+    if (freeze && freezeLayout && weekDay === freezeLayout.slipWeekDay) {
+        return todayKey();
+    }
+    if (weekDay > strongDays) return null;
+
+    var endpoint = getWeeklyStrongEndpointWallDate();
+    if (!endpoint) return null;
+    return walkBackStrongDaysFrom(endpoint, strongDays - weekDay);
+}
+
+/**
+ * weekSlot 0 = Start (day before Day 1, if logged), 1–7 = track days.
+ * Returns null when the slot has no logged wall date.
+ */
+function getWeeklyTrackWallDate(weekSlot) {
+    if (weekSlot == null || weekSlot < 0 || weekSlot > 7) return null;
+    if (weekSlot === 0) {
+        var day1 = getWeeklyDayWallDate(1);
+        if (!day1) return null;
+        var prev = addDaysToKey(day1, -1);
+        return isWallDateLogged(prev) ? prev : null;
+    }
+    return getWeeklyDayWallDate(weekSlot);
+}
+
+function formatDayLogInsight(dateKey) {
+    if (!dateKey) return null;
+    var entry = getDailyLogEntry(dateKey);
+    if (!entry || !logStatus(entry)) return null;
+    var status = logStatus(entry);
+    var d = parseDateKey(dateKey);
+    var dateLabel = d.toLocaleDateString(undefined, {
+        weekday: 'long',
+        month: 'short',
+        day: 'numeric',
+    });
+    var stateKey = normalizeDayState(entry.dayState);
+    var stateInfo = stateKey && typeof DAY_LOG_STATES !== 'undefined' ? DAY_LOG_STATES[stateKey] : null;
+    var outcome = status === 'strong' ? '✓ I Stayed Strong Today' : '✕ I Slipped Today';
+    var note = entry.note ? String(entry.note).trim() : '';
+    return {
+        title: dateLabel,
+        outcome: outcome,
+        stateLabel: stateInfo ? stateInfo.emoji + ' ' + stateInfo.label : '',
+        note: note,
+        body: note || outcome,
+    };
+}
+
+function formatWeeklyLoggedInsight(dateKey) {
+    return formatDayLogInsight(dateKey);
+}
+
 function getWeeklyActiveTraveler(streak) {
     const leftPct = getWeeklyTravelerPct(streak);
     return leftPct == null ? null : { leftPct };

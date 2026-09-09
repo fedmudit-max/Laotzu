@@ -387,50 +387,57 @@ function getNextTargetAfterMilestoneHit(fixedDay, s) {
     return nextFixed;
 }
 
-function getBestJourneyHintText(s) {
+function getActiveJourneyTargetDay(curS, s) {
     s = s || state;
-    if (Math.max(1, Math.floor(Number(s.attempt) || 1)) <= 1) return null;
+    curS = Math.max(0, Math.floor(Number(curS) || 0));
+    var priorBest = getCompletedJourneysBestSuccess(s);
+    var nextFixed = getNextStandardMilestoneDay(curS);
+    if (!priorBest) return nextFixed;
 
-    var journeys = s.completedJourneys || [];
+    var candidates = [];
+    if (nextFixed != null) candidates.push(nextFixed);
+    if (priorBest > curS) candidates.push(priorBest);
+    if (!candidates.length) return null;
+    return Math.min.apply(null, candidates);
+}
+
+function isOnNewBestJourney(s) {
+    s = s || state;
+    var prior = bestScoreFromCompletedJourneys(s.completedJourneys || []);
+    if (!prior) return false;
     var curS = journeyScoreSuccess(s);
     var curF = (s.score && s.score.failures) || 0;
-    var finished = journeyIsOver(s) || curF >= MAX_FAILURES;
+    return isBetterJourneyScore(curS, curF, prior);
+}
 
-    if (isAwaitingNextJourney(s)) {
-        if (!journeys.length) return null;
-        var finishedScore = journeys[journeys.length - 1].score || s.score || {};
-        var prevBest = bestScoreFromCompletedJourneys(journeys.slice(0, -1));
-        if (!prevBest || isBetterJourneyScore(
-            finishedScore.success || 0,
-            finishedScore.failures || 0,
-            prevBest,
-        )) {
-            return 'New Best!';
-        }
-        return null;
+function getBestJourneyHintParts(s) {
+    s = s || state;
+    if (isAwaitingNextJourney(s)) return null;
+    if (!shouldCountCurrentJourneyForMilestones(s)) return null;
+
+    var curS = journeyScoreSuccess(s);
+    var targetDay = getActiveJourneyTargetDay(curS, s);
+    if (!targetDay) return null;
+
+    var onNewBest = isOnNewBestJourney(s);
+    var parts = {
+        targetLine: onNewBest
+            ? 'New Best! Target ' + targetDay + ' Days'
+            : 'Target ' + targetDay + ' strong days',
+        bestLine: null,
+    };
+    var priorBest = getCompletedJourneysBestSuccess(s);
+    if (priorBest > 0) {
+        parts.bestLine = 'Best - ' + priorBest + ' strong days';
     }
+    return parts;
+}
 
-    if (!shouldCountCurrentJourneyForMilestones(s) && !finished) return null;
-
-    var prior = bestScoreFromCompletedJourneys(journeys);
-
-    if (!prior) {
-        if (finished) return 'New Best!';
-        var next = getNextStandardMilestoneDay(curS);
-        return next ? 'Beat ' + next + ' to win' : null;
-    }
-
-    if (isBetterJourneyScore(curS, curF, prior)) {
-        return finished ? 'New Best!' : 'New Best! Keep Going!';
-    }
-
-    if (finished) return null;
-
-    if (curS < (prior.success || 0)) {
-        return 'Beat ' + prior.success + ' to win';
-    }
-
-    return null;
+function getBestJourneyHintText(s) {
+    var parts = getBestJourneyHintParts(s);
+    if (!parts) return null;
+    if (parts.bestLine) return parts.targetLine + '\n' + parts.bestLine;
+    return parts.targetLine;
 }
 
 function resolveJourneyMilestoneHit(successCount) {

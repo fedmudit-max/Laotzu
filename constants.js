@@ -76,3 +76,11 @@ const PREMIUM_FEATURES = [
 /** Shown under the feature list on the premium panel. */
 const PREMIUM_BACKUP_NOTE =
     'Daily logging stays free forever. Above features need Premium after the trial. Buying Premium never resets your Journey score.';
+
+/** Optional daily reflection state saved on each logged wall date. */
+const DAY_LOG_STATES = {
+    rest: { label: 'Rest', emoji: '😴' },
+    busy: { label: 'Busy', emoji: '⚡' },
+    done: { label: 'Done', emoji: '✓' },
+};
+const DAY_ENTRY_NOTE_MAX = 280;

@@ -430,3 +430,6 @@ function closeLearnJourney() {
     overlay.classList.remove('active');
     overlay.setAttribute('aria-hidden', 'true');
 }
+
+// Logged-day details are shown inline on the weekly card only (no overlay editor).
+function dayEntryDismissForWeekView() {}

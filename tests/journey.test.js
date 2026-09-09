@@ -5,6 +5,7 @@ const {
     resetKing,
     seedJourney,
     getState,
+    setState,
 } = require('./helpers/king-harness');
 
 test('fresh journey has zero slips and can log', () => {
@@ -117,4 +118,77 @@ test('permanent best journey updates when finished score beats prior', () => {
     const best = getState(ctx).bestJourney;
     assert.equal(best.success, 5);
     assert.equal(best.failures, 10);
+});
+
+test('best journey hint on first journey follows milestone targets', () => {
+    const ctx = createKingContext();
+    resetKing(ctx, { today: '2026-06-15' });
+    seedJourney(ctx, { today: '2026-06-15', start: '2026-06-15' });
+
+    assert.equal(ctx.getBestJourneyHintText(), 'Target 25 strong days');
+
+    setState(ctx, { score: { success: 25, failures: 0 } });
+    assert.equal(ctx.getBestJourneyHintText(), 'Target 50 strong days');
+
+    setState(ctx, { score: { success: 50, failures: 0 } });
+    assert.equal(ctx.getBestJourneyHintText(), 'Target 100 strong days');
+});
+
+test('best journey hint on later journeys adds previous best strong days', () => {
+    const ctx = createKingContext();
+    resetKing(ctx, { today: '2026-06-15' });
+    seedJourney(ctx, { today: '2026-06-15', start: '2026-06-15', attempt: 2 });
+    setState(ctx, {
+        score: { success: 10, failures: 0 },
+        completedJourneys: [{
+            attempt: 1,
+            score: { success: 38, failures: 10 },
+            endedDate: '2026-06-14',
+        }],
+    });
+
+    assert.equal(
+        ctx.getBestJourneyHintText(),
+        'Target 25 strong days\nBest - 38 strong days',
+    );
+
+    setState(ctx, { score: { success: 26, failures: 0 } });
+    assert.equal(
+        ctx.getBestJourneyHintText(),
+        'Target 38 strong days\nBest - 38 strong days',
+    );
+
+    setState(ctx, { score: { success: 40, failures: 0 } });
+    assert.equal(
+        ctx.getBestJourneyHintText(),
+        'New Best! Target 50 Days\nBest - 38 strong days',
+    );
+});
+
+test('best journey hint shows New Best when current journey beats prior', () => {
+    const ctx = createKingContext();
+    resetKing(ctx, { today: '2026-06-15' });
+    seedJourney(ctx, { today: '2026-06-15', start: '2026-06-15', attempt: 2 });
+    setState(ctx, {
+        score: { success: 149, failures: 2 },
+        completedJourneys: [{
+            attempt: 1,
+            score: { success: 145, failures: 10 },
+            endedDate: '2026-06-14',
+        }],
+    });
+
+    assert.equal(
+        ctx.getBestJourneyHintText(),
+        'New Best! Target 200 Days\nBest - 145 strong days',
+    );
+});
+
+test('best journey hint hides while awaiting next journey', () => {
+    const ctx = createKingContext();
+    resetKing(ctx, { today: '2026-06-15' });
+    seedJourney(ctx, { today: '2026-06-15', start: '2026-06-15' });
+    setState(ctx, { pendingNextJourney: true, journeyEndedDate: '2026-06-15' });
+
+    assert.equal(ctx.getBestJourneyHintText(), null);
 });

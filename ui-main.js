@@ -27,6 +27,8 @@ let currentSlide = 0;
 let lastActionTap = { btn: null, action: '', at: 0 };
 let lastJourneyMilestonesKey = '';
 let deferredHeavyRendered = false;
+let weeklySelectedSlot = null;
+let weeklySelectedDateKey = null;
 
 // ════════════════════════════════════════════════════════
 //  INIT
@@ -160,6 +162,14 @@ function getRelapseScoreTier(failures) {
     return 'relapse-10';
 }
 
+function renderJourneyScoreMarkup(success, failures) {
+    return (
+        '<span class="score-strong">' + success + '</span>' +
+        '<span class="score-sep">/</span>' +
+        '<span class="score-failures">' + failures + '</span>'
+    );
+}
+
 function renderTopStats() {
     clampCalendarDayToRealToday();
     const dayEl = document.getElementById('calendarDay');
@@ -170,10 +180,7 @@ function renderTopStats() {
     const currentEl = document.getElementById('currentJourney');
     if (currentEl) {
         currentEl.className = `score-value ${tier}`;
-        currentEl.innerHTML =
-            `<span class="score-strong">${success}</span>` +
-            `<span class="score-sep">/</span>` +
-            `<span class="score-failures">${failures}</span>`;
+        currentEl.innerHTML = renderJourneyScoreMarkup(success, failures);
     }
 
     const breakdownEl = document.getElementById('currentJourneyBreakdown');
@@ -189,7 +196,13 @@ function renderTopStats() {
 
     const bestEl = document.getElementById('bestJourney');
     const best = getDisplayBestJourney();
-    if (bestEl) bestEl.textContent = formatJourneyScore(best);
+    if (bestEl) {
+        bestEl.className = 'stat-value gold';
+        bestEl.innerHTML = renderJourneyScoreMarkup(
+            Number(best.success) || 0,
+            Number(best.failures) || 0,
+        );
+    }
 
     const bestHintEl = document.getElementById('bestJourneyHint');
     if (bestHintEl) {
@@ -443,9 +456,39 @@ function layoutWeeklyTrack(track) {
     }
 }
 
-function renderWeeklyStreakInsight(progress) {
+function renderWeeklyStreakInsight(progress, selectedSlot) {
     const titleEl = document.getElementById('weeklyStreakDayTitle');
+    const stateEl = document.getElementById('weeklyStreakDayState');
     const textEl  = document.getElementById('weeklyStreakDayText');
+    const insightWrap = document.getElementById('weeklyStreakInsight');
+
+    weeklySelectedDateKey = null;
+    if (insightWrap) insightWrap.classList.remove('is-logged-entry');
+    if (stateEl) {
+        stateEl.hidden = true;
+        stateEl.textContent = '';
+    }
+
+    if (selectedSlot != null) {
+        const dateKey = getWeeklyTrackWallDate(selectedSlot);
+        const logged = formatDayLogInsight(dateKey);
+        if (logged) {
+            weeklySelectedDateKey = dateKey;
+            if (insightWrap) insightWrap.classList.add('is-logged-entry');
+            if (titleEl) titleEl.textContent = logged.title;
+            if (stateEl && logged.stateLabel) {
+                stateEl.textContent = logged.stateLabel;
+                stateEl.hidden = false;
+            }
+            if (textEl) {
+                const lines = [logged.outcome];
+                if (logged.note) lines.push(logged.note);
+                textEl.textContent = lines.join('\n\n');
+            }
+            return;
+        }
+        weeklySelectedSlot = null;
+    }
 
     if (isWeeklySlipReflectDay()) {
         if (titleEl) titleEl.textContent = WEEKLY_SLIP_REFLECT.title;
@@ -459,6 +502,42 @@ function renderWeeklyStreakInsight(progress) {
     if (textEl)  textEl.textContent  = insight.body;
 }
 
+function isWeeklyTrackSlotTappable(weekSlot) {
+    return getWeeklyTrackWallDate(weekSlot) != null;
+}
+
+function highlightWeeklySelectedSlot(track, slot) {
+    if (!track) return;
+    track.querySelectorAll('[data-week-slot]').forEach(function (el) {
+        el.classList.toggle('selected', Number(el.getAttribute('data-week-slot')) === slot);
+    });
+}
+
+function bindWeeklyTrackTaps(track) {
+    if (!track || track._weeklyTapBound) return;
+    track._weeklyTapBound = true;
+    track.addEventListener('click', function (e) {
+        var target = e.target.closest('[data-week-slot].weekly-tappable');
+        if (!target) return;
+        var slot = Number(target.getAttribute('data-week-slot'));
+        if (!Number.isFinite(slot) || !isWeeklyTrackSlotTappable(slot)) return;
+        if (typeof dayEntryDismissForWeekView === 'function') {
+            dayEntryDismissForWeekView();
+        }
+        weeklySelectedSlot = weeklySelectedSlot === slot ? null : slot;
+        renderWeeklyStreakInsight(getWeeklyStreakDay(getDisplayStreak()), weeklySelectedSlot);
+        highlightWeeklySelectedSlot(track, weeklySelectedSlot);
+    });
+}
+
+function weeklyTappableClass(weekSlot) {
+    return isWeeklyTrackSlotTappable(weekSlot) ? ' weekly-tappable' : '';
+}
+
+function weeklySlotAttr(weekSlot) {
+    return isWeeklyTrackSlotTappable(weekSlot) ? ' data-week-slot="' + weekSlot + '"' : '';
+}
+
 function renderWeeklyStreak() {
     const track = document.getElementById('weeklyStreakTrack');
     if (!track) return;
@@ -470,18 +549,23 @@ function renderWeeklyStreak() {
     const slipDay = freezeLayout ? freezeLayout.slipWeekDay : 0;
     const strongDays = freezeLayout ? freezeLayout.strongWeekDay : progress;
 
-    renderWeeklyStreakInsight(progress);
+    if (weeklySelectedSlot != null && !isWeeklyTrackSlotTappable(weeklySelectedSlot)) {
+        weeklySelectedSlot = null;
+    }
+
+    renderWeeklyStreakInsight(progress, weeklySelectedSlot);
     const traveler = getWeeklyActiveTraveler(streak);
 
     const card = document.getElementById('weeklyStreakCard');
     if (card) card.classList.toggle('streak-freeze-day', freeze);
 
     const startDone = isWeeklyStartReached(streak);
-    const startCls = 'weekly-step weekly-step-start' + (startDone ? ' done' : '');
-    let railHtml   = '<div class="' + startCls + '">' +
+    const startCls = 'weekly-step weekly-step-start' + (startDone ? ' done' : '') + weeklyTappableClass(0);
+    let railHtml   = '<div class="' + startCls + '"' + weeklySlotAttr(0) + '>' +
         '<div class="weekly-step-marker"><div class="weekly-step-dot weekly-step-origin" aria-hidden="true"></div></div>' +
         '</div>';
-    let labelHtml  = '<div class="weekly-step-label-col' + (startDone ? ' done' : '') + '">' +
+    let labelHtml  = '<div class="weekly-step-label-col weekly-step-label-start' + (startDone ? ' done' : '') +
+        weeklyTappableClass(0) + '"' + weeklySlotAttr(0) + '>' +
         '<div class="weekly-step-label">Start</div></div>';
     for (let day = 1; day <= 7; day++) {
         const strongDone = strongDays > 0 && day <= strongDays;
@@ -496,14 +580,15 @@ function renderWeeklyStreak() {
             isSlipDot ? 'slip-day' : '',
             current ? 'current' : '',
             freeze && strongDone ? 'frozen' : '',
-        ].filter(Boolean).join(' ');
+        ].filter(Boolean).join(' ') + weeklyTappableClass(day);
         const labelCls = [
             'weekly-step-label-col',
             strongDone ? 'done' : '',
             isSlipDot ? 'slip-day' : '',
             current ? 'current' : '',
             freeze && strongDone ? 'frozen' : '',
-        ].filter(Boolean).join(' ');
+        ].filter(Boolean).join(' ') + weeklyTappableClass(day);
+        const slotAttr = weeklySlotAttr(day);
         const marker  = isTarget
             ? `<div class="weekly-step-marker"><svg class="weekly-step-bullseye-svg" viewBox="0 0 18 18" aria-hidden="true">
                 <line class="dart-shaft" x1="3.3" y1="2.5" x2="8.55" y2="8.35" stroke="#9a7b4f" stroke-width="1.1" stroke-linecap="round"/>
@@ -515,8 +600,8 @@ function renderWeeklyStreak() {
                 <path class="dart-tip" d="M8.15 7.95 L9.45 9.3 L7.9 9.05 Z"/>
             </svg></div>`
             : '<div class="weekly-step-marker"><div class="weekly-step-dot" aria-hidden="true"></div></div>';
-        railHtml += `<div class="${stepCls}">${marker}</div>`;
-        labelHtml += `<div class="${labelCls}"><div class="weekly-step-label">Day ${day}</div></div>`;
+        railHtml += `<div class="${stepCls}"${slotAttr}>${marker}</div>`;
+        labelHtml += `<div class="${labelCls}"${slotAttr}><div class="weekly-step-label">Day ${day}</div></div>`;
     }
 
     const travelerHtml = traveler
@@ -531,6 +616,9 @@ function renderWeeklyStreak() {
         </div>
         <div class="weekly-streak-labels">${labelHtml}</div>`;
     requestAnimationFrame(() => layoutWeeklyTrack(track));
+
+    bindWeeklyTrackTaps(track);
+    highlightWeeklySelectedSlot(track, weeklySelectedSlot);
 
     if (!track._weeklyResizeObs && typeof ResizeObserver !== 'undefined') {
         track._weeklyResizeObs = new ResizeObserver(() => layoutWeeklyTrack(track));
