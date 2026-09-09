@@ -233,7 +233,7 @@ function renderChances() {
     for (let i = 0; i < maxFailures; i++) {
         const div = document.createElement('div');
         div.className = 'chance' + (i < failures ? ' used' : '');
-        div.textContent = '💪';
+        div.textContent = '🛡️';
         grid.appendChild(div);
     }
 
@@ -244,7 +244,7 @@ function renderChances() {
     if (labelEl) {
         labelEl.className = `chances-label ${tier}`;
         labelEl.textContent =
-            `💪 ${remaining} ${remaining === 1 ? 'power' : 'powers'} remaining`;
+            `🛡️ ${remaining} ${remaining === 1 ? 'slip' : 'slips'} left`;
     }
 }
 

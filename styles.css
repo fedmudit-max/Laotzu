@@ -813,7 +813,7 @@ body::before {
 }
 .score-value.relapse-10 .score-failures { color: var(--text-muted); }
 
-/* ── CHANCES (10 💪 emojis) ─────────────────────── */
+/* ── SLIPS (10 🛡️ shields) ─────────────────────── */
 .chances-card {
     background: rgba(52, 199, 89, 0.12);
     border: 1.5px solid rgba(52, 199, 89, 0.3);
