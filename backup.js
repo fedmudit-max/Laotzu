@@ -266,7 +266,6 @@ function shareWebBackupFile(json, filename, exportedAt) {
 }
 
 function exportProgressBackup() {
-    if (!requirePremium()) return;
     if (!isMobileDevice()) {
         showToast(0, 'Export is available on your phone — open the King app there.');
         return;
@@ -288,7 +287,6 @@ function exportProgressBackup() {
 }
 
 function openImportPicker() {
-    if (!requirePremium()) return;
     if (!isMobileDevice()) {
         showToast(0, 'Import is available on your phone — open the King app there.');
         return;

@@ -1,4 +1,10 @@
-const CACHE_NAME = 'king-v138';
+const CACHE_NAME = 'king-v156';
+
+function logSwOptionalFailure(area, err) {
+    try {
+        if (err) console.warn('[King SW:' + area + ']', err);
+    } catch (e) {}
+}
 
 const ASSETS = [
     './',
@@ -8,6 +14,7 @@ const ASSETS = [
     './data.js',
     './migration.js',
     './logic-storage-state.js',
+    './optional-log.js',
     './logic-dates-log.js',
     './logic-journey.js',
     './logic-streak.js',
@@ -58,9 +65,14 @@ function staleWhileRevalidate(request) {
             var networkFetch = fetch(request).then(function (response) {
                 if (response && response.ok) cache.put(request, response.clone());
                 return response;
-            }).catch(function () { return null; });
+            }).catch(function (err) {
+                logSwOptionalFailure('stale-while-revalidate-fetch', err);
+                return null;
+            });
             if (cached) {
-                networkFetch.catch(function () {});
+                networkFetch.catch(function (err) {
+                    logSwOptionalFailure('stale-while-revalidate-bg', err);
+                });
                 return cached;
             }
             return networkFetch.then(function (response) {

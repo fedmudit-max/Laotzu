@@ -35,7 +35,6 @@ function applyPremiumTierLayout() {
         'knowledgeCard',
         'monthPanelCard',
         'chartPanelCard',
-        'premiumBackupGate',
         'remindPanelCard',
     ];
     for (var i = 0; i < gatedIds.length; i++) {
@@ -113,6 +112,35 @@ function fillPremiumFeatureList(listEl) {
     }).join('');
 }
 
+function formatTrialDaysLeft(left) {
+    return left === 1 ? '1 free day left' : left + ' free days left';
+}
+
+/**
+ * Premium panel phase during trial: early (status only) → countdown (full list) → expired.
+ * @returns {'active'|'early'|'countdown'|'expired'}
+ */
+function getPremiumTrialPanelPhase() {
+    if (Entitlement.isSubscriptionActive()) return 'active';
+    if (!Entitlement.isTrialActive()) return 'expired';
+    var left = Entitlement.daysRemaining();
+    var countdownDays = typeof PREMIUM_TRIAL_COUNTDOWN_DAYS === 'number'
+        ? PREMIUM_TRIAL_COUNTDOWN_DAYS
+        : 7;
+    return left <= countdownDays ? 'countdown' : 'early';
+}
+
+function setPremiumPanelSubscribeLabel(text) {
+    var btn = document.getElementById('premiumPanelSubscribeBtn');
+    if (btn) btn.textContent = text;
+}
+
+function setPremiumFeatureListVisible(listEl, visible) {
+    if (!listEl) return;
+    listEl.hidden = !visible;
+    if (!visible) listEl.innerHTML = '';
+}
+
 function setPremiumBackupNote(el, visible) {
     if (!el) return;
     if (!visible) {
@@ -130,21 +158,44 @@ function renderPremiumPanelContent() {
     var noteEl = document.getElementById('premiumPanelBackupNote');
     if (!statusEl || !listEl) return;
 
-    if (Entitlement.isSubscriptionActive()) {
+    var phase = getPremiumTrialPanelPhase();
+
+    if (phase === 'active') {
         statusEl.textContent = 'Premium is active. Billing and renewal are managed in Google Play.';
+        setPremiumFeatureListVisible(listEl, false);
         setPremiumBackupNote(noteEl, false);
-    } else if (Entitlement.isTrialActive()) {
-        var left = Entitlement.daysRemaining();
-        statusEl.textContent = left === 1
-            ? '1 free day left on your trial.'
-            : left + ' free days left on your trial.';
-        setPremiumBackupNote(noteEl, true);
-    } else {
-        statusEl.textContent = 'Free trial ended. Daily logging stays free forever. Subscribe to unlock timeline, milestones, Monthly Mirror, Progress Graph, and export/import. Your score is not affected.';
-        setPremiumBackupNote(noteEl, true);
+        setPremiumPanelSubscribeLabel('Manage in Google Play');
+        return;
     }
 
+    if (phase === 'early') {
+        var earlyLeft = Entitlement.daysRemaining();
+        statusEl.textContent = 'Premium trial · ' + formatTrialDaysLeft(earlyLeft) + '.';
+        setPremiumFeatureListVisible(listEl, false);
+        setPremiumBackupNote(noteEl, false);
+        setPremiumPanelSubscribeLabel('Subscribe anytime');
+        return;
+    }
+
+    if (phase === 'countdown') {
+        var countdownLeft = Entitlement.daysRemaining();
+        statusEl.textContent = countdownLeft === 1
+            ? 'Trial ends tomorrow. Subscribe to keep everything below.'
+            : 'Trial ends in ' + countdownLeft + ' days. Subscribe to keep everything below.';
+        fillPremiumFeatureList(listEl);
+        setPremiumFeatureListVisible(listEl, true);
+        setPremiumBackupNote(noteEl, true);
+        if (noteEl) noteEl.textContent = PREMIUM_BACKUP_NOTE;
+        setPremiumPanelSubscribeLabel('Keep Premium after trial');
+        return;
+    }
+
+        statusEl.textContent = 'Free trial ended. Daily logging stays free forever. Subscribe to unlock timeline, milestones, Monthly Mirror, and Progress Graph. Your score is not affected.';
     fillPremiumFeatureList(listEl);
+    setPremiumFeatureListVisible(listEl, true);
+    setPremiumBackupNote(noteEl, true);
+    if (noteEl) noteEl.textContent = PREMIUM_BACKUP_NOTE;
+    setPremiumPanelSubscribeLabel('View plans & subscribe');
 }
 
 function renderPremiumStatus() {
@@ -157,21 +208,24 @@ function renderPremiumStatus() {
         if (teaserEl) teaserEl.textContent = 'Active · Google Play';
         if (cardEl) {
             cardEl.classList.add('premium-active-state');
-            cardEl.classList.remove('premium-trial-state', 'premium-expired-state');
+            cardEl.classList.remove('premium-trial-state', 'premium-expired-state', 'premium-trial-early', 'premium-trial-countdown');
         }
     } else if (Entitlement.isTrialActive()) {
+        var trialPhase = getPremiumTrialPanelPhase();
         if (titleEl) titleEl.textContent = '⭐ Premium trial';
         if (teaserEl) teaserEl.textContent = '';
         if (cardEl) {
             cardEl.classList.add('premium-trial-state');
             cardEl.classList.remove('premium-active-state', 'premium-expired-state');
+            cardEl.classList.toggle('premium-trial-early', trialPhase === 'early');
+            cardEl.classList.toggle('premium-trial-countdown', trialPhase === 'countdown');
         }
     } else {
         if (titleEl) titleEl.textContent = '⭐ Premium';
         if (teaserEl) teaserEl.textContent = 'Logging free · unlock all features';
         if (cardEl) {
             cardEl.classList.add('premium-expired-state');
-            cardEl.classList.remove('premium-active-state', 'premium-trial-state');
+            cardEl.classList.remove('premium-active-state', 'premium-trial-state', 'premium-trial-early', 'premium-trial-countdown');
         }
     }
 

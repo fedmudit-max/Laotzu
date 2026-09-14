@@ -151,7 +151,7 @@
 
         <!-- Tab 1: Journey strong-day milestones -->
         <div class="tab-content" id="tab-journey">
-            <div class="section-label">Strong</div>
+            <div class="section-label">Beginner</div>
             <div class="milestone-list" id="strongSection"></div>
             <div class="section-label">Warrior</div>
             <div class="milestone-list" id="enduranceSection"></div>
@@ -343,7 +343,7 @@
                 <p class="premium-panel-status" id="premiumPanelStatus"></p>
                 <ul class="premium-panel-features" id="premiumPanelFeatures"></ul>
                 <p class="premium-backup-note" id="premiumPanelBackupNote"></p>
-                <button class="btn-premium-panel" type="button" data-action="open-premium">View plans &amp; subscribe</button>
+                <button class="btn-premium-panel" type="button" id="premiumPanelSubscribeBtn" data-action="open-premium">View plans &amp; subscribe</button>
             </div>
         </div>
     </div>
@@ -358,7 +358,7 @@
         </button>
         <div class="collapse-body" id="backupResetBody">
             <div class="actions-stack">
-                <div class="premium-gated" id="premiumBackupGate">
+                <div id="premiumBackupGate">
                     <button class="btn-backup" type="button" id="exportBackupBtn" data-action="export-backup">Export Progress</button>
                     <button class="btn-backup" type="button" id="importBackupBtn" data-action="import-backup">Import Progress</button>
                     <p class="backup-status" id="lastBackupLabel">Last exported: Never</p>
@@ -399,33 +399,30 @@
             <section class="learn-section">
                 <h3 class="learn-section-title">The Journey System</h3>
                 <p class="learn-section-body"><strong>Don't just count your streak. Measure the Journey.</strong></p>
-                <p class="learn-section-body">Every Journey starts with <strong>10 Powers</strong>.</p>
+                <p class="learn-section-body">Every Journey starts with <strong>10 🛡️</strong> before it ends.</p>
                 <p class="learn-section-body">Think of them as something valuable — something you don't want to waste.</p>
-                <p class="learn-section-body">Every time you slip, <strong>one Power is lost.</strong></p>
-                <p class="learn-powers learn-seq-row" aria-label="Powers countdown">
+                <p class="learn-section-body">Every time you slip on a new day, you lose one 🛡️.</p>
+                <p class="learn-powers learn-seq-row" aria-label="Shields left countdown">
                     <span class="learn-seq-num learn-pow-ok">10</span><span class="learn-seq-arrow learn-pow-ok" aria-hidden="true">→</span><span class="learn-seq-num learn-pow-ok">9</span><span class="learn-seq-arrow learn-pow-ok" aria-hidden="true">→</span><span class="learn-seq-num learn-pow-warn">8</span><span class="learn-seq-arrow learn-pow-warn" aria-hidden="true">→</span><span class="learn-seq-num learn-pow-warn">7</span><span class="learn-seq-gap learn-pow-warn" aria-hidden="true">.......</span><span class="learn-seq-arrow learn-pow-danger" aria-hidden="true">→</span><span class="learn-seq-num learn-pow-danger">3</span><span class="learn-seq-arrow learn-pow-danger" aria-hidden="true">→</span><span class="learn-seq-num learn-pow-danger">2</span><span class="learn-seq-arrow learn-pow-critical" aria-hidden="true">→</span><span class="learn-seq-num learn-pow-critical">1</span>
                 </p>
-                <p class="learn-section-body">More powers you have, stronger you are. Less powers you have, weaker you are.</p>
-                <p class="learn-section-body">Every time you relapse, you lose one Power — and you feel this:</p>
+                <p class="learn-section-body">The more 🛡️ you have left, the longer you can keep building Strong Days.</p>
+                <p class="learn-section-body">Every time you relapse, you lose one 🛡️ — and you feel this:</p>
                 <blockquote class="learn-quote learn-quote-emphasis">
                     I have lost one. I don't want to lose another.
                 </blockquote>
                 <p class="learn-section-body">Your goal isn't simply to protect a streak.</p>
-                <p class="learn-section-body">Your goal is to achieve as many strong days as possible before the Journey ends.</p>
+                <p class="learn-section-body">Your goal is to achieve as many Strong Days as possible before the Journey ends.</p>
                 <blockquote class="learn-quote learn-quote-emphasis">
                     When you're climbing a mountain and you slip, you don't start again from the bottom.
                 </blockquote>
-                <p class="learn-section-body">You might spend your whole life trying to reach the mountain top in one go, or through one perfect streak.</p>
-                <p class="learn-section-body">You learn, improve, find your footing, and keep moving forward.</p>
-                <p class="learn-section-body"><strong>An example of a Journey:</strong></p>
-                <p class="learn-score-line learn-seq-row learn-score-example"><span>Streak 1:</span><span>4 days</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span>slip</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span>4 strong / 1 slip</span></p>
-                <p class="learn-score-line learn-seq-row learn-score-example"><span>Streak 2:</span><span>5 days</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span>slip</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span>9 strong / 2 slips</span></p>
-                <p class="learn-score-line learn-seq-row learn-score-example"><span>Streak 3:</span><span>2 days</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span>slip</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span>11 strong / 3 slips</span></p>
-                <p class="learn-score-line learn-seq-row learn-score-example"><span>Streak 4:</span><span>0 days</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span>slip</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span>11 strong / 4 slips</span></p>
-                <p class="learn-section-body">Your strong days accumulate.</p>
-                <p class="learn-section-body">Your Powers count down.</p>
+                <p class="learn-section-body"><strong>An Example of a Journey</strong></p>
+                <p class="learn-score-line learn-seq-row learn-score-example"><span>Streak 1:</span><span>4 days</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span>🛡️</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span>4 Strong Days / 1 Slip</span></p>
+                <p class="learn-score-line learn-seq-row learn-score-example"><span>Streak 2:</span><span>5 days</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span>🛡️</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span>9 Strong Days / 2 Slips</span></p>
+                <p class="learn-score-line learn-seq-row learn-score-example"><span>Streak 3:</span><span>2 days</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span>🛡️</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span>11 Strong Days / 3 Slips</span></p>
+                <p class="learn-score-line learn-seq-row learn-score-example"><span>Streak 4:</span><span>0 days</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span>🛡️</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span>11 Strong Days / 4 Slips</span></p>
+                <p class="learn-section-body">Your Strong Days accumulate. Your 🛡️ go down.</p>
                 <p class="learn-section-body">Eventually, the Journey ends.</p>
-                <p class="learn-score-line learn-score-example">25 strong days / 10 slips.</p>
+                <p class="learn-score-line learn-score-example">25 Strong Days / 10 Slips</p>
                 <p class="learn-section-body">And now you have a number. A number you can understand. A number you can beat.</p>
             </section>
 
@@ -462,11 +459,11 @@
                 <p class="learn-section-body">Imagine your first three Journey scores:</p>
                 <p class="learn-score-line learn-seq-row learn-score-highlight"><span>30 / 10</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span>60 / 10</span><span class="learn-seq-arrow" aria-hidden="true">→</span><span>102 / 10</span></p>
                 <p class="learn-section-body">That means you didn't just reach those numbers once.</p>
-                <p class="learn-section-body">You crossed the 25-day milestone 3 times, the 50-day milestone 2 times, and the 100-day milestone once.</p>
+                <p class="learn-section-body">You crossed the 25 Strong Days milestone 3 times, the 50 Strong Days milestone 2 times, and the 100 Strong Days milestone once.</p>
                 <p class="learn-section-body">Every time you cross a milestone, its count increases.</p>
-                <p class="learn-score-line learn-record-example">25 days × 3</p>
-                <p class="learn-score-line learn-record-example">50 days × 2</p>
-                <p class="learn-score-line learn-record-example">100 days × 1</p>
+                <p class="learn-score-line learn-record-example">25 Strong Days × 3</p>
+                <p class="learn-score-line learn-record-example">50 Strong Days × 2</p>
+                <p class="learn-score-line learn-record-example">100 Strong Days × 1</p>
                 <p class="learn-section-body">These aren't just numbers.</p>
                 <p class="learn-section-body">Each one is another piece of evidence that you have been able to go that far before.</p>
                 <p class="learn-section-body">The more times you reach a milestone, the stronger the proof becomes.</p>
@@ -485,7 +482,6 @@
                 <p class="learn-section-body">Look at that honestly.</p>
                 <p class="learn-section-body">Maybe you've improved from where you were before. You'll feel it. Maybe you've slipped more than before. That will hurt. Either way, you win — because you now know the truth.</p>
                 <p class="learn-section-body">If you've improved, you have proof that you're getting stronger. If you've fallen, you have a clear signal that something needs to change.</p>
-                <p class="learn-section-body">The Monthly Mirror doesn't punish you. It shows you where you are.</p>
                 <blockquote class="learn-quote learn-quote-emphasis">
                     What you see honestly, you can change.
                 </blockquote>
@@ -508,8 +504,8 @@
             </section>
 
             <section class="learn-section">
-                <h3 class="learn-section-title">Can You Change Yourself?</h3>
-                <p class="learn-section-body">In the beginning, you may struggle to reach even 50 days. Maybe even 25.</p>
+                <h3 class="learn-section-title">You Can Change Yourself</h3>
+                <p class="learn-section-body">In the beginning, you may struggle to reach even 50 Strong Days. Maybe even 25 Strong Days.</p>
                 <p class="learn-section-body">Don't lose faith.</p>
                 <p class="learn-section-body">One more strong day than your last Journey is a sign of progress.</p>
                 <p class="learn-section-body">That's all it needs to be.</p>
@@ -736,7 +732,7 @@
                 <text x="60" y="56" text-anchor="middle" font-size="13" font-weight="600"
                     fill="#34c759" font-family="-apple-system,sans-serif" id="breathLabel">Breathe in</text>
                 <text x="60" y="73" text-anchor="middle" font-size="22" font-weight="700"
-                    fill="#1d1d1f" font-family="-apple-system,sans-serif" id="urgeCountdown">5:00</text>
+                    fill="#1d1d1f" font-family="-apple-system,sans-serif" id="urgeCountdown">0:30</text>
             </svg>
         </div>
 
@@ -763,6 +759,7 @@
     <script defer src="./data.js"></script>
     <script defer src="./migration.js"></script>
     <script defer src="./logic-storage-state.js"></script>
+    <script defer src="./optional-log.js"></script>
     <script defer src="./logic-dates-log.js"></script>
     <script defer src="./logic-journey.js"></script>
     <script defer src="./logic-streak.js"></script>
