@@ -170,7 +170,7 @@ function renderPremiumPanelContent() {
 
     if (phase === 'early') {
         var earlyLeft = Entitlement.daysRemaining();
-        statusEl.textContent = 'Premium trial · ' + formatTrialDaysLeft(earlyLeft) + '.';
+        statusEl.textContent = formatTrialDaysLeft(earlyLeft) + '.';
         setPremiumFeatureListVisible(listEl, false);
         setPremiumBackupNote(noteEl, false);
         setPremiumPanelSubscribeLabel('Subscribe anytime');
