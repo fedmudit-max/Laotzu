@@ -276,7 +276,7 @@ function resetActionButtonLayout(successBtn, failBtn) {
     failBtn.classList.remove('logged-slip', 'action-btn-full');
 }
 
-const POST_SLIP_LOGGED = 'Slip logged. Journey continues.';
+const POST_SLIP_LOGGED = 'Slip logged.';
 const POST_SLIP_TOMORROW = 'Stay strong tomorrow.';
 
 function renderButtons() {
