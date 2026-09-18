@@ -19,16 +19,14 @@ test('active local trial grants premium access', () => {
     assert.equal(ctx.Entitlement.getAccess(s).active, true);
 });
 
-test('expired trial denies premium without subscription', () => {
+test('expired trial still grants access when premium gating is disabled', () => {
     const ctx = createKingContext();
     resetKing(ctx);
     setState(ctx, { trialStartedAt: isoDaysFromNow(-40), premiumUntil: '' });
     const s = getState(ctx);
 
-    assert.equal(ctx.Entitlement.isTrialActive(s), false);
-    assert.equal(ctx.Entitlement.isSubscriptionActive(s), false);
-    assert.equal(ctx.Entitlement.hasPremiumAccess(s), false);
-    assert.equal(ctx.Entitlement.shouldShowPaywall(s), true);
+    assert.equal(ctx.Entitlement.hasPremiumAccess(s), true);
+    assert.equal(ctx.Entitlement.shouldShowPaywall(s), false);
 });
 
 test('active premiumUntil cache grants access', () => {

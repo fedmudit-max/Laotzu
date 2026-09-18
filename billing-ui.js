@@ -26,9 +26,15 @@ function setPremiumSectionVisible(id, visible) {
     if (el) el.hidden = !visible;
 }
 
+function isPremiumGatingEnabled() {
+    return typeof PREMIUM_GATING_ENABLED === 'undefined' || !!PREMIUM_GATING_ENABLED;
+}
+
 function applyPremiumTierLayout() {
     var access = Entitlement.getAccess();
-    var unlocked = !safeGet('onboardingComplete') || access.active;
+    var unlocked = !isPremiumGatingEnabled()
+        || !safeGet('onboardingComplete')
+        || access.active;
     var gatedIds = [
         'weeklyStreakCard',
         'milestonesCard',
@@ -42,7 +48,7 @@ function applyPremiumTierLayout() {
     }
     setPremiumSectionVisible('primaryStack', true);
     setPremiumSectionVisible('learnJourneyCard', true);
-    setPremiumSectionVisible('premiumPanelCard', true);
+    setPremiumSectionVisible('premiumPanelCard', isPremiumGatingEnabled());
     setPremiumSectionVisible('backupResetCard', true);
     setPremiumSectionVisible('exportBackupBtn', true);
     setPremiumSectionVisible('importBackupBtn', true);
@@ -393,6 +399,7 @@ function closePremiumSheet() {
 }
 
 function requirePremium() {
+    if (!isPremiumGatingEnabled()) return true;
     if (safeGet('onboardingComplete') !== 'true') return false;
     if (Entitlement.getAccess().active) return true;
     openPremiumSheet();

@@ -13,6 +13,9 @@ const BREATH_OUT_SECS = 4;
 const BREATH_SOUND_GAIN = 0.75;
 const BACKUP_FORMAT = 'king-backup';
 const BACKUP_VERSION = 1;
+/** When false, every feature stays unlocked — no trial countdown or paywall. */
+const PREMIUM_GATING_ENABLED = false;
+
 /** Local free trial length. Access window is trialStartedAt + this many days. */
 const PREMIUM_TRIAL_DAYS = 30;
 /** Last N trial days: full Premium feature list + stronger subscribe CTA in the panel. */

@@ -132,7 +132,7 @@ test('expired cache after restore denies premium when trial ended', () => {
         lastVerifiedAt: isoDaysFromNow(-2),
     });
 
-    assert.equal(ctx.Entitlement.hasPremiumAccess(getState(ctx)), false);
+    assert.equal(ctx.Entitlement.hasPremiumAccess(getState(ctx)), !ctx.PREMIUM_GATING_ENABLED);
 });
 
 test('premium trial panel phase is early when more than countdown days remain', () => {

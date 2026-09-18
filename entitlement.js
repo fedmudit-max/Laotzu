@@ -108,8 +108,13 @@ var Entitlement = (function () {
         return ends.getTime() > Date.now();
     }
 
+    function isPremiumGatingEnabled() {
+        return typeof PREMIUM_GATING_ENABLED === 'undefined' || !!PREMIUM_GATING_ENABLED;
+    }
+
     /** Single access answer: paid subscription OR open trial window. */
     function hasPremiumAccess(s) {
+        if (!isPremiumGatingEnabled()) return true;
         return isSubscriptionActive(s) || isTrialActive(s);
     }
 
@@ -150,6 +155,7 @@ var Entitlement = (function () {
     }
 
     function isBasicTier(s) {
+        if (!isPremiumGatingEnabled()) return false;
         return safeGet('onboardingComplete') === 'true' && !hasPremiumAccess(s);
     }
 
