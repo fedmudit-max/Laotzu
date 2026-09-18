@@ -50,8 +50,23 @@ function init() {
         saveToStorage(state);
     }
     // Corrupt / interrupted 10-slip finish → archive so the user is not stuck.
-    if (typeof healStrandedJourneyEnd === 'function' && healStrandedJourneyEnd()) {
-        saveToStorage(state);
+    if (typeof healStrandedJourneyEnd === 'function') {
+        var healedComparison = healStrandedJourneyEnd();
+        if (healedComparison) {
+            saveToStorage(state);
+            if (typeof presentJourneyEndComparison === 'function') {
+                presentJourneyEndComparison(healedComparison, {
+                    nextJourneyOpenToday: typeof canBeginNextJourneyToday === 'function'
+                        && canBeginNextJourneyToday(),
+                });
+            }
+        }
+    }
+    if (typeof isAwaitingNextJourney === 'function' && isAwaitingNextJourney()
+        && typeof tryShowAwaitingJourneyComparison === 'function') {
+        var canOpenNextOnInit = typeof canBeginNextJourneyToday === 'function'
+            && canBeginNextJourneyToday();
+        tryShowAwaitingJourneyComparison(canOpenNextOnInit);
     }
     // Heal stale currentStreak from older saves (log order ≠ calendar order).
     if (typeof recomputeCurrentStreak === 'function') {
@@ -116,6 +131,9 @@ function renderAll(options) {
         }
     }
     if (!options.deferHeavy) deferredHeavyRendered = true;
+    if (typeof flushJourneyEndComparisonPending === 'function') {
+        flushJourneyEndComparisonPending();
+    }
 }
 
 /** Progress tab charts and calendar — safe to run after first paint. */
@@ -248,15 +266,30 @@ function renderChances() {
     }
 }
 
+function resetActionButtonLayout(successBtn, failBtn) {
+    if (!successBtn || !failBtn) return;
+    successBtn.hidden = false;
+    failBtn.hidden = false;
+    successBtn.disabled = false;
+    failBtn.disabled = false;
+    successBtn.classList.remove('logged-slip');
+    failBtn.classList.remove('logged-slip', 'action-btn-full');
+}
+
+const POST_SLIP_LOGGED = 'Slip logged. Journey continues.';
+const POST_SLIP_TOMORROW = 'Stay strong tomorrow.';
+
 function renderButtons() {
     const successBtn = document.getElementById('successBtn');
     const failBtn    = document.getElementById('failBtn');
+    if (!successBtn || !failBtn) return;
+
+    resetActionButtonLayout(successBtn, failBtn);
 
     if (isAwaitingNextJourney()) {
-        successBtn.disabled = true;
-        successBtn.classList.remove('logged');
-        successBtn.textContent = '✓ I STAYED STRONG TODAY';
+        successBtn.hidden = true;
         failBtn.disabled = true;
+        failBtn.classList.add('logged-slip', 'action-btn-full');
         failBtn.textContent = 'New journey starts tomorrow';
         return;
     }
@@ -280,21 +313,18 @@ function renderButtons() {
     } else if (state.todayStatus === 'failed') {
         successBtn.disabled = true;
         successBtn.classList.remove('logged');
-        successBtn.textContent = 'Plan to avoid it next time';
-
-        const ORDINALS = ['', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th'];
-        const count    = state.todayFailCount;
-        failBtn.disabled    = false;
-        failBtn.textContent = count === 0
-            ? '✕ I Slipped'
-            : `✕ I Slipped ${ORDINALS[count] || `${count}th`} time today`;
+        successBtn.classList.add('logged-slip');
+        successBtn.textContent = POST_SLIP_TOMORROW;
+        failBtn.disabled = true;
+        failBtn.classList.add('logged-slip');
+        failBtn.textContent = POST_SLIP_LOGGED;
 
     } else {
         successBtn.disabled = false;
         successBtn.classList.remove('logged');
         successBtn.textContent = '✓ I STAYED STRONG TODAY';
         failBtn.disabled    = false;
-        failBtn.textContent = '✕ I Slipped';
+        failBtn.textContent = '✕ I SLIPPED TODAY';
     }
 }
 
@@ -677,12 +707,27 @@ function countUnrevealedJourneyMilestones(milestones, alwaysShow) {
     return n;
 }
 
-function buildLockedMilestonePlaceholderHtml() {
+function getNextSectionUnlockAt(milestones, alwaysShow) {
+    for (var i = 0; i < milestones.length; i++) {
+        var m = milestones[i];
+        if (!alwaysShow && !isJourneyMilestoneRevealed(m.unlockAt)) {
+            return m.unlockAt;
+        }
+    }
+    return 0;
+}
+
+function buildLockedMilestonePlaceholderHtml(unlockAt, showHint, hideDayHint) {
+    var msg = 'Keep going to unlock';
+    if (showHint && unlockAt > 0 && !hideDayHint
+        && typeof formatJourneyMilestoneUnlockHint === 'function') {
+        msg = formatJourneyMilestoneUnlockHint(unlockAt);
+    }
     return (
         '<div class="milestone-item milestone-locked">' +
             '<div class="milestone-info">' +
                 '<div class="milestone-icon">🔒</div>' +
-                '<div class="milestone-name">Keep going to unlock</div>' +
+                '<div class="milestone-name">' + msg + '</div>' +
             '</div>' +
         '</div>'
     );
@@ -691,14 +736,12 @@ function buildLockedMilestonePlaceholderHtml() {
 function buildMilestoneSectionHtml(milestones, options) {
     options = options || {};
     var alwaysShow = !!options.alwaysShow;
-    var mysteryLock = !!options.mysteryLock;
     var journeyEnded = isJourneyEndedDisplay();
-
-    if (mysteryLock && !isJourneyMilestoneRevealed(options.mysteryUnlock || 0)) {
-        return '<div class="mystery-lock"><span class="mystery-lock-icon">🔒</span></div>';
-    }
+    var hideUnlockDayHint = !!options.hideUnlockDayHint;
 
     var html = '';
+    var sectionUnlockAt = getNextSectionUnlockAt(milestones, alwaysShow);
+    var showSectionUnlockHint = true;
     var lockedSlotsLeft = lockedMilestoneSlotsForSection(
         countUnrevealedJourneyMilestones(milestones, alwaysShow),
     );
@@ -722,7 +765,12 @@ function buildMilestoneSectionHtml(milestones, options) {
                     '<div class="milestone-status">' + status + '</div>' +
                 '</div>';
         } else if (lockedSlotsLeft > 0) {
-            html += buildLockedMilestonePlaceholderHtml();
+            html += buildLockedMilestonePlaceholderHtml(
+                sectionUnlockAt,
+                showSectionUnlockHint,
+                hideUnlockDayHint,
+            );
+            showSectionUnlockHint = false;
             lockedSlotsLeft--;
         }
     }
@@ -764,7 +812,7 @@ function renderJourneyMilestones() {
     renderMilestoneSection(
         document.getElementById('legendarySection'),
         expandSectionMilestones([500, 750, 1000]),
-        { mysteryLock: true, mysteryUnlock: 400 },
+        { hideUnlockDayHint: true },
     );
 }
 

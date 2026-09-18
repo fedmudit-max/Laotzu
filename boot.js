@@ -26,19 +26,27 @@ function registerServiceWorkerDeferred() {
         // For Android install testing, serve over LAN HTTP/HTTPS (phone IP) or ngrok.
         navigator.serviceWorker.getRegistrations().then(function (regs) {
             regs.forEach(function (reg) { reg.unregister(); });
-        }).catch(function () {});
+        }).catch(function (err) {
+            logOptionalFailure('boot:sw-unregister', err);
+        });
         if (typeof caches !== 'undefined') {
             caches.keys().then(function (keys) {
                 keys.forEach(function (key) { caches.delete(key); });
-            }).catch(function () {});
+            }).catch(function (err) {
+                logOptionalFailure('boot:cache-clear', err);
+            });
         }
         return;
     }
 
     function register() {
         navigator.serviceWorker.register('./sw.js').then(function (reg) {
-            reg.update().catch(function () {});
-        }).catch(function () {});
+            reg.update().catch(function (err) {
+                logOptionalFailure('boot:sw-update', err);
+            });
+        }).catch(function (err) {
+            logOptionalFailure('boot:sw-register', err);
+        });
     }
 
     if (document.readyState === 'complete') {
@@ -147,7 +155,6 @@ function showFileProtocolBanner() {
             closeCelebration: closeCelebration,
             modalCancel: closeModal,
             modalConfirm: confirmAction,
-            urgeSurvived: urgeSurvived,
             closeUrge: closeUrge,
             closeCompare: closeCompare,
             'open-learn-journey': openLearnJourney,
@@ -240,6 +247,9 @@ function showFileProtocolBanner() {
         dismissLoadScreen(function () {
             try { paintApp(true); } catch (err) { console.error('King render failed:', err); }
             try { checkOnboarding(); } catch (err) { console.error('King onboarding failed:', err); }
+            if (typeof flushJourneyEndComparisonPending === 'function') {
+                flushJourneyEndComparisonPending();
+            }
             if (typeof consumeReminderLogAction === 'function') consumeReminderLogAction();
             deferStartupHeavyWork();
         });

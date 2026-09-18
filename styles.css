@@ -22,6 +22,8 @@ html.king-loading .container {
 :root {
     --green:       #34c759;
     --green-light: #30d158;
+    /* Slip button — tangerine orange; distinct from Best Journey --gold (#ff9f0a) */
+    --red:         #ff6d35;
     --gold:        #ff9f0a;
     --text:        #1d1d1f;
     --text-muted:  #86868b;
@@ -896,9 +898,10 @@ button {
 }
 
 .btn-danger {
-    background: linear-gradient(180deg, #ff453a, #ff3b30);
+    background: var(--red);
     color: white;
-    box-shadow: 0 4px 12px rgba(255,59,48,0.4);
+    box-shadow: 0 3px 10px rgba(255, 109, 53, 0.28);
+    border: none;
 }
 
 .btn-danger:hover:not(:disabled) { transform: translateY(-2px); }
@@ -910,6 +913,25 @@ button {
     background: linear-gradient(180deg, #9ca3af, #6b7280);
     box-shadow: none;
 }
+
+.action-buttons .action-btn-full {
+    grid-column: 1 / -1;
+}
+
+.action-buttons .logged-slip {
+    opacity: 1;
+    cursor: default;
+    pointer-events: none;
+    background: var(--bg);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    box-shadow: none;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.35;
+    padding: 12px 10px;
+}
+
 .actions-card .collapse-body {
     padding: 0;
 }
@@ -2578,6 +2600,15 @@ button {
 
 .mystery-lock-icon { font-size: 28px; }
 
+.mystery-lock-text {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-muted);
+    line-height: 1.35;
+    text-align: center;
+    padding: 0 8px;
+}
+
 /* ── CHART TOGGLE ── */
 .chart-toggle {
     display: flex;
@@ -2870,6 +2901,9 @@ button {
     visibility: visible;
     pointer-events: all;
 }
+#journeyCompareOverlay {
+    z-index: 3600;
+}
 .overlay-card {
     background: var(--card);
     border-radius: 28px;
@@ -2899,7 +2933,7 @@ button {
     font-size: 22px;
     font-weight: 700;
     color: var(--text);
-    margin-bottom: 8px;
+    margin-bottom: 20px;
     letter-spacing: -0.4px;
 }
 .urge-subtitle {
@@ -3003,6 +3037,17 @@ button {
 .journey-compare-popup .journey-compare-verdict-muted {
     color: var(--text-muted);
     font-weight: 700;
+}
+
+.journey-compare-popup .journey-compare-first-end {
+    margin: 0;
+}
+
+.journey-compare-popup .journey-compare-first-end .onb-journey-arrow {
+    margin: 10px 0;
+    text-align: center;
+    font-size: 18px;
+    color: var(--text-muted);
 }
 
 .compare-header[hidden] {

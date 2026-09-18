@@ -116,7 +116,7 @@ function applySlipDay({ logDate, calDay }) {
         status: 'slip',
         day: calDay,
         date: wallDate,
-        slipCount: nextSlipCount(wallDate, calDay),
+        slipCount: 1,
     });
 
     if (isToday) {

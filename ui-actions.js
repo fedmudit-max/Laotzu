@@ -51,6 +51,10 @@ function applyNotificationLog(kind) {
         showToast(0, 'Already logged strong today.');
         return;
     }
+    if (state.todayStatus === 'failed') {
+        showToast(0, 'You already slipped today. Stay strong tomorrow!');
+        return;
+    }
     showModal('fail');
 }
 
@@ -172,37 +176,15 @@ function completeEndJourney(endWallDate) {
     const comparison = archiveCompletedJourney(endWallDate);
     if (!comparison) return;
 
-    var beatPreviousBest = comparison.prevBestScore
-        && isBetterJourneyScore(
-            comparison.score.success,
-            comparison.score.failures,
-            comparison.prevBestScore,
-        );
-
-    // 10th slip logged for a prior day (e.g. yesterday): Journey already ended then —
-    // today is Day 1 of the next Journey, not a forced rest day.
-    var nextAlreadyOpen = false;
-    if (typeof canBeginNextJourneyToday === 'function' && canBeginNextJourneyToday()) {
-        beginNextJourney();
-        nextAlreadyOpen = true;
-    }
+    // Defer beginNextJourney until the user dismisses the comparison popup so
+    // attempt / end-date state and the shown-once key stay tied to this journey.
+    var canOpenNextToday = typeof canBeginNextJourneyToday === 'function'
+        && canBeginNextJourneyToday();
 
     chartPage = -1;
     saveAndRender();
 
-    if (comparison.prevBestScore) {
-        setTimeout(function () {
-            showJourneyComparison(
-                { attempt: comparison.attempt, score: comparison.score },
-                comparison.prevBestScore,
-                {
-                    nextJourneyOpenToday: nextAlreadyOpen,
-                    prevBestAttempt: comparison.prevBestAttempt,
-                    beatBest: beatPreviousBest,
-                },
-            );
-        }, 600);
-    }
+    queueJourneyEndComparison(comparison, { nextJourneyOpenToday: canOpenNextToday });
 }
 
 function recordFailure() {
@@ -213,6 +195,10 @@ function recordFailure() {
     state.lastOpenedDate = todayKey();
     const result = recordSlipToday();
     if (!result || !result.applied) {
+        if (state.todayStatus === 'failed') {
+            showToast(0, 'You already slipped today. Stay strong tomorrow!');
+            return;
+        }
         // Stranded 10/10 (logging blocked, never archived) — recover via normal end path.
         if (typeof journeyIsOver === 'function' && journeyIsOver(state)
             && typeof isAwaitingNextJourney === 'function' && !isAwaitingNextJourney()) {
@@ -220,18 +206,18 @@ function recordFailure() {
                 ? inferJourneyEndWallDate()
                 : todayKey();
             completeEndJourney(endDay);
-            showToast(0, '10 Powers used. Journey complete.');
+            showToast(0, '10 slips logged. Journey complete.');
         }
         return;
     }
 
     if (journeyIsOver(state)) {
         completeEndJourney(todayKey());
-        showToast(0, '10 Powers used. Journey complete.');
+        showToast(0, '10 slips logged. Journey complete.');
     } else {
         chartPage = -1;
         saveAndRender();
         const failures = result.failures;
-        showToast(0, `${failures} Power${failures === 1 ? '' : 's'} used. Keep moving forward. Journey Continues.`);
+        showToast(0, `${failures} slip${failures === 1 ? '' : 's'} logged. Keep moving forward. Journey continues.`);
     }
 }

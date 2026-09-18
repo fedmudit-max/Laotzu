@@ -183,13 +183,6 @@ function formatJourneyScore(score) {
     return (Number(score.success) || 0) + '/' + (Number(score.failures) || 0);
 }
 
-function getJourneyStrongDayImprovementPct(currentSuccess, prevSuccess) {
-    var cur = Number(currentSuccess) || 0;
-    var prev = Number(prevSuccess) || 0;
-    if (prev <= 0 || cur <= prev) return null;
-    return Math.round(((cur - prev) / prev) * 100);
-}
-
 function isBetterJourneyScore(success, failures, best) {
     if (!best) return true;
     var bestSuccess = Number(best.success);
@@ -236,8 +229,133 @@ function findCompletedJourneyForScore(journeys, score) {
     return null;
 }
 
-function getDisplayBestJourney() {
-    return pickBetterJourneyScore(state.score, state.bestJourney);
+function hasFinishedJourneyScore(score) {
+    if (!score || typeof score !== 'object') return false;
+    var failures = Number(score.failures) || 0;
+    return failures >= MAX_FAILURES;
+}
+
+/** Prior all-time best before archiving the live journey (completed rows + permanent best). */
+function pickPriorBestScoreBeforeCurrent(s, completedJourneys) {
+    s = s || state;
+    var best = bestScoreFromCompletedJourneys(completedJourneys || []);
+    var cur = s.score || {};
+    var curS = Number(cur.success) || 0;
+    var curF = Number(cur.failures) || 0;
+
+    if (hasFinishedJourneyScore(s.bestJourney)) {
+        var bjS = Number(s.bestJourney.success) || 0;
+        var bjF = Number(s.bestJourney.failures) || 0;
+        if (!(bjS === curS && bjF === curF)) {
+            var bj = { success: bjS, failures: bjF };
+            best = best ? pickBetterJourneyScore(bj, best) : bj;
+        }
+    }
+
+    return best || null;
+}
+
+function getPriorBestScoreBeforeArchive(s) {
+    s = s || state;
+    return pickPriorBestScoreBeforeCurrent(s, s.completedJourneys || []);
+}
+
+/** Rebuild journey-end comparison while awaiting next journey (e.g. missed popup on reopen). */
+function buildComparisonForAwaitingJourney(s) {
+    s = s || state;
+    if (!isAwaitingNextJourney(s)) return null;
+
+    var attempt = Math.max(1, Math.floor(Number(s.attempt) || 1));
+    var journeys = s.completedJourneys || [];
+    var currentRow = null;
+    var priorJourneys = [];
+
+    for (var i = 0; i < journeys.length; i++) {
+        var row = journeys[i];
+        var rowAttempt = Math.max(1, Math.floor(Number(row.attempt) || 1));
+        if (rowAttempt === attempt) {
+            currentRow = row;
+        } else {
+            priorJourneys.push(row);
+        }
+    }
+
+    if (!currentRow || !currentRow.score) return null;
+
+    var prevBestScore = pickPriorBestScoreBeforeCurrent(s, priorJourneys);
+    var prevBestJourney = prevBestScore
+        ? findCompletedJourneyForScore(priorJourneys, prevBestScore)
+        : null;
+    return {
+        attempt: attempt,
+        score: {
+            success: Number(currentRow.score.success) || 0,
+            failures: Number(currentRow.score.failures) || 0,
+        },
+        prevBestScore: prevBestScore,
+        prevBestAttempt: prevBestJourney ? prevBestJourney.attempt : null,
+        journeyEndedDate: s.journeyEndedDate || '',
+    };
+}
+
+function journeyComparisonShownKey(attempt, endedDate) {
+    return 'kingCompareShown:v2:' + Math.max(1, Math.floor(Number(attempt) || 1))
+        + ':' + (endedDate || '');
+}
+
+function wasJourneyComparisonShown(comparison) {
+    if (!comparison) return false;
+    return safeGet(journeyComparisonShownKey(
+        comparison.attempt,
+        comparison.journeyEndedDate,
+    )) === '1';
+}
+
+function markJourneyComparisonShown(comparison) {
+    if (!comparison) return;
+    safeSet(journeyComparisonShownKey(
+        comparison.attempt,
+        comparison.journeyEndedDate,
+    ), '1');
+}
+
+function resolvePriorBestAttemptBeforeArchive(s, prevBestScore) {
+    s = s || state;
+    if (!prevBestScore) return null;
+
+    var prevBestJourney = findCompletedJourneyForScore(s.completedJourneys || [], prevBestScore);
+    if (prevBestJourney) return prevBestJourney.attempt;
+
+    if (hasFinishedJourneyScore(s.bestJourney)) {
+        var bjSuccess = Number(s.bestJourney.success) || 0;
+        var bjFailures = Number(s.bestJourney.failures) || 0;
+        if (bjSuccess === (Number(prevBestScore.success) || 0)
+            && bjFailures === (Number(prevBestScore.failures) || 0)) {
+            var attempt = Math.max(1, Math.floor(Number(s.attempt) || 1));
+            return attempt > 1 ? attempt - 1 : null;
+        }
+    }
+    return null;
+}
+
+function isFirstJourneyInProgress(s) {
+    s = s || state;
+    if (Math.max(1, Math.floor(Number(s.attempt) || 1)) !== 1) return false;
+    if ((s.completedJourneys || []).length > 0) return false;
+    if (isAwaitingNextJourney(s)) return false;
+    if (journeyIsOver(s)) return false;
+    return true;
+}
+
+function getDisplayBestJourney(s) {
+    s = s || state;
+    if (isFirstJourneyInProgress(s)) {
+        return {
+            success: Number(s.score && s.score.success) || 0,
+            failures: Number(s.score && s.score.failures) || 0,
+        };
+    }
+    return pickBetterJourneyScore(s.score, s.bestJourney);
 }
 
 function updateBestJourney() {
@@ -374,6 +492,22 @@ function getMilestoneUnlockDay(day) {
     return JOURNEY_MILESTONE_DAYS[idx - 1];
 }
 
+function formatJourneyMilestoneLabel(day) {
+    return Math.max(0, Math.floor(Number(day) || 0)) + ' Strong Days';
+}
+
+function formatStrongDaysToWinLabel(dayCount, withExclaim) {
+    var n = Math.max(0, Math.floor(Number(dayCount) || 0));
+    var label = 'Beat ' + n + ' Strong Day' + (n !== 1 ? 's' : '') + ' to Win';
+    return withExclaim ? label + '!' : label;
+}
+
+function formatJourneyMilestoneUnlockHint(unlockAt) {
+    var day = Math.max(0, Math.floor(Number(unlockAt) || 0));
+    if (day <= 0) return 'Keep going to unlock';
+    return formatJourneyMilestoneLabel(day) + ' to unlock';
+}
+
 function getPersonalBestMilestoneDay(s) {
     var best = getCompletedJourneysBestSuccess(s);
     return best > 0 && !JOURNEY_MILESTONES[best] ? best : null;
@@ -425,7 +559,7 @@ function formatJourneyTargetHint(targetDay, curS, s) {
     if (!targetDay) return null;
 
     if (isPriorBestTargetDay(targetDay, curS, s)) {
-        return 'Beat ' + targetDay + ' days to win!';
+        return formatStrongDaysToWinLabel(targetDay, true);
     }
     if (isOnNewBestJourney(s)) {
         return 'New Best! Target ' + targetDay + ' strong days';
@@ -438,19 +572,49 @@ function getBestJourneyHintParts(s) {
     if (isAwaitingNextJourney(s)) return null;
     if (!shouldCountCurrentJourneyForMilestones(s)) return null;
 
-    var curS = journeyScoreSuccess(s);
-    var targetDay = getActiveJourneyTargetDay(curS, s);
-    if (!targetDay) return null;
+    var priorBest = getCompletedJourneysBestSuccess(s);
+    if (!priorBest) return null;
 
-    return {
-        targetLine: formatJourneyTargetHint(targetDay, curS, s),
-    };
+    var curS = journeyScoreSuccess(s);
+
+    if (isOnNewBestJourney(s)) {
+        return {
+            targetLine: 'New Best! Keep Going!',
+        };
+    }
+
+    if (curS < priorBest) {
+        return {
+            targetLine: formatStrongDaysToWinLabel(priorBest, true),
+        };
+    }
+
+    return null;
 }
 
 function getBestJourneyHintText(s) {
     var parts = getBestJourneyHintParts(s);
     if (!parts) return null;
     return parts.targetLine;
+}
+
+/** Target for the next journey (Day 0) — works while awaiting next journey after archive. */
+function getNextJourneyTargetGoal(s) {
+    s = s || state;
+    var targetDay = getActiveJourneyTargetDay(0, s);
+    if (!targetDay) return 'Target 25 strong days';
+
+    var priorBest = getCompletedJourneysBestSuccess(s);
+    if (priorBest > 0 && targetDay === priorBest) {
+        return formatStrongDaysToWinLabel(targetDay, false);
+    }
+    return 'Target ' + targetDay + ' strong days';
+}
+
+function formatNextJourneyTargetLine(nextAttempt, s) {
+    s = s || state;
+    nextAttempt = Math.max(2, Math.floor(Number(nextAttempt) || 2));
+    return 'Journey ' + nextAttempt + ': ' + getNextJourneyTargetGoal(s);
 }
 
 function resolveJourneyMilestoneHit(successCount) {
@@ -510,7 +674,7 @@ function expandSectionMilestones(sectionDays, options) {
         out.push({
             day: day,
             emoji: meta.emoji,
-            label: day + ' Days',
+            label: formatJourneyMilestoneLabel(day),
             unlockAt: options.alwaysVisible ? 0 : getMilestoneUnlockDay(day),
         });
     }
@@ -615,24 +779,25 @@ function healStrandedJourneyEnd(s) {
             s.journeyEndedDate = inferJourneyEndWallDate(s);
         }
         updateBestJourney();
-        return true;
+        return buildComparisonForAwaitingJourney(s);
     }
 
-    return !!archiveCompletedJourney(inferJourneyEndWallDate(s));
+    return archiveCompletedJourney(inferJourneyEndWallDate(s));
 }
 
 function archiveCompletedJourney(endWallDate) {
     if (isAwaitingNextJourney()) return null;
 
-    const prevBestScore = bestScoreFromCompletedJourneys(state.completedJourneys);
-    var prevBestJourney = prevBestScore
-        ? findCompletedJourneyForScore(state.completedJourneys, prevBestScore)
-        : null;
+    const prevBestScore = getPriorBestScoreBeforeArchive(state);
+    var ended = clampDateKeyToRealToday(endWallDate || todayKey());
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(ended)) ended = todayKey();
+
     const comparison = {
         attempt: state.attempt,
         score: { ...state.score },
         prevBestScore,
-        prevBestAttempt: prevBestJourney ? prevBestJourney.attempt : null,
+        prevBestAttempt: resolvePriorBestAttemptBeforeArchive(state, prevBestScore),
+        journeyEndedDate: ended,
     };
 
     state.completedJourneys.push({
@@ -646,9 +811,6 @@ function archiveCompletedJourney(endWallDate) {
         streaks: [...state.currentJourneyStreaks],
         date: new Date().toISOString(),
     });
-
-    var ended = clampDateKeyToRealToday(endWallDate || todayKey());
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(ended)) ended = todayKey();
 
     state.pendingNextJourney = true;
     state.journeyEndedDate = ended;

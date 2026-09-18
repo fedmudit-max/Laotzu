@@ -25,15 +25,43 @@ function checkNewDay() {
     if (!safeGet('onboardingComplete')) return;
 
     // Safety net before day roll / next-journey logic.
-    if (typeof healStrandedJourneyEnd === 'function' && healStrandedJourneyEnd()) {
-        saveToStorage(state);
+    if (typeof healStrandedJourneyEnd === 'function') {
+        var healedComparison = healStrandedJourneyEnd();
+        if (healedComparison) {
+            saveToStorage(state);
+            if (typeof presentJourneyEndComparison === 'function') {
+                presentJourneyEndComparison(healedComparison, {
+                    nextJourneyOpenToday: typeof canBeginNextJourneyToday === 'function'
+                        && canBeginNextJourneyToday(),
+                });
+            }
+        }
     }
-
     const today = todayKey();
 
     if (isAwaitingNextJourney()) {
-        if (typeof canBeginNextJourneyToday === 'function' ? canBeginNextJourneyToday()
-            : (state.journeyEndedDate && today !== state.journeyEndedDate)) {
+        var canOpenNextToday = typeof canBeginNextJourneyToday === 'function'
+            ? canBeginNextJourneyToday()
+            : !!(state.journeyEndedDate && today !== state.journeyEndedDate);
+
+        var awaitingComparison = typeof buildComparisonForAwaitingJourney === 'function'
+            ? buildComparisonForAwaitingJourney()
+            : null;
+        var comparisonDone = typeof canAdvancePastAwaitingJourneyComparison === 'function'
+            ? canAdvancePastAwaitingJourneyComparison(awaitingComparison)
+            : true;
+
+        if (!comparisonDone) {
+            if (typeof tryShowAwaitingJourneyComparison === 'function') {
+                tryShowAwaitingJourneyComparison(canOpenNextToday);
+            }
+            state.lastCheckedDate = today;
+            saveToStorage(state);
+            renderAll();
+            return;
+        }
+
+        if (canOpenNextToday) {
             beginNextJourney();
             chartPage = -1;
             // Day 1 is today (opened the day after end) — nothing to backfill.

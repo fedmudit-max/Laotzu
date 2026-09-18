@@ -655,7 +655,7 @@
         <div style="font-size:14px;color:var(--text-muted);line-height:1.5;margin-bottom:24px;">Log yesterday before you can log today.</div>
         <div style="display:flex;gap:12px;">
             <button data-action="yesterday-strong" style="flex:1;padding:13px;background:linear-gradient(180deg,var(--green-light),var(--green));color:white;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;">✓ I Stayed Strong</button>
-            <button data-action="yesterday-slip" style="flex:1;padding:13px;background:linear-gradient(180deg,#ff453a,#ff3b30);color:white;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;">✕ I Slipped</button>
+            <button data-action="yesterday-slip" style="flex:1;padding:13px;background:var(--red);color:white;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;">✕ I Slipped</button>
         </div>
     </div>
 </div>
@@ -719,7 +719,6 @@
 <div class="overlay" id="urgeOverlay">
     <div class="overlay-card">
         <div class="urge-title">🌊 Surf the Urge</div>
-        <div class="urge-subtitle">Urges typically peak within minutes. Use this time to breathe and wait it out.</div>
 
         <!-- Breathing ring -->
         <div class="breathing-ring-wrap">
@@ -738,8 +737,7 @@
 
         <div class="urge-phase" id="urgePhase">Inhale slowly for 4 seconds…</div>
 
-        <button class="btn-urge-survived" data-action="urgeSurvived">✓ I'm still holding</button>
-        <button class="btn-urge-cancel"   data-action="closeUrge">Close</button>
+        <button class="btn-urge-cancel" data-action="closeUrge">Close</button>
     </div>
 </div>
 

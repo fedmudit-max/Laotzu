@@ -212,14 +212,6 @@ function countLifetimeJourneys() {
     return completed + (archivedCurrent ? 0 : 1);
 }
 
-function nextSlipCount(logDate, calDay) {
-    var prev = getDailyLogEntry(logDate, calDay);
-    if (prev && logStatus(prev) === 'slip') {
-        return (prev.slipCount || 1) + 1;
-    }
-    return 1;
-}
-
 /** todayStatus is calendar-today only — never set from historical logs. */
 function markTodayStatus(dateKey, status) {
     if (dateKey === todayKey()) {

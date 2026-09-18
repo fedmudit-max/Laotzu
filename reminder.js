@@ -212,7 +212,9 @@ function todayIsLoggedForReminder() {
 function syncReminderLoggedDate() {
     if (!reminderNativeAvailable()) return;
     var dateKey = todayIsLoggedForReminder() ? todayKey() : '';
-    callReminderPlugin('setLoggedDate', { dateKey: dateKey }).catch(function () {});
+    callReminderPlugin('setLoggedDate', { dateKey: dateKey }).catch(function (err) {
+        logOptionalFailure('reminder:sync-logged-date', err);
+    });
 }
 
 function callReminderPlugin(method, args) {
@@ -234,7 +236,9 @@ function openNotificationSettingsIfDenied() {
     callReminderPlugin('openNotificationSettings').then(function (status) {
         rememberReminderStatus(status);
         renderReminderTab();
-    }).catch(function () {});
+    }).catch(function (err) {
+        logOptionalFailure('reminder:open-settings', err);
+    });
 }
 
 function reminderStatusCopy(settings) {
@@ -297,7 +301,8 @@ function turnReminderOff(message) {
     return callReminderPlugin('cancel', { disable: true }).then(function (status) {
         rememberReminderStatus(status);
         renderReminderTab();
-    }).catch(function () {
+    }).catch(function (err) {
+        logOptionalFailure('reminder:turn-off', err);
         renderReminderTab();
     }).then(function () {
         if (message) showToast(0, message);
@@ -340,7 +345,9 @@ function reconcileReminderEnableState() {
             });
         }
         turnReminderOff(REMINDER_EXACT_ALARM_DENIED);
-    }).catch(function () {});
+    }).catch(function (err) {
+        logOptionalFailure('reminder:reconcile', err);
+    });
 }
 
 function openExactAlarmPermissionFlow(initialStatus) {
@@ -361,7 +368,8 @@ function openExactAlarmPermissionFlow(initialStatus) {
             });
         }
         return { status: afterSettings || initialStatus, scheduled: false, awaitingExact: true };
-    }).catch(function () {
+    }).catch(function (err) {
+        logOptionalFailure('reminder:exact-alarm-flow', err);
         return { status: initialStatus, scheduled: false, awaitingExact: true };
     });
 }
@@ -411,7 +419,8 @@ function applyReminderAlarms(options) {
             rememberReminderStatus(status);
             renderReminderTab();
             return { scheduled: false };
-        }).catch(function () {
+        }).catch(function (err) {
+            logOptionalFailure('reminder:cancel', err);
             renderReminderTab();
             return { scheduled: false };
         });
@@ -422,12 +431,15 @@ function applyReminderAlarms(options) {
             settings.enabled = false;
             saveReminderSettings(settings);
             renderReminderTab();
-            callReminderPlugin('openNotificationSettings').catch(function () {});
+            callReminderPlugin('openNotificationSettings').catch(function (err) {
+                logOptionalFailure('reminder:open-notification-settings', err);
+            });
             return callReminderPlugin('cancel', { disable: true }).then(function (status) {
                 rememberReminderStatus(status);
                 renderReminderTab();
                 return { scheduled: false, notificationsDenied: true };
-            }).catch(function () {
+            }).catch(function (err) {
+                logOptionalFailure('reminder:cancel-after-denied', err);
                 renderReminderTab();
                 return { scheduled: false, notificationsDenied: true };
             });
@@ -473,7 +485,8 @@ function ensureNotificationPermission() {
             }
             return true;
         });
-    }).catch(function () {
+    }).catch(function (err) {
+        logOptionalFailure('reminder:notification-permission', err);
         return false;
     });
 }
@@ -514,7 +527,8 @@ function onRemindToggleChange() {
                     openNotificationSettingsIfDenied();
                 }
             }
-        }).catch(function () {
+        }).catch(function (err) {
+            logOptionalFailure('reminder:toggle', err);
             settings.enabled = false;
             saveReminderSettings(settings);
             renderReminderTab();
@@ -530,7 +544,8 @@ function onRemindToggleChange() {
 
     applyReminderAlarms().then(function () {
         showToast(0, 'Daily reminder is off.');
-    }).catch(function () {
+    }).catch(function (err) {
+        logOptionalFailure('reminder:turn-off-alarms', err);
         showToast(0, 'Could not update the reminder.');
     });
 }
@@ -558,7 +573,8 @@ function onRemindTimeChange() {
         } else if (loadReminderSettings().enabled) {
             showToast(0, 'Time saved — ' + formatReminderTime(settings.hour, settings.minute) + '.');
         }
-    }).catch(function () {
+    }).catch(function (err) {
+        logOptionalFailure('reminder:time-change', err);
         showToast(0, 'Could not update the reminder time.');
     });
 }
@@ -611,7 +627,9 @@ function listenForReminderLogActions() {
         plugin.addListener('pendingLog', function () {
             consumeReminderLogAction();
         });
-    } catch (e) {}
+    } catch (e) {
+        logOptionalFailure('reminder:pending-log-listener', e);
+    }
 }
 
 function listenForExactAlarmPermissionChanges() {
@@ -622,7 +640,9 @@ function listenForExactAlarmPermissionChanges() {
             rememberReminderStatus(status);
             reconcileReminderEnableState();
         });
-    } catch (e) {}
+    } catch (e) {
+        logOptionalFailure('reminder:exact-alarm-listener', e);
+    }
 }
 
 function consumeReminderLogAction() {
@@ -632,5 +652,7 @@ function consumeReminderLogAction() {
         if (action === 'strong' || action === 'slip') {
             applyNotificationLog(action);
         }
-    }).catch(function () {});
+    }).catch(function (err) {
+        logOptionalFailure('reminder:consume-log', err);
+    });
 }
