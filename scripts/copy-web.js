@@ -77,6 +77,13 @@ function publishPwa(destRoot, wipe) {
         copyFileInto(destRoot, rel);
     });
     copyAssetDirInto(destRoot);
+    copyLegalPagesInto(destRoot);
+}
+
+function copyLegalPagesInto(destRoot) {
+    const privacySrc = path.join(ROOT, 'public/privacy.html');
+    if (!fs.existsSync(privacySrc)) return;
+    fs.copyFileSync(privacySrc, path.join(destRoot, 'privacy.html'));
 }
 
 function assertSameBytes(rel, destRoot) {
@@ -90,9 +97,21 @@ function assertSameBytes(rel, destRoot) {
 const files = listPwaFiles();
 publishPwa(WWW, true);
 
-const nativePublic = [];
-if (fs.existsSync(path.dirname(ANDROID_PUBLIC))) nativePublic.push(ANDROID_PUBLIC);
-if (fs.existsSync(path.dirname(IOS_PUBLIC))) nativePublic.push(IOS_PUBLIC);
+function nativePublicDestinations() {
+    const out = [];
+    // Do not require assets/ in git — mkdir before publishPwa.
+    if (fs.existsSync(path.join(ROOT, 'android/app'))) {
+        fs.mkdirSync(ANDROID_PUBLIC, { recursive: true });
+        out.push(ANDROID_PUBLIC);
+    }
+    if (fs.existsSync(path.join(ROOT, 'ios/App/App'))) {
+        fs.mkdirSync(IOS_PUBLIC, { recursive: true });
+        out.push(IOS_PUBLIC);
+    }
+    return out;
+}
+
+const nativePublic = nativePublicDestinations();
 nativePublic.forEach(function (dest) {
     publishPwa(dest, true);
 });

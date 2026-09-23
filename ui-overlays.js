@@ -743,3 +743,19 @@ function closeLearnJourney() {
     overlay.classList.remove('active');
     overlay.setAttribute('aria-hidden', 'true');
 }
+
+function openAppSettings() {
+    var overlay = document.getElementById('appSettingsOverlay');
+    if (!overlay) return;
+    overlay.classList.add('active');
+    overlay.setAttribute('aria-hidden', 'false');
+    var scroll = overlay.querySelector('.settings-sheet-scroll');
+    if (scroll) scroll.scrollTop = 0;
+}
+
+function closeAppSettings() {
+    var overlay = document.getElementById('appSettingsOverlay');
+    if (!overlay) return;
+    overlay.classList.remove('active');
+    overlay.setAttribute('aria-hidden', 'true');
+}
