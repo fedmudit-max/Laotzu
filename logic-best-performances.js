@@ -85,8 +85,8 @@ function getActiveStreakRecordId(s) {
 
 function compareStreakRecords(a, b) {
     if (b.days !== a.days) return b.days - a.days;
-    if (b.attempt !== a.attempt) return b.attempt - a.attempt;
-    if (b.segmentIndex !== a.segmentIndex) return b.segmentIndex - a.segmentIndex;
+    // Same length: earlier achievement wins (lower journey attempt, then earlier segment in journey).
+    if (a.sortKey !== b.sortKey) return a.sortKey - b.sortKey;
     return String(a.id).localeCompare(String(b.id));
 }
 
@@ -141,8 +141,8 @@ function getActiveJourneyRecordId(s) {
 }
 
 function compareJourneyRecords(a, b) {
-    if (isBetterJourneyScore(a.success, a.failures, b)) return -1;
-    if (isBetterJourneyScore(b.success, b.failures, a)) return 1;
+    if (b.success !== a.success) return b.success - a.success;
+    if (a.failures !== b.failures) return a.failures - b.failures;
     if (b.attempt !== a.attempt) return b.attempt - a.attempt;
     return String(a.id).localeCompare(String(b.id));
 }

@@ -114,21 +114,62 @@ test('current streak outside top 3 gets no glow', () => {
     assert.ok(board.slots.every(function (s) { return !s.isActive; }));
 });
 
-test('equal-duration streaks tie-break by attempt then id deterministically', () => {
+test('equal streak length ranks earlier journey and segment higher', () => {
     const ctx = withBestPerf(createKingContext());
     resetKing(ctx, { today: '2026-06-10' });
     ctx.replaceState(ctx.mergeSavedState({
         ...ctx.getDefaultState(),
         pastJourneyStreaks: [
-            { attempt: 1, streaks: [10] },
-            { attempt: 2, streaks: [10] },
+            { attempt: 1, streaks: [21, 21, 21] },
+            { attempt: 2, streaks: [21] },
+            { attempt: 3, streaks: [21] },
         ],
         currentStreak: 0,
     }));
-    const a = ctx.buildBestStreaksBoard(getState(ctx));
-    const b = ctx.buildBestStreaksBoard(getState(ctx));
-    assertSlotValues(a.slots, [10, 10, null]);
-    assertSlotValues(b.slots, [10, 10, null]);
+    const board = ctx.buildBestStreaksBoard(getState(ctx));
+    assertSlotValues(board.slots, [21, 21, 21]);
+    assert.equal(board.slots[0].id, 'streak:1:0');
+    assert.equal(board.slots[1].id, 'streak:1:1');
+    assert.equal(board.slots[2].id, 'streak:1:2');
+});
+
+test('equal streak across journeys ranks journey 1 before 2 before 3', () => {
+    const ctx = withBestPerf(createKingContext());
+    resetKing(ctx, { today: '2026-06-10' });
+    ctx.replaceState(ctx.mergeSavedState({
+        ...ctx.getDefaultState(),
+        pastJourneyStreaks: [
+            { attempt: 3, streaks: [21] },
+            { attempt: 2, streaks: [21] },
+            { attempt: 1, streaks: [21] },
+        ],
+        currentStreak: 0,
+    }));
+    const board = ctx.buildBestStreaksBoard(getState(ctx));
+    assertSlotValues(board.slots, [21, 21, 21]);
+    assert.equal(board.slots[0].rank, 1);
+    assert.equal(board.slots[0].id, 'streak:1:0');
+    assert.equal(board.slots[1].rank, 2);
+    assert.equal(board.slots[1].id, 'streak:2:0');
+    assert.equal(board.slots[2].rank, 3);
+    assert.equal(board.slots[2].id, 'streak:3:0');
+});
+
+test('same-length live streak ranks below earlier segment in same journey', () => {
+    const ctx = withBestPerf(createKingContext());
+    resetKing(ctx, { today: '2026-06-10' });
+    ctx.replaceState(ctx.mergeSavedState({
+        ...ctx.getDefaultState(),
+        attempt: 1,
+        pastJourneyStreaks: [],
+        currentJourneyStreaks: [21],
+        currentStreak: 21,
+        score: { success: 42, failures: 0 },
+    }));
+    const board = ctx.buildBestStreaksBoard(getState(ctx));
+    assertSlotValues(board.slots, [21, 21, null]);
+    assert.equal(board.slots[0].id, 'streak:1:0');
+    assert.equal(board.slots[1].id, 'streak:1:live');
 });
 
 test('active streak matches live id not equal historical segment', () => {
@@ -229,7 +270,7 @@ test('active journey outside top 3 has no glow', () => {
     assert.ok(board.slots.every(function (s) { return !s.isActive; }));
 });
 
-test('journey tie uses fewer failures then attempt', () => {
+test('journey tie on strong days ranks fewer slips higher', () => {
     const ctx = withBestPerf(createKingContext());
     resetKing(ctx, { today: '2026-06-10' });
     ctx.replaceState(ctx.mergeSavedState({
@@ -237,12 +278,19 @@ test('journey tie uses fewer failures then attempt', () => {
         completedJourneys: [
             { attempt: 1, score: { success: 50, failures: 10 } },
             { attempt: 2, score: { success: 50, failures: 5 } },
+            { attempt: 3, score: { success: 50, failures: 8 } },
         ],
         pendingNextJourney: true,
     }));
     const board = ctx.buildBestJourneysBoard(getState(ctx));
-    assert.equal(board.slots[0].value, 50);
-    assert.equal(board.slots[1].value, 50);
+    assertSlotValues(board.slots, [50, 50, 50]);
+    // Same strong days: rank by fewer slips (5 → 8 → 10).
+    assert.equal(board.slots[0].rank, 1);
+    assert.equal(board.slots[0].id, 'journey:2:completed');
+    assert.equal(board.slots[1].rank, 2);
+    assert.equal(board.slots[1].id, 'journey:3:completed');
+    assert.equal(board.slots[2].rank, 3);
+    assert.equal(board.slots[2].id, 'journey:1:completed');
 });
 
 test('buildBestPerformancesViewModel returns both boards', () => {
