@@ -167,10 +167,8 @@ function showFileProtocolBanner() {
             'export-save-downloads': function () { runAndroidNativeExport('downloads'); },
             'export-choose-folder': function () { runAndroidNativeExport('folder'); },
             'export-choice-cancel': closeExportChoiceModal,
-            'open-privacy': function () {
-                closeAppSettings();
-                window.location.href = './privacy.html';
-            },
+            'open-privacy': openPrivacy,
+            'close-privacy': closePrivacy,
             'open-settings': openAppSettings,
             'close-settings': closeAppSettings,
         };
@@ -210,6 +208,13 @@ function showFileProtocolBanner() {
     if (settingsOverlay) {
         settingsOverlay.addEventListener('click', function (e) {
             if (e.target.id === 'appSettingsOverlay') closeAppSettings();
+        });
+    }
+
+    var privacyOverlay = document.getElementById('privacyOverlay');
+    if (privacyOverlay) {
+        privacyOverlay.addEventListener('click', function (e) {
+            if (e.target.id === 'privacyOverlay') closePrivacy();
         });
     }
 

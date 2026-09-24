@@ -627,6 +627,86 @@ body::before {
     transform: translateY(0);
 }
 
+.privacy-overlay {
+    z-index: 2300;
+}
+
+.privacy-scroll .meta {
+    color: var(--text-muted);
+    font-size: 14px;
+    margin: 0 0 20px;
+    line-height: 1.45;
+}
+
+.privacy-scroll h2 {
+    font-size: 15px;
+    font-weight: 800;
+    margin: 22px 0 8px;
+    letter-spacing: -0.2px;
+    color: var(--text);
+}
+
+.privacy-scroll .summary h2 {
+    margin: 0 0 10px;
+    font-size: 14px;
+}
+
+.privacy-scroll h3 {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 16px 0 6px;
+    color: var(--text);
+}
+
+.privacy-scroll .effective-footer {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(60, 60, 67, 0.12);
+}
+
+.privacy-scroll p,
+.privacy-scroll li {
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--text-muted);
+    font-weight: 500;
+    margin: 0 0 10px;
+}
+
+.privacy-scroll ul {
+    padding-left: 1.2rem;
+    margin: 0 0 10px;
+}
+
+.privacy-scroll a {
+    color: #007aff;
+}
+
+.privacy-scroll .summary {
+    background: rgba(60, 60, 67, 0.06);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 4px;
+}
+
+.privacy-scroll .summary strong {
+    color: var(--green);
+    font-weight: 700;
+}
+
+.privacy-scroll code {
+    font-size: 13px;
+}
+
+.privacy-loading,
+.privacy-error {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin: 0;
+}
+
 .learn-journey-header {
     display: flex;
     align-items: flex-start;
@@ -3525,8 +3605,15 @@ button {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 24px;
+    padding: max(20px, var(--king-safe-top)) max(20px, var(--king-safe-right)) max(20px, var(--king-safe-bottom)) max(20px, var(--king-safe-left));
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     transition: opacity 0.4s ease;
+}
+
+body.king-onboarding .container {
+    visibility: hidden;
+    pointer-events: none;
 }
 
 .onboarding-overlay.hidden {
@@ -3538,6 +3625,18 @@ button {
     max-width: 360px;
     width: 100%;
     text-align: center;
+    margin: auto;
+    flex-shrink: 0;
+}
+
+.onboarding-slides {
+    position: relative;
+    min-height: 300px;
+    margin-bottom: 4px;
+}
+
+.onboarding-slides:has(#slide-3.active) {
+    min-height: min(52vh, 440px);
 }
 
 .onboarding-slide {
@@ -3545,7 +3644,10 @@ button {
     animation: fadeUp 0.35s ease both;
 }
 
-.onboarding-slide.active { display: block; }
+.onboarding-slide.active {
+    display: block;
+    width: 100%;
+}
 
 .onboarding-emoji {
     font-size: 72px;
@@ -3571,8 +3673,13 @@ button {
 
 /* Journey score example (Progress slide) */
 .onboarding-slide:has(.onboarding-journey-compare) .onboarding-emoji {
-    font-size: 48px;
-    margin-bottom: 16px;
+    font-size: 44px;
+    margin-bottom: 12px;
+}
+
+.onboarding-slide:has(.onboarding-journey-compare) .onboarding-title {
+    font-size: 22px;
+    margin-bottom: 12px;
 }
 
 .onboarding-slide:has(.onboarding-journey-compare) .onboarding-body {
@@ -3581,8 +3688,34 @@ button {
 }
 
 .onboarding-journey-compare {
-    margin: 0 4px 28px;
+    margin: 0 2px 16px;
     text-align: left;
+}
+
+.onboarding-journey-compare .onb-journey-card {
+    padding: 10px 12px;
+}
+
+.onboarding-journey-compare .onb-journey-row {
+    font-size: 13px;
+    padding: 2px 0;
+}
+
+.onboarding-journey-compare .onb-journey-row strong {
+    font-size: 14px;
+}
+
+.onboarding-journey-compare .onb-journey-score strong {
+    font-size: 16px;
+}
+
+.onboarding-journey-compare .onb-journey-arrow {
+    padding: 6px 0;
+}
+
+.onboarding-journey-compare .onb-journey-verdict {
+    margin-top: 10px;
+    font-size: 15px;
 }
 
 .onb-journey-card {
@@ -3699,9 +3832,9 @@ button {
     font-weight: 800;
 }
 
-/* Journey strong-day / score figures on Progress slide */
-.onboarding-journey-compare .onb-journey-card .onb-journey-row:first-of-type strong,
-.onboarding-journey-compare .onb-journey-score strong {
+/* Progress slide: highlight only the improved journey card */
+.onboarding-journey-compare .onb-journey-card-better .onb-journey-row:first-of-type strong,
+.onboarding-journey-compare .onb-journey-card-better .onb-journey-score strong {
     color: var(--green);
 }
 

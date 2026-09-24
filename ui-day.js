@@ -326,6 +326,7 @@ function checkOnboarding() {
     var topBar = document.getElementById('appTopBar');
     const done = safeGet('onboardingComplete');
     if (topBar) topBar.hidden = !done;
+    document.body.classList.toggle('king-onboarding', !done);
     if (!done) {
         resetOnboardingUI();
         overlay.style.display = 'flex';
@@ -365,6 +366,8 @@ function completeOnboarding() {
     } catch (err) {
         console.error('King onboarding save failed:', err);
     }
+
+    document.body.classList.remove('king-onboarding');
 
     const overlay = document.getElementById('onboardingOverlay');
     if (overlay) {

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'king-v180';
+const CACHE_NAME = 'king-v184';
 
 function logSwOptionalFailure(area, err) {
     try {
@@ -32,6 +32,7 @@ const ASSETS = [
     './ui-history.js',
     './ui-day.js',
     './boot.js',
+    './privacy-content.js',
     './privacy.html',
     './manifest.json',
     './assets/icon-192.png',

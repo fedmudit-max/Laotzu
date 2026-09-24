@@ -80,10 +80,38 @@ function publishPwa(destRoot, wipe) {
     copyLegalPagesInto(destRoot);
 }
 
+function privacyBodyForOverlay(html) {
+    const m = html.match(/<main[^>]*class=["']wrap["'][^>]*>([\s\S]*?)<\/main>/i);
+    if (!m) throw new Error('public/privacy.html: missing <main class="wrap">');
+    let inner = m[1];
+    inner = inner.replace(/<h1[^>]*>[\s\S]*?<\/h1>/i, '');
+    inner = inner.replace(/<p[^>]*class=["'][^"']*back-app[^"']*["'][^>]*>[\s\S]*?<\/p>/i, '');
+    return inner.trim();
+}
+
+function writePrivacyContentJs(destPath, innerHtml) {
+    const js = 'window.KING_PRIVACY_POLICY_BODY=' + JSON.stringify(innerHtml) + ';\n';
+    fs.writeFileSync(destPath, js, 'utf8');
+}
+
+/** Standalone page + in-app overlay body at repo root (and copied into www / native). */
+function syncLegalAssetsAtRoot() {
+    const privacySrc = path.join(ROOT, 'public/privacy.html');
+    if (!fs.existsSync(privacySrc)) return;
+    const html = fs.readFileSync(privacySrc, 'utf8');
+    const body = privacyBodyForOverlay(html);
+    fs.copyFileSync(privacySrc, path.join(ROOT, 'privacy.html'));
+    writePrivacyContentJs(path.join(ROOT, 'privacy-content.js'), body);
+}
+
 function copyLegalPagesInto(destRoot) {
     const privacySrc = path.join(ROOT, 'public/privacy.html');
     if (!fs.existsSync(privacySrc)) return;
     fs.copyFileSync(privacySrc, path.join(destRoot, 'privacy.html'));
+    const contentJs = path.join(ROOT, 'privacy-content.js');
+    if (fs.existsSync(contentJs)) {
+        fs.copyFileSync(contentJs, path.join(destRoot, 'privacy-content.js'));
+    }
 }
 
 function assertSameBytes(rel, destRoot) {
@@ -93,6 +121,8 @@ function assertSameBytes(rel, destRoot) {
         throw new Error('Web copy drifted: ' + rel + ' (' + destRoot + ')');
     }
 }
+
+syncLegalAssetsAtRoot();
 
 const files = listPwaFiles();
 publishPwa(WWW, true);

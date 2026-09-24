@@ -759,3 +759,51 @@ function closeAppSettings() {
     overlay.classList.remove('active');
     overlay.setAttribute('aria-hidden', 'true');
 }
+
+function openPrivacy() {
+    var overlay = document.getElementById('privacyOverlay');
+    var body = document.getElementById('privacyOverlayBody');
+    if (!overlay || !body) return;
+    overlay.classList.add('active');
+    overlay.setAttribute('aria-hidden', 'false');
+    body.scrollTop = 0;
+
+    if (body.dataset.loaded === '1') return;
+
+    var embedded = window.KING_PRIVACY_POLICY_BODY;
+    if (typeof embedded === 'string' && embedded.length) {
+        body.innerHTML = embedded;
+        body.dataset.loaded = '1';
+        return;
+    }
+
+    var privacyUrl = new URL('privacy.html', window.location.href).href;
+    fetch(privacyUrl)
+        .then(function (res) {
+            if (!res.ok) throw new Error('privacy fetch failed');
+            return res.text();
+        })
+        .then(function (html) {
+            var doc = new DOMParser().parseFromString(html, 'text/html');
+            var wrap = doc.querySelector('main.wrap') || doc.querySelector('.wrap');
+            if (!wrap) throw new Error('privacy parse failed');
+            var h1 = wrap.querySelector('h1');
+            if (h1) h1.remove();
+            var back = wrap.querySelector('.back-app');
+            if (back) back.remove();
+            body.innerHTML = wrap.innerHTML;
+            body.dataset.loaded = '1';
+        })
+        .catch(function () {
+            body.innerHTML =
+                '<p class="privacy-error">Could not load the privacy policy here. ' +
+                '<a href="./privacy.html" target="_blank" rel="noopener noreferrer">Open privacy policy</a></p>';
+        });
+}
+
+function closePrivacy() {
+    var overlay = document.getElementById('privacyOverlay');
+    if (!overlay) return;
+    overlay.classList.remove('active');
+    overlay.setAttribute('aria-hidden', 'true');
+}
