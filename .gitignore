@@ -11,8 +11,14 @@ __MACOSX/
 # Gradle (any module)
 .gradle/
 android/.gradle/
+android/.gradle-user-home/
+android/**/build/
 android/app/build/
 android/build/
+
+# Local review bundles (regenerate: npm run review:zip)
+*-code-review*.zip
+King-*.zip
 
 # Android local / IDE
 android/captures/

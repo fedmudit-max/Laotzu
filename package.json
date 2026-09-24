@@ -12,7 +12,8 @@
     "android:install": "npm run android:debug && node scripts/install-debug-apk.js",
     "android:bundle": "npm run web:copy && cd android && ./gradlew :app:bundleRelease",
     "icons:generate": "python3 scripts/generate-icons.py",
-    "test": "node --test --test-concurrency=1 tests/*.test.js"
+    "test": "node --test --test-concurrency=1 tests/*.test.js",
+    "review:zip": "bash scripts/make-review-zip.sh"
   },
   "repository": {
     "type": "git",
