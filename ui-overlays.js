@@ -726,6 +726,7 @@ function tryShowAwaitingJourneyComparison(canOpenNextToday) {
 // ════════════════════════════════════════════════════════
 
 function openLearnJourney() {
+    if (typeof closeAppSettings === 'function') closeAppSettings();
     var overlay = document.getElementById('learnJourneyOverlay');
     if (!overlay) return;
     overlay.classList.add('active');
@@ -747,6 +748,7 @@ function closeLearnJourney() {
 function openAppSettings() {
     var overlay = document.getElementById('appSettingsOverlay');
     if (!overlay) return;
+    if (typeof renderPremiumPanelContent === 'function') renderPremiumPanelContent();
     overlay.classList.add('active');
     overlay.setAttribute('aria-hidden', 'false');
     var scroll = overlay.querySelector('.settings-sheet-scroll');

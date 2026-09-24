@@ -383,7 +383,8 @@ function completeOnboarding() {
     var topBar = document.getElementById('appTopBar');
     if (topBar) topBar.hidden = false;
 
-    if (typeof monthPanelOpen !== 'undefined') monthPanelOpen = true;
+    if (typeof monthPanelOpen !== 'undefined') monthPanelOpen = false;
+    if (typeof bestPerformancesPanelOpen !== 'undefined') bestPerformancesPanelOpen = false;
     if (typeof deferredHeavyRendered !== 'undefined') deferredHeavyRendered = false;
 
     // Never show paywall immediately after first start.

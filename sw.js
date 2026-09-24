@@ -1,4 +1,4 @@
-const CACHE_NAME = 'king-v185';
+const CACHE_NAME = 'king-v194';
 
 function logSwOptionalFailure(area, err) {
     try {
@@ -19,6 +19,7 @@ const ASSETS = [
     './logic-journey.js',
     './logic-streak.js',
     './logic-logging.js',
+    './logic-best-performances.js',
     './entitlement.js',
     './billing-offers.js',
     './billing-store-play.js',

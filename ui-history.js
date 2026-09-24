@@ -22,11 +22,18 @@ function toggleLifetimePanel() {
     syncHistoryPanels();
 }
 
+function toggleBestPerformancesPanel() {
+    if (!requirePremium()) return;
+    bestPerformancesPanelOpen = !bestPerformancesPanelOpen;
+    syncHistoryPanels();
+}
+
 function syncHistoryPanels() {
     var monthOpen = monthPanelOpen;
     var chartOpen = chartPanelOpen;
     var lifetimeOpen = lifetimePanelOpen;
-    if (monthOpen || chartOpen || lifetimeOpen) ensureDeferredHeavyRendered();
+    var bestPerfOpen = bestPerformancesPanelOpen;
+    if (monthOpen || chartOpen || lifetimeOpen || bestPerfOpen) ensureDeferredHeavyRendered();
     var el;
 
     el = document.getElementById('chartPanelTitle');
@@ -38,20 +45,27 @@ function syncHistoryPanels() {
     if (el) el.classList.toggle('is-open', chartOpen);
     el = document.getElementById('lifetimePanelBody');
     if (el) el.classList.toggle('is-open', lifetimeOpen);
+    el = document.getElementById('bestPerformancesPanelBody');
+    if (el) el.classList.toggle('is-open', bestPerfOpen);
     el = document.getElementById('monthPanelChevron');
     if (el) el.classList.toggle('open', monthOpen);
     el = document.getElementById('chartPanelChevron');
     if (el) el.classList.toggle('open', chartOpen);
     el = document.getElementById('lifetimePanelChevron');
     if (el) el.classList.toggle('open', lifetimeOpen);
+    el = document.getElementById('bestPerformancesPanelChevron');
+    if (el) el.classList.toggle('open', bestPerfOpen);
     el = document.getElementById('monthPanelToggle');
     if (el) el.setAttribute('aria-expanded', monthOpen ? 'true' : 'false');
     el = document.getElementById('chartPanelToggle');
     if (el) el.setAttribute('aria-expanded', chartOpen ? 'true' : 'false');
     el = document.getElementById('lifetimePanelToggle');
     if (el) el.setAttribute('aria-expanded', lifetimeOpen ? 'true' : 'false');
+    el = document.getElementById('bestPerformancesPanelToggle');
+    if (el) el.setAttribute('aria-expanded', bestPerfOpen ? 'true' : 'false');
 
     if (chartOpen) renderChart();
+    if (bestPerfOpen) renderBestPerformances();
 }
 
 (function initHistoryPanels() {
@@ -76,6 +90,13 @@ function syncHistoryPanels() {
             toggleLifetimePanel();
         });
     }
+    var bestPerfBtn = document.getElementById('bestPerformancesPanelToggle');
+    if (bestPerfBtn) {
+        bestPerfBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            toggleBestPerformancesPanel();
+        });
+    }
 })();
 
 function switchChartMode(mode) {
@@ -84,6 +105,20 @@ function switchChartMode(mode) {
     document.getElementById('toggleStreaks').classList.toggle('active', mode === 'streaks');
     document.getElementById('toggleJourneys').classList.toggle('active', mode === 'journeys');
     renderChart();
+}
+
+function switchBestPerformancesMode(mode) {
+    if (mode !== 'streaks' && mode !== 'journeys') return;
+    bestPerformancesMode = mode;
+    var streaksBtn = document.getElementById('bestPerfToggleStreaks');
+    var journeysBtn = document.getElementById('bestPerfToggleJourneys');
+    if (streaksBtn) streaksBtn.classList.toggle('active', mode === 'streaks');
+    if (journeysBtn) journeysBtn.classList.toggle('active', mode === 'journeys');
+    var streaksPane = document.getElementById('bestStreaksPane');
+    var journeysPane = document.getElementById('bestJourneysPane');
+    if (streaksPane) streaksPane.hidden = mode !== 'streaks';
+    if (journeysPane) journeysPane.hidden = mode !== 'journeys';
+    renderBestPerformances();
 }
 
 // ════════════════════════════════════════════════════════
@@ -590,6 +625,52 @@ function renderMonthGrid() {
     var monthEmpty = !hasAnyDailyLogEntries();
     setHistoryEmptyVisible('monthEmptyState', monthEmpty);
     if (grid) grid.classList.toggle('is-empty', monthEmpty);
+}
+
+// ════════════════════════════════════════════════════════
+//  BEST PERFORMANCES
+// ════════════════════════════════════════════════════════
+
+function renderBestPerformanceList(containerId, board, valueSuffix) {
+    var root = document.getElementById(containerId);
+    if (!root || typeof buildBestPerformancesViewModel !== 'function') return;
+    var slots = board.slots || [];
+    var html = '';
+    for (var i = 0; i < slots.length; i++) {
+        var slot = slots[i];
+        var rankClass = 'best-perf-row--rank-' + slot.rank;
+        var activeClass = slot.isActive ? ' best-perf-row--active' : '';
+        var emptyClass = slot.empty ? ' best-perf-row--empty' : '';
+        html += '<div class="best-perf-row ' + rankClass + activeClass + emptyClass + '" role="listitem" aria-label="' + slot.ariaLabel + '">';
+        html += '<span class="best-perf-medal" aria-hidden="true">' + slot.medal + '</span>';
+        if (slot.empty) {
+            html += '<span class="best-perf-empty">—</span>';
+        } else {
+            html += '<div class="best-perf-bar-track" style="width:' + slot.barPercent + '%" aria-hidden="true">';
+            html += '<div class="best-perf-bar-fill"></div>';
+            html += '</div>';
+            html += '<span class="best-perf-value">' + slot.value + ' ' + valueSuffix + '</span>';
+        }
+        html += '</div>';
+    }
+    root.innerHTML = html;
+}
+
+function renderBestPerformances() {
+    if (typeof buildBestPerformancesViewModel !== 'function') return;
+    var mode = bestPerformancesMode === 'journeys' ? 'journeys' : 'streaks';
+    var streaksBtn = document.getElementById('bestPerfToggleStreaks');
+    var journeysBtn = document.getElementById('bestPerfToggleJourneys');
+    if (streaksBtn) streaksBtn.classList.toggle('active', mode === 'streaks');
+    if (journeysBtn) journeysBtn.classList.toggle('active', mode === 'journeys');
+    var streaksPane = document.getElementById('bestStreaksPane');
+    var journeysPane = document.getElementById('bestJourneysPane');
+    if (streaksPane) streaksPane.hidden = mode !== 'streaks';
+    if (journeysPane) journeysPane.hidden = mode !== 'journeys';
+
+    var model = buildBestPerformancesViewModel();
+    renderBestPerformanceList('bestStreaksList', model.streaks, 'days');
+    renderBestPerformanceList('bestJourneysList', model.journeys, 'days');
 }
 
 // ════════════════════════════════════════════════════════

@@ -195,13 +195,13 @@
 
     <!-- ═══ MONTHLY MIRROR (collapsible) ═══════════════════ -->
     <div class="card collapse-card" id="monthPanelCard">
-        <button type="button" class="collapse-header" id="monthPanelToggle" aria-expanded="true" aria-controls="monthPanelBody">
+        <button type="button" class="collapse-header" id="monthPanelToggle" aria-expanded="false" aria-controls="monthPanelBody">
             <span class="collapse-header-row">
                 <span class="collapse-title">Monthly Mirror</span>
-                <span class="collapse-chevron open" id="monthPanelChevron" aria-hidden="true">›</span>
+                <span class="collapse-chevron" id="monthPanelChevron" aria-hidden="true">›</span>
             </span>
         </button>
-        <div class="collapse-body is-open" id="monthPanelBody">
+        <div class="collapse-body" id="monthPanelBody">
             <div class="chart-header">
                 <button class="month-nav-btn" id="monthNavPrev" data-action="month-prev">‹</button>
                 <div style="text-align:center;">
@@ -225,6 +225,28 @@
                     <span class="legend-swatch slip" aria-hidden="true"></span>
                     <span class="month-stat-slip" id="monthSlipStat">0 slips</span>
                 </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ BEST PERFORMANCES (collapsible) ══════════════ -->
+    <div class="card collapse-card" id="bestPerformancesPanelCard">
+        <button type="button" class="collapse-header" id="bestPerformancesPanelToggle" aria-expanded="false" aria-controls="bestPerformancesPanelBody">
+            <span class="collapse-header-row">
+                <span class="collapse-title">Best Performances</span>
+                <span class="collapse-chevron" id="bestPerformancesPanelChevron" aria-hidden="true">›</span>
+            </span>
+        </button>
+        <div class="collapse-body" id="bestPerformancesPanelBody">
+            <div class="chart-toggle" id="bestPerformancesModeToggle">
+                <button type="button" class="chart-toggle-btn active" id="bestPerfToggleStreaks" data-action="best-perf-streaks">Streaks</button>
+                <button type="button" class="chart-toggle-btn" id="bestPerfToggleJourneys" data-action="best-perf-journeys">Journeys</button>
+            </div>
+            <div class="best-perf-pane" id="bestStreaksPane">
+                <div class="best-perf-list" id="bestStreaksList" role="list" aria-label="Best streaks"></div>
+            </div>
+            <div class="best-perf-pane" id="bestJourneysPane" hidden>
+                <div class="best-perf-list" id="bestJourneysList" role="list" aria-label="Best journeys"></div>
             </div>
         </div>
     </div>
@@ -293,39 +315,6 @@
         </div>
     </div>
 
-    <!-- ═══ HOW KING WORKS ═══════════════════════════════ -->
-    <div class="card collapse-card learn-journey-card" id="learnJourneyCard">
-        <button type="button" class="collapse-header" id="learnJourneyToggle" data-action="open-learn-journey" aria-haspopup="dialog">
-            <span class="collapse-header-row">
-                <span class="collapse-header-text">
-                    <span class="collapse-title">How King Works</span>
-                </span>
-                <span class="collapse-chevron" aria-hidden="true">›</span>
-            </span>
-        </button>
-    </div>
-
-    <!-- ═══ PREMIUM (collapsible) ══════════════════════════ -->
-    <div class="card collapse-card premium-panel-card" id="premiumPanelCard">
-        <button type="button" class="collapse-header" id="premiumPanelToggle" aria-expanded="false" aria-controls="premiumPanelBody">
-            <span class="collapse-header-row">
-                <span class="collapse-header-text">
-                    <span class="collapse-title" id="premiumPanelTitle">⭐ Premium</span>
-                    <span class="collapse-teaser" id="premiumPanelTeaser">Support King & unlock perks</span>
-                </span>
-                <span class="collapse-chevron" id="premiumPanelChevron" aria-hidden="true">›</span>
-            </span>
-        </button>
-        <div class="collapse-body" id="premiumPanelBody">
-            <div class="premium-panel-inner">
-                <p class="premium-panel-status" id="premiumPanelStatus"></p>
-                <ul class="premium-panel-features" id="premiumPanelFeatures"></ul>
-                <p class="premium-backup-note" id="premiumPanelBackupNote"></p>
-                <button class="btn-premium-panel" type="button" id="premiumPanelSubscribeBtn" data-action="open-premium">View plans &amp; subscribe</button>
-            </div>
-        </div>
-    </div>
-
 </div><!-- .container -->
 
 <!-- ── Settings (export, reminder, reset, privacy) ── -->
@@ -338,7 +327,7 @@
             <div class="settings-block settings-reminder-wrap" id="settingsReminderSection">
                 <div class="settings-group settings-group-reminder">
                     <div class="settings-remind-head">
-                        <span class="settings-remind-label">Daily check-in</span>
+                        <span class="settings-remind-label">Reminder</span>
                         <label class="remind-switch">
                             <input type="checkbox" id="remindToggle" aria-label="Turn daily reminder on">
                             <span class="remind-switch-ui" aria-hidden="true"></span>
@@ -354,13 +343,43 @@
                 </div>
             </div>
 
+            <div class="settings-block" id="settingsLearnSection">
+                <div class="settings-group">
+                    <button type="button" class="settings-row" data-action="open-learn-journey">
+                        <img class="settings-row-icon settings-row-app-logo" src="./assets/icon-192.png" width="30" height="30" alt="" aria-hidden="true">
+                        <span class="settings-row-text">
+                            <span class="settings-row-title">How King Works</span>
+                        </span>
+                        <span class="settings-row-chevron" aria-hidden="true">›</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="settings-block premium-panel-card" id="premiumPanelCard">
+                <div class="settings-group settings-group-premium settings-group-premium-collapse">
+                    <button type="button" class="collapse-header settings-premium-collapse-header" id="premiumPanelToggle" aria-expanded="false" aria-controls="premiumPanelBody">
+                        <span class="collapse-header-row">
+                            <span class="collapse-header-text">
+                                <span class="settings-premium-title" id="premiumPanelTitle">⭐ Premium</span>
+                                <span class="settings-premium-teaser" id="premiumPanelTeaser">Support King &amp; unlock perks</span>
+                            </span>
+                            <span class="collapse-chevron" id="premiumPanelChevron" aria-hidden="true">›</span>
+                        </span>
+                    </button>
+                    <div class="collapse-body settings-premium-collapse-body" id="premiumPanelBody">
+                        <p class="premium-panel-status" id="premiumPanelStatus"></p>
+                        <button class="btn-premium-panel settings-premium-cta" type="button" id="premiumPanelSubscribeBtn" data-action="open-premium">View plans &amp; subscribe</button>
+                    </div>
+                </div>
+            </div>
+
             <div class="settings-block" id="settingsDataSection">
                 <div class="settings-group" id="premiumBackupGate">
                     <button type="button" class="settings-row" id="exportBackupBtn" data-action="export-backup">
                         <span class="settings-row-icon settings-row-icon-green" aria-hidden="true">↑</span>
                         <span class="settings-row-text">
                             <span class="settings-row-title">Export progress</span>
-                            <span class="settings-row-sub">Save a JSON backup</span>
+                            <span class="settings-row-sub">Save a backup file on this device</span>
                         </span>
                         <span class="settings-row-chevron" aria-hidden="true">›</span>
                     </button>
@@ -372,7 +391,12 @@
                         </span>
                         <span class="settings-row-chevron" aria-hidden="true">›</span>
                     </button>
-                    <p class="settings-group-note backup-status" id="lastBackupLabel">Last exported: Never</p>
+                    <p class="settings-group-note settings-group-note--footer backup-status" id="lastBackupLabel">Last exported: Never</p>
+                </div>
+            </div>
+
+            <div class="settings-block" id="settingsLegalSection">
+                <div class="settings-group">
                     <button type="button" class="settings-row" data-action="open-privacy">
                         <span class="settings-row-icon settings-row-icon-muted" aria-hidden="true">◆</span>
                         <span class="settings-row-text">
@@ -380,12 +404,17 @@
                         </span>
                         <span class="settings-row-chevron" aria-hidden="true">›</span>
                     </button>
+                </div>
+            </div>
+
+            <div class="settings-block settings-block-danger" id="settingsDangerSection">
+                <div class="settings-group settings-group-danger">
                     <button type="button" class="settings-row settings-row-danger" data-action="modal-reset">
                         <span class="settings-row-icon settings-row-icon-danger" aria-hidden="true">↺</span>
                         <span class="settings-row-text">
                             <span class="settings-row-title">Reset all data</span>
-                            <span class="settings-row-sub">Erase progress on this device</span>
                         </span>
+                        <span class="settings-row-chevron" aria-hidden="true">›</span>
                     </button>
                 </div>
             </div>
@@ -802,6 +831,7 @@
     <script defer src="./logic-journey.js"></script>
     <script defer src="./logic-streak.js"></script>
     <script defer src="./logic-logging.js"></script>
+    <script defer src="./logic-best-performances.js"></script>
     <script defer src="./entitlement.js"></script>
     <script defer src="./billing-offers.js"></script>
     <script defer src="./billing-store-play.js"></script>

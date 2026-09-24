@@ -150,6 +150,8 @@ function showFileProtocolBanner() {
             'chart-next': function () { chartNav(1); },
             'chart-streaks': function () { switchChartMode('streaks'); },
             'chart-journeys': function () { switchChartMode('journeys'); },
+            'best-perf-streaks': function () { switchBestPerformancesMode('streaks'); },
+            'best-perf-journeys': function () { switchBestPerformancesMode('journeys'); },
             onboardingNext: onboardingNext,
             // Skip uses the same finish path as Let's Begin — trial from Calendar Day 1.
             onboardingSkip: completeOnboarding,

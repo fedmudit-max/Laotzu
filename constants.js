@@ -75,6 +75,7 @@ const PREMIUM_FEATURES = [
     'Streak, Journey & Progress milestones',
     'Daily knowledge cards',
     'Monthly Mirror',
+    'Best Performances',
     'Progress Graph',
     'Daily reminder to log your day',
     'Features in future',

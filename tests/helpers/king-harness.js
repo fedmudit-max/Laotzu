@@ -61,6 +61,7 @@ function createKingContext() {
         'logic-journey.js',
         'logic-streak.js',
         'logic-logging.js',
+        'logic-best-performances.js',
         'entitlement.js',
         'backup.js',
         'billing-offers.js',

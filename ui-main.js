@@ -8,9 +8,11 @@ let currentTab = 0;
 let chartPage = -1;
 let chartMode = 'streaks';
 let monthOffset = 0;
-let monthPanelOpen = true;
+let monthPanelOpen = false;
 let chartPanelOpen = false;
 let lifetimePanelOpen = false;
+let bestPerformancesPanelOpen = false;
+let bestPerformancesMode = 'streaks';
 let toastTimer = null;
 let confettiParticles = [];
 let confettiAnimId    = null;
@@ -27,6 +29,17 @@ let lastJourneyMilestonesKey = '';
 let deferredHeavyRendered = false;
 let weeklySelectedSlot = null;
 let weeklySelectedDateKey = null;
+let lastWeeklyRenderSignature = '';
+
+function weeklyRenderSignature() {
+    const streak = getDisplayStreak();
+    return [
+        streak,
+        getWeeklyStreakDay(streak),
+        isStreakFreezeDay() ? 1 : 0,
+        state.todayStatus || 'none',
+    ].join('|');
+}
 
 // ════════════════════════════════════════════════════════
 //  INIT
@@ -118,6 +131,7 @@ function renderAll(options) {
             renderKnowledgeCard,
             renderLifetimeStats,
             renderMonthGrid,
+            renderBestPerformances,
             renderChart,
         );
     }
@@ -141,6 +155,7 @@ function renderDeferredHeavy() {
         renderKnowledgeCard,
         renderLifetimeStats,
         renderMonthGrid,
+        renderBestPerformances,
         renderChart,
     ];
     for (const job of jobs) {
@@ -661,12 +676,20 @@ function renderWeeklyStreak() {
         track._weeklyResizeObs = new ResizeObserver(() => layoutWeeklyTrack(track));
         track._weeklyResizeObs.observe(track);
     }
+
+    lastWeeklyRenderSignature = weeklyRenderSignature();
 }
 
 /** Lightweight refresh — move traveler and green fill without rebuilding the track DOM. */
 function updateWeeklyTravelerPosition() {
     const track = document.getElementById('weeklyStreakTrack');
     if (!track) return;
+
+    const signature = weeklyRenderSignature();
+    if (signature !== lastWeeklyRenderSignature) {
+        renderWeeklyStreak();
+        return;
+    }
 
     const rail = track.querySelector('.weekly-streak-rail');
     if (!rail || !weeklyTrackLayout) {

@@ -40,6 +40,7 @@ function applyPremiumTierLayout() {
         'milestonesCard',
         'knowledgeCard',
         'monthPanelCard',
+        'bestPerformancesPanelCard',
         'chartPanelCard',
         'settingsReminderSection',
     ];
@@ -48,7 +49,7 @@ function applyPremiumTierLayout() {
     }
     setPremiumSectionVisible('primaryStack', true);
     setPremiumSectionVisible('appTopBar', true);
-    setPremiumSectionVisible('learnJourneyCard', true);
+    setPremiumSectionVisible('settingsLearnSection', true);
     setPremiumSectionVisible('premiumPanelCard', isPremiumGatingEnabled());
     setPremiumSectionVisible('settingsDataSection', true);
     setPremiumSectionVisible('exportBackupBtn', true);
@@ -163,7 +164,7 @@ function renderPremiumPanelContent() {
     var statusEl = document.getElementById('premiumPanelStatus');
     var listEl = document.getElementById('premiumPanelFeatures');
     var noteEl = document.getElementById('premiumPanelBackupNote');
-    if (!statusEl || !listEl) return;
+    if (!statusEl) return;
 
     var phase = getPremiumTrialPanelPhase();
 
@@ -187,21 +188,25 @@ function renderPremiumPanelContent() {
     if (phase === 'countdown') {
         var countdownLeft = Entitlement.daysRemaining();
         statusEl.textContent = countdownLeft === 1
-            ? 'Trial ends tomorrow. Subscribe to keep everything below.'
-            : 'Trial ends in ' + countdownLeft + ' days. Subscribe to keep everything below.';
-        fillPremiumFeatureList(listEl);
-        setPremiumFeatureListVisible(listEl, true);
-        setPremiumBackupNote(noteEl, true);
-        if (noteEl) noteEl.textContent = PREMIUM_BACKUP_NOTE;
+            ? 'Trial ends tomorrow. Subscribe to keep Premium features.'
+            : 'Trial ends in ' + countdownLeft + ' days. Subscribe to keep Premium features.';
+        if (listEl) {
+            fillPremiumFeatureList(listEl);
+            setPremiumFeatureListVisible(listEl, true);
+        }
+        setPremiumBackupNote(noteEl, !!listEl);
+        if (noteEl && listEl) noteEl.textContent = PREMIUM_BACKUP_NOTE;
         setPremiumPanelSubscribeLabel('Keep Premium after trial');
         return;
     }
 
-        statusEl.textContent = 'Free trial ended. Daily logging stays free forever. Subscribe to unlock timeline, milestones, Monthly Mirror, and Progress Graph. Your score is not affected.';
-    fillPremiumFeatureList(listEl);
-    setPremiumFeatureListVisible(listEl, true);
-    setPremiumBackupNote(noteEl, true);
-    if (noteEl) noteEl.textContent = PREMIUM_BACKUP_NOTE;
+    statusEl.textContent = 'Free trial ended. Daily logging stays free forever. Subscribe to unlock timeline, milestones, Monthly Mirror, Best Performances, and Progress Graph. Your score is not affected.';
+    if (listEl) {
+        fillPremiumFeatureList(listEl);
+        setPremiumFeatureListVisible(listEl, true);
+    }
+    setPremiumBackupNote(noteEl, !!listEl);
+    if (noteEl && listEl) noteEl.textContent = PREMIUM_BACKUP_NOTE;
     setPremiumPanelSubscribeLabel('View plans & subscribe');
 }
 
@@ -384,6 +389,7 @@ function showPremiumModal(opts) {
 }
 
 function openPremiumSheet() {
+    if (typeof closeAppSettings === 'function') closeAppSettings();
     var offer = getPremiumOffer();
     showPremiumModal({
         trialDays: offer.trialDays,
