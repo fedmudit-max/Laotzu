@@ -63,6 +63,7 @@ body::before {
 }
 
 .app-top-bar {
+    --app-top-bar-row: 44px;
     position: fixed;
     top: 0;
     left: 0;
@@ -72,9 +73,10 @@ body::before {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
+    min-height: calc(var(--app-top-bar-row) + max(6px, var(--king-safe-top)) + 8px);
     max-width: 480px;
     margin: 0 auto;
-    padding: max(8px, var(--king-safe-top)) max(16px, var(--king-safe-right)) 10px max(16px, var(--king-safe-left));
+    padding: max(6px, var(--king-safe-top)) max(20px, var(--king-safe-right)) 8px max(20px, var(--king-safe-left));
     background: var(--bg);
     box-sizing: border-box;
 }
@@ -82,21 +84,25 @@ body::before {
 .app-top-bar-brand {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 9px;
     min-width: 0;
+    min-height: var(--app-top-bar-row);
 }
 
 .app-top-bar-logo {
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
     flex-shrink: 0;
+    display: block;
+    object-fit: cover;
 }
 
 .app-top-bar-title {
-    font-size: 20px;
-    font-weight: 700;
-    letter-spacing: -0.4px;
+    font-size: 17px;
+    font-weight: 600;
+    line-height: var(--app-top-bar-row);
+    letter-spacing: -0.43px;
     color: var(--text);
 }
 
@@ -104,22 +110,30 @@ body::before {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
+    flex-shrink: 0;
+    width: var(--app-top-bar-row);
+    height: var(--app-top-bar-row);
     margin: 0;
+    margin-right: -10px;
     padding: 0;
     border: none;
-    border-radius: 12px;
-    background: var(--card);
-    color: var(--text-muted);
+    border-radius: 50%;
+    background: transparent;
+    color: rgba(60, 60, 67, 0.75);
     cursor: pointer;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
     -webkit-appearance: none;
     appearance: none;
+    transition: color 0.15s ease, transform 0.12s ease;
+}
+
+.app-top-bar-settings-icon {
+    display: block;
+    width: 20px;
+    height: 20px;
 }
 
 .app-top-bar-settings:active {
-    transform: scale(0.96);
+    transform: scale(0.94);
     color: var(--text);
 }
 
@@ -128,12 +142,12 @@ body::before {
     max-width: 480px;
     margin: 0 auto;
     padding: 16px 16px calc(40px + var(--king-safe-bottom));
-    padding-top: calc(58px + max(8px, var(--king-safe-top)));
+    padding-top: calc(52px + max(6px, var(--king-safe-top)));
     padding-left: max(16px, var(--king-safe-left));
     padding-right: max(16px, var(--king-safe-right));
 }
 
-/* ── Settings sheet ── */
+/* ── Settings sheet (layout overrides live after generic .overlay below) ── */
 .settings-overlay {
     z-index: 2200;
 }
@@ -141,130 +155,254 @@ body::before {
 .settings-sheet {
     display: flex;
     flex-direction: column;
-    max-height: min(90vh, 780px);
-    padding: 0 0 calc(12px + var(--king-safe-bottom));
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: 480px;
+    padding: 0 max(16px, var(--king-safe-left)) calc(12px + var(--king-safe-bottom)) max(16px, var(--king-safe-right));
+    box-sizing: border-box;
 }
 
-.settings-sheet-header {
-    padding: 20px 18px 8px;
+.settings-sheet-top {
+    position: relative;
     flex-shrink: 0;
+    min-height: calc(36px + max(8px, var(--king-safe-top)));
+    padding: max(8px, var(--king-safe-top)) 0 4px;
+    box-sizing: border-box;
 }
 
-.settings-sheet-title {
+.settings-sheet-dismiss {
+    position: absolute;
+    top: max(8px, var(--king-safe-top));
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
     margin: 0;
-    font-size: 22px;
-    font-weight: 700;
-    letter-spacing: -0.4px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--text-muted);
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.settings-sheet-dismiss:active {
+    background: rgba(0, 0, 0, 0.1);
     color: var(--text);
 }
 
-.settings-sheet-lede {
-    margin: 6px 0 0;
-    font-size: 14px;
-    line-height: 1.45;
-    color: var(--text-muted);
-}
-
 .settings-sheet-scroll {
-    flex: 1;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    padding: 8px 14px 4px;
+    margin-top: 0;
+    flex: 1 1 auto;
+    overflow: visible;
+    padding: 0 0 4px;
+    min-height: 0;
 }
 
-.settings-section {
-    margin-bottom: 18px;
+.settings-block {
+    margin-bottom: 14px;
 }
 
-.settings-section-label {
-    margin: 0 0 8px 4px;
+.settings-block:last-child {
+    margin-bottom: 0;
+}
+
+.settings-group {
+    background: var(--card);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.settings-group-note {
+    margin: 0;
+    padding: 6px 14px 8px 52px;
     font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
+    line-height: 1.35;
     color: var(--text-muted);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
-.settings-reminder-panel {
-    padding: 4px 2px 0;
+.settings-remind-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px 6px;
+}
+
+.settings-remind-label {
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: -0.2px;
+    color: var(--text);
+}
+
+.settings-group-reminder .settings-remind-time-inline {
+    margin: 0;
+    padding: 0 10px 8px;
+    gap: 0;
+    background: transparent;
+    justify-content: center;
+}
+
+.settings-group-reminder .remind-time-btn {
+    min-width: 36px;
+    padding: 0 4px;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.settings-group-reminder .remind-time-colon {
+    font-size: 20px;
+    padding: 0;
 }
 
 .settings-row {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 12px;
     width: 100%;
-    margin: 0 0 8px;
-    padding: 14px 16px;
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    background: var(--card);
+    margin: 0;
+    padding: 12px 14px 12px 12px;
+    border: none;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 0;
+    background: transparent;
     text-align: left;
     cursor: pointer;
     font-family: inherit;
     box-sizing: border-box;
     -webkit-appearance: none;
     appearance: none;
-    transition: border-color 0.15s, background 0.15s;
+    transition: background 0.15s;
+}
+
+.settings-group .settings-row:last-child {
+    border-bottom: none;
 }
 
 .settings-row:active {
-    border-color: rgba(52, 199, 89, 0.45);
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.settings-row-icon {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.settings-row-icon-green {
+    background: rgba(52, 199, 89, 0.14);
+    color: var(--green);
+}
+
+.settings-row-icon-blue {
+    background: rgba(0, 122, 255, 0.12);
+    color: #007aff;
+}
+
+.settings-row-icon-muted {
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
+.settings-row-icon-danger {
+    background: rgba(255, 59, 48, 0.12);
+    color: #ff3b30;
 }
 
 .settings-row-text {
-    display: block;
+    flex: 1;
+    min-width: 0;
 }
 
 .settings-row-title {
     display: block;
-    font-size: 15px;
-    font-weight: 600;
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: -0.2px;
     color: var(--text);
-    line-height: 1.3;
+    line-height: 1.25;
 }
 
 .settings-row-sub {
     display: block;
-    margin-top: 3px;
+    margin-top: 2px;
     font-size: 13px;
     line-height: 1.35;
     color: var(--text-muted);
 }
 
+.settings-row-chevron {
+    flex-shrink: 0;
+    font-size: 20px;
+    font-weight: 400;
+    line-height: 1;
+    color: rgba(0, 0, 0, 0.22);
+    margin-right: 2px;
+}
+
 .settings-row-danger .settings-row-title {
     color: #ff3b30;
+    font-weight: 600;
 }
 
-.settings-row-link {
-    margin-bottom: 0;
-}
-
-.settings-backup-status {
-    margin: 2px 4px 10px;
-    text-align: left;
-}
-
-.settings-close-btn {
+.settings-done-btn {
     display: block;
-    width: calc(100% - 28px);
-    margin: 8px 14px 0;
+    width: 100%;
+    margin: 12px 0 0;
     padding: 14px;
     border: none;
     border-radius: 14px;
-    background: rgba(0, 0, 0, 0.06);
+    background: var(--green);
     font-family: inherit;
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 600;
-    color: var(--text);
+    letter-spacing: -0.2px;
+    color: #fff;
     cursor: pointer;
     flex-shrink: 0;
+    box-shadow: 0 4px 14px rgba(52, 199, 89, 0.35);
+    -webkit-appearance: none;
+    appearance: none;
 }
 
-.settings-close-btn:active {
-    background: rgba(0, 0, 0, 0.1);
+.settings-done-btn:active {
+    transform: scale(0.98);
+    box-shadow: 0 2px 8px rgba(52, 199, 89, 0.28);
 }
 
 #settingsReminderSection.premium-gated.is-locked {
     position: relative;
+}
+
+@media (max-height: 640px) {
+    .settings-sheet-scroll {
+        max-height: calc(94vh - 88px - var(--king-safe-top) - var(--king-safe-bottom));
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+@media (hover: none) {
+    .overlay.settings-overlay .settings-sheet {
+        transition: none;
+    }
 }
 
 /* ── CARDS ──────────────────────────────────────── */
@@ -3096,6 +3234,36 @@ button {
     visibility: visible;
     pointer-events: all;
 }
+
+/* Settings: beat generic .overlay centering/padding; opaque full screen, content-sized sheet */
+.overlay.settings-overlay {
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 0;
+    background: var(--bg);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.overlay.settings-overlay .settings-sheet {
+    margin: 0;
+    align-self: stretch;
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+    min-height: 0;
+    max-height: none;
+    height: auto;
+    overflow: visible;
+    transform: translateY(-100%);
+    transition: transform 0.34s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.overlay.settings-overlay.active .settings-sheet {
+    transform: translateY(0);
+}
+
 #journeyCompareOverlay {
     z-index: 3600;
 }

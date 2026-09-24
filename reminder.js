@@ -243,7 +243,7 @@ function openNotificationSettingsIfDenied() {
 
 function reminderStatusCopy(settings) {
     if (!reminderNativeAvailable()) {
-        return 'Reminders work in the King Android app — even if it is closed.';
+        return '';
     }
     if (!settings.enabled) return '';
     if (safeGet('onboardingComplete') === 'true' && !Entitlement.hasPremiumAccess()) {
@@ -502,7 +502,6 @@ function onRemindToggleChange() {
 
     if (turningOn && !reminderNativeAvailable()) {
         if (toggle) toggle.checked = false;
-        showToast(0, 'Daily reminder is available in the King Android app.');
         return;
     }
 

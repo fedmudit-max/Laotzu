@@ -52,13 +52,13 @@
 
 <header class="app-top-bar" id="appTopBar">
     <div class="app-top-bar-brand">
-        <img class="app-top-bar-logo" src="./assets/icon-192.png" width="28" height="28" alt="">
+        <img class="app-top-bar-logo" src="./assets/icon-192.png" width="30" height="30" alt="">
         <span class="app-top-bar-title">King</span>
     </div>
     <button type="button" class="app-top-bar-settings" data-action="open-settings" aria-label="Settings" aria-haspopup="dialog">
-        <svg class="app-top-bar-settings-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" stroke="currentColor" stroke-width="1.75"/>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+        <svg class="app-top-bar-settings-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" stroke="currentColor" stroke-width="2"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
     </button>
 </header>
@@ -329,71 +329,67 @@
 </div><!-- .container -->
 
 <!-- ── Settings (export, reminder, reset, privacy) ── -->
-<div class="overlay settings-overlay learn-journey-overlay" id="appSettingsOverlay" aria-hidden="true" role="presentation">
-    <div class="settings-sheet learn-journey-card-panel" role="dialog" aria-modal="true" aria-labelledby="appSettingsTitle" onclick="event.stopPropagation()">
-        <div class="settings-sheet-header">
-            <h2 class="settings-sheet-title" id="appSettingsTitle">Settings</h2>
-            <p class="settings-sheet-lede">Your progress stays on this device.</p>
+<div class="overlay settings-overlay" id="appSettingsOverlay" aria-hidden="true" role="presentation">
+    <div class="settings-sheet" role="dialog" aria-modal="true" aria-label="Settings" onclick="event.stopPropagation()">
+        <div class="settings-sheet-top">
+            <button type="button" class="settings-sheet-dismiss" data-action="close-settings" aria-label="Close settings">✕</button>
         </div>
         <div class="settings-sheet-scroll">
-            <div class="settings-section settings-reminder-wrap" id="settingsReminderSection">
-                <h3 class="settings-section-label">Daily reminder</h3>
-                <div class="remind-panel settings-reminder-panel">
-                    <div class="remind-group">
-                        <div class="remind-row">
-                            <div class="remind-copy">
-                                <div class="remind-title">Daily Reminder</div>
-                            </div>
-                            <label class="remind-switch">
-                                <input type="checkbox" id="remindToggle" aria-label="Turn daily reminder on">
-                                <span class="remind-switch-ui" aria-hidden="true"></span>
-                            </label>
-                        </div>
+            <div class="settings-block settings-reminder-wrap" id="settingsReminderSection">
+                <div class="settings-group settings-group-reminder">
+                    <div class="settings-remind-head">
+                        <span class="settings-remind-label">Daily check-in</span>
+                        <label class="remind-switch">
+                            <input type="checkbox" id="remindToggle" aria-label="Turn daily reminder on">
+                            <span class="remind-switch-ui" aria-hidden="true"></span>
+                        </label>
                     </div>
-                    <p class="remind-footer" id="remindStatus"></p>
-                    <div class="remind-group remind-group-time">
-                        <div class="remind-time-row" id="remindTimeRow">
-                            <button type="button" class="remind-time-btn" id="remindHour" aria-label="Hour" data-field="hour">8</button>
-                            <span class="remind-time-colon" aria-hidden="true">:</span>
-                            <button type="button" class="remind-time-btn" id="remindMinute" aria-label="Minute" data-field="minute">00</button>
-                            <button type="button" class="remind-time-btn remind-time-ampm" id="remindAmPm" aria-label="AM or PM" data-field="ampm">PM</button>
-                        </div>
+                    <div class="remind-time-row settings-remind-time-inline" id="remindTimeRow">
+                        <button type="button" class="remind-time-btn" id="remindHour" aria-label="Hour" data-field="hour">8</button>
+                        <span class="remind-time-colon" aria-hidden="true">:</span>
+                        <button type="button" class="remind-time-btn" id="remindMinute" aria-label="Minute" data-field="minute">00</button>
+                        <button type="button" class="remind-time-btn remind-time-ampm" id="remindAmPm" aria-label="AM or PM" data-field="ampm">PM</button>
                     </div>
                 </div>
             </div>
 
-            <div class="settings-section" id="settingsDataSection">
-                <h3 class="settings-section-label">Data</h3>
-                <div class="settings-actions" id="premiumBackupGate">
+            <div class="settings-block" id="settingsDataSection">
+                <div class="settings-group" id="premiumBackupGate">
                     <button type="button" class="settings-row" id="exportBackupBtn" data-action="export-backup">
+                        <span class="settings-row-icon settings-row-icon-green" aria-hidden="true">↑</span>
                         <span class="settings-row-text">
                             <span class="settings-row-title">Export progress</span>
-                            <span class="settings-row-sub">Save a JSON backup on this device</span>
+                            <span class="settings-row-sub">Save a JSON backup</span>
                         </span>
+                        <span class="settings-row-chevron" aria-hidden="true">›</span>
                     </button>
                     <button type="button" class="settings-row" id="importBackupBtn" data-action="import-backup">
+                        <span class="settings-row-icon settings-row-icon-blue" aria-hidden="true">↓</span>
                         <span class="settings-row-text">
                             <span class="settings-row-title">Import progress</span>
                             <span class="settings-row-sub">Restore from a backup file</span>
                         </span>
+                        <span class="settings-row-chevron" aria-hidden="true">›</span>
                     </button>
-                    <p class="backup-status settings-backup-status" id="lastBackupLabel">Last exported: Never</p>
+                    <p class="settings-group-note backup-status" id="lastBackupLabel">Last exported: Never</p>
+                    <button type="button" class="settings-row" data-action="open-privacy">
+                        <span class="settings-row-icon settings-row-icon-muted" aria-hidden="true">◆</span>
+                        <span class="settings-row-text">
+                            <span class="settings-row-title">Privacy policy</span>
+                        </span>
+                        <span class="settings-row-chevron" aria-hidden="true">›</span>
+                    </button>
+                    <button type="button" class="settings-row settings-row-danger" data-action="modal-reset">
+                        <span class="settings-row-icon settings-row-icon-danger" aria-hidden="true">↺</span>
+                        <span class="settings-row-text">
+                            <span class="settings-row-title">Reset all data</span>
+                            <span class="settings-row-sub">Erase progress on this device</span>
+                        </span>
+                    </button>
                 </div>
-                <button type="button" class="settings-row settings-row-link" data-action="open-privacy">
-                    <span class="settings-row-text">
-                        <span class="settings-row-title">Privacy policy</span>
-                        <span class="settings-row-sub">How King handles your data</span>
-                    </span>
-                </button>
-                <button type="button" class="settings-row settings-row-danger" data-action="modal-reset">
-                    <span class="settings-row-text">
-                        <span class="settings-row-title">Reset all data</span>
-                        <span class="settings-row-sub">Erase progress on this device</span>
-                    </span>
-                </button>
             </div>
         </div>
-        <button type="button" class="settings-close-btn" data-action="close-settings">Close</button>
+        <button type="button" class="settings-done-btn" data-action="close-settings">Done</button>
         <input type="file" id="importFileInput" accept=".json,application/json" hidden>
     </div>
 </div>
