@@ -410,7 +410,16 @@ function layoutWeeklyTrack(track) {
     if (steps.length !== 8 || labels.length !== 8) return;
 
     const trackWidth = track.getBoundingClientRect().width;
-    if (trackWidth <= 0) return;
+    if (trackWidth <= 0) {
+        if (!track._weeklyLayoutRetry) {
+            track._weeklyLayoutRetry = true;
+            requestAnimationFrame(function () {
+                track._weeklyLayoutRetry = false;
+                layoutWeeklyTrack(track);
+            });
+        }
+        return;
+    }
 
     const startStep = steps[0];
     const daySteps = steps.slice(1);
